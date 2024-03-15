@@ -1,2 +1,7 @@
-# mcf-bet-bot
-## a gambling bot made by Jimmy
+# 廢土對賭機器人
+
+# 功能
+還在寫...
+
+# 如何使用
+還在寫...
