@@ -36,87 +36,10 @@ let bot;
 let client;
 let is_on = false;
 
-const cmdModule = require('./commands/cmd.js');
-if (cmdModule.name) {
-  commands[cmdModule.name] = cmdModule.aliases || [cmdModule.name];
-}
-
-// cpay 模組
-const cpayModule = require('./commands/cpay.js');
-if (cpayModule.name) {
-  commands[cpayModule.name] = cpayModule.aliases || [cpayModule.name];
-}
-
-// daily 模組
-const dailyModule = require('./commands/daily.js');
-if (dailyModule.name) {
-  commands[dailyModule.name] = dailyModule.aliases || [dailyModule.name];
-}
-
-// donate 模組
-const donateModule = require('./commands/donate.js');
-if (donateModule.name) {
-  commands[donateModule.name] = donateModule.aliases || [donateModule.name];
-}
-
-// epay 模組
-const epayModule = require('./commands/epay.js');
-if (epayModule.name) {
-  commands[epayModule.name] = epayModule.aliases || [epayModule.name];
-}
-
-// help 模組
-const helpModule = require('./commands/help.js');
-if (helpModule.name) {
-  commands[helpModule.name] = helpModule.aliases || [helpModule.name];
-}
-
-// hi 模組
-const hiModule = require('./commands/hi.js');
-if (hiModule.name) {
-  commands[hiModule.name] = hiModule.aliases || [hiModule.name];
-}
-
-// link 模組
-const linkModule = require('./commands/link.js');
-if (linkModule.name) {
-  commands[linkModule.name] = linkModule.aliases || [linkModule.name];
-}
-
-// money 模組
-const moneyModule = require('./commands/money.js');
-if (moneyModule.name) {
-  commands[moneyModule.name] = moneyModule.aliases || [moneyModule.name];
-}
-
-// play 模組
-const playModule = require('./commands/play.js');
-if (playModule.name) {
-  commands[playModule.name] = playModule.aliases || [playModule.name];
-}
-
-// reload 模組
-const reloadModule = require('./commands/reload.js');
-if (reloadModule.name) {
-  commands[reloadModule.name] = reloadModule.aliases || [reloadModule.name];
-}
-
-// say 模組
-const sayModule = require('./commands/say.js');
-if (sayModule.name) {
-  commands[sayModule.name] = sayModule.aliases || [sayModule.name];
-}
-
-// stop 模組
-const stopModule = require('./commands/stop.js');
-if (stopModule.name) {
-  commands[stopModule.name] = stopModule.aliases || [stopModule.name];
-}
-
-// wallet 模組
-const walletModule = require('./commands/wallet.js');
-if (walletModule.name) {
-  commands[walletModule.name] = walletModule.aliases || [walletModule.name];
+for (const file of commandFiles) {
+    const command = require(`./commands/${file}`);
+    if (!command.name) continue;
+    commands[command.name] = command.aliases;
 }
 
 const init_bot = async () => {
@@ -218,51 +141,7 @@ const init_bot = async () => {
 
                         } else {
                             await command_records(client, playerid, args)
-                            
-                            switch (commandName) {
-                                case 'cmd':
-                                    require(`./commands/cmd.js`).execute(bot, playerid, args);
-                                    break;
-                                case 'cpay':
-                                    require(`./commands/cpay.js`).execute(bot, playerid, args);
-                                    break;
-                                case 'daily':
-                                    require(`./commands/daily.js`).execute(bot, playerid, args);
-                                    break;
-                                case 'donate':
-                                    require(`./commands/donate.js`).execute(bot, playerid, args);
-                                    break;
-                                case 'epay':
-                                    require(`./commands/epay.js`).execute(bot, playerid, args);
-                                    break;
-                                case 'help':
-                                    require(`./commands/help.js`).execute(bot, playerid, args);
-                                    break;
-                                case 'hi':
-                                    require(`./commands/hi.js`).execute(bot, playerid, args);
-                                    break;
-                                case 'link':
-                                    require(`./commands/link.js`).execute(bot, playerid, args);
-                                    break;
-                                case 'money':
-                                    require(`./commands/money.js`).execute(bot, playerid, args);
-                                    break;
-                                case 'play':
-                                    require(`./commands/play.js`).execute(bot, playerid, args);
-                                    break;
-                                case 'reload':
-                                    require(`./commands/reload.js`).execute(bot, playerid, args);
-                                    break;
-                                case 'say':
-                                    require(`./commands/say.js`).execute(bot, playerid, args);
-                                    break;
-                                case 'stop':
-                                    require(`./commands/stop.js`).execute(bot, playerid, args);
-                                    break;
-                                case 'wallet':
-                                    require(`./commands/wallet.js`).execute(bot, playerid, args);
-                                    break;
-                            }
+                            require(`./commands/${item}.js`).execute(bot, playerid, args);
                         }
                         return
                     }
@@ -415,12 +294,18 @@ const init_bot = async () => {
                     config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'))
                     try { bot.chat(config.warp) } catch {}
                 }, 600000)
+
+                claim = setInterval(function () {
+                    config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'))
+                    try { bot.chat(config.claim_text) } catch {}
+                }, 120000)
             }
 
             try {
                 if (config.trade_text && config.trade_text !== '') bot.chat(`$${config.trade_text}`)
                 if (config.lottery_text && config.lottery_text !== '') bot.chat(`%${config.lottery_text}`)
                 if (config.facility_text && config.facility_text !== '') bot.chat(`!${config.facility_text}`)
+                if (config.claim_text && config.claim_text !== '') bot.chat(config.claim_text)
             } catch {}
     
             setTimeout(() => {
@@ -451,6 +336,7 @@ const init_bot = async () => {
         clearInterval(trade_and_lottery)
         clearInterval(facility)
         clearInterval(auto_warp)
+        clearInterval(claim)
         stop_rl()
         stop_msg()
         console.log('[WARN] Minecraft 機器人被伺服器踢出了!');
@@ -468,6 +354,7 @@ const init_bot = async () => {
         clearInterval(trade_and_lottery)
         clearInterval(facility)
         clearInterval(auto_warp)
+        clearInterval(claim)
         stop_rl()
         stop_msg()
         console.log('[WARN] Minecraft 機器人下線了!');

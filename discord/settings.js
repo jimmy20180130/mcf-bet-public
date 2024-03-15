@@ -96,6 +96,15 @@ module.exports = {
 							.setDescription('在抽獎頻道自動宣傳的文字')
 					)
 			)
+			.addSubcommand(subcommand =>
+				subcommand
+					.setName('領地頻道') 
+					.setDescription('在領地頻道自動宣傳的文字')
+					.addStringOption(option =>
+						option.setName('宣傳文')
+							.setDescription('在領地頻道自動宣傳的文字')
+					)
+			)
 	)
 
 	.addSubcommand(subcommand =>
@@ -218,6 +227,12 @@ module.exports = {
 
 			case '抽獎頻道':
 				config.lottery_text = interaction.options.getString('宣傳文');
+				fs.writeFileSync(`${process.cwd()}/config/config.json`, JSON.stringify(config, null, 4));
+				await interaction.reply({ content: '設定完成', ephemeral: true });
+				break;
+
+			case '領地頻道':
+				config.claim_text = interaction.options.getString('宣傳文');
 				fs.writeFileSync(`${process.cwd()}/config/config.json`, JSON.stringify(config, null, 4));
 				await interaction.reply({ content: '設定完成', ephemeral: true });
 				break;

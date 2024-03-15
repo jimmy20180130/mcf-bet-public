@@ -49,6 +49,7 @@
     "trade_text": "",
     "lottery_text": "",
     "facility_text": "",
+    "claim_text": "",
     "roles": {
         "link_role": "member"
     }
