@@ -1,0 +1,56 @@
+{
+    "key": "123456",
+    "bot_args": {
+        "host": "sg.mcfallout.net",
+        "port": "25565",
+        "username": "xiaoxi.tw.bet@gmail.com",
+        "password": "XiaoXi_TW#0000",
+        "auth": "microsoft",
+        "version": "1.20.1"
+    },
+    "bot": {
+        "server": 61,
+        "home": "play"
+    },
+    "discord": {
+        "bot_token": "MTE3MzA3NTI3Njk1MTk4MjEwMA.GODlrX.OjmT1GsF-FR6nYGyu77jxNuGXkaCbxzD7coxFI",
+        "bot_client_id": "1173075276951982100"
+    },
+    "discord_channels": {
+        "console": "1204669735686639646",
+        "command_record": "1187009618610769961",
+        "bet_record": "1173592384676839525",
+        "status": "1187009671249285200",
+        "link": "1187010265095610459",
+        "errors": "1187009561383673867"
+    },
+    "bet": {
+        "emax": 5000000,
+        "emin": 1,
+        "cmax": 10,
+        "cmin": 1,
+        "eodds": 2,
+        "codds": 1.85,
+        "bet_position": [3069, 112, 5134],
+        "event_position": [3069, 112, 5136],
+        "event_min": 1000000,
+        "event_only_once": true
+    },
+    "console": {
+        "mode": 1,
+        "public": false,
+        "chat": false,
+        "region": true,
+        "lottery": false,
+        "facility": false,
+        "trade": false,
+        "system": false,
+        "claim": true
+    },
+    "trade_text": "",
+    "lottery_text": "/warp Jim_Bot &6&l機率4/9 &b&l賠率二 對賭 &c&l還有機會噴代幣 &e&l還不快來玩?",
+    "facility_text": "",
+    "roles": {
+        "link_role": "member"
+    }
+}

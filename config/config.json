@@ -1,0 +1,55 @@
+{
+    "key": "key",
+    "bot_args": {
+        "host": "sg.mcfallout.net",
+        "port": "25565",
+        "username": "example@example.com",
+        "auth": "microsoft",
+        "version": "1.20.1"
+    },
+    "bot": {
+        "server": 61,
+        "home": "play"
+    },
+    "discord": {
+        "bot_token": "token",
+        "bot_client_id": "id"
+    },
+    "discord_channels": {
+        "console": "id",
+        "command_record": "id",
+        "bet_record": "id",
+        "status": "id",
+        "link": "id",
+        "errors": "id"
+    },
+    "bet": {
+        "emax": 5000000,
+        "emin": 1,
+        "cmax": 10,
+        "cmin": 1,
+        "eodds": 2,
+        "codds": 1.85,
+        "bet_position": [3069, 112, 5134],
+        "event_position": [3069, 112, 5136],
+        "event_min": 1000000,
+        "event_only_once": true
+    },
+    "console": {
+        "mode": 1,
+        "public": false,
+        "chat": false,
+        "region": true,
+        "lottery": false,
+        "facility": false,
+        "trade": false,
+        "system": false,
+        "claim": true
+    },
+    "trade_text": "",
+    "lottery_text": "",
+    "facility_text": "",
+    "roles": {
+        "link_role": "member"
+    }
+}
