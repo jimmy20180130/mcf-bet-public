@@ -31,6 +31,7 @@ const commands = {}
 let trade_and_lottery;
 let facility;
 let auto_warp;
+let claim
 
 let bot;
 let client;
