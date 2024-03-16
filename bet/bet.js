@@ -1,12 +1,12 @@
 const fs = require('fs');
-const { chat } = require(`./utils/chat.js`);
-const { mc_error_handler } = require(`./error/mc_handler.js`)
-const { process_msg } = require(`./utils/process_msg.js`)
-const { pay_handler } = require(`./utils/pay_handler.js`)
-const { activateBlock } = require(`./utils/better-mineflayer.js`)
+const { chat } = require(`${process.cwd()}/utils/chat.js`);
+const { mc_error_handler } = require(`${process.cwd()}/error/mc_handler.js`)
+const { process_msg } = require(`${process.cwd()}/utils/process_msg.js`)
+const { pay_handler } = require(`${process.cwd()}/utils/pay_handler.js`)
+const { activateBlock } = require(`${process.cwd()}/utils/better-mineflayer.js`)
 const { write_pay_history, write_errors } = require(`${process.cwd()}/utils/database.js`)
-const { get_player_uuid } = require(`./utils/get_player_info.js`);
-const { bet_win, bet_lose, error_embed } = require(`./discord/embed.js`);
+const { get_player_uuid } = require(`${process.cwd()}/utils/get_player_info.js`);
+const { bet_win, bet_lose, error_embed } = require(`${process.cwd()}/discord/embed.js`);
 const Vec3 = require('vec3');
 const Decimal = require('decimal.js');
 
