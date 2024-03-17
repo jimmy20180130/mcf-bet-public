@@ -523,19 +523,19 @@ const init_dc = () => {
 }
 
 process.on("unhandledRejection", async (error) => {
-    console.log(error.message)
+    console.log(error.stack)
     is_on = false;
     process.exit(1)
 });
 
 process.on("uncaughtException", async (error) => {
-    console.log(error.message)
+    console.log(error.stack)
     is_on = false;
     process.exit(1)
 });
 
 process.on("uncaughtExceptionMonitor", async (error) => {
-    console.log(error.message)
+    console.log(error.stack)
     is_on = false;
     process.exit(1)
 });

@@ -52,6 +52,7 @@
             "not_completed": "&c參數未填寫完整"
         },
         "bet": {
+            "no_money": "錯誤: 機器人沒錢了",
             "timeout": "錯誤: 下注超時",
             "no_permission": "錯誤: 沒有足夠的權限",
             "redstone_not_found": "錯誤: 找不到紅石粉",

@@ -128,7 +128,7 @@ async function active_redstone(bot, playerid, amount, type) {
             let timeout_Promise = new Promise((resolve) => {
                 setTimeout(() => {
                     resolve('timeout');
-                }, 10000);
+                }, 20000);
             });
 
             await Promise.race([no_permission_Promise, bet_result, timeout_Promise]).then(async (value) => {
