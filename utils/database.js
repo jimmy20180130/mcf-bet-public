@@ -108,9 +108,9 @@ async function create_player_data(playerid, player_uuid, discord_id, role) {
 
     } else {
         const user_data = new sqlite3.Database(`${process.cwd()}/data/user_data.db`);
-        const insertSql = 'INSERT INTO user (discord_id, realname, wallet, roles, player_uuid, quiet, create_time, tickets) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+        const insertSql = 'INSERT INTO user (discord_id, realname, wallet, roles, player_uuid, quiet, create_time) VALUES (?, ?, ?, ?, ?, ?, ?)';
 
-        user_data.run(insertSql, [discord_id, playerid, 0, role, player_uuid, 0, Math.round(new Date() / 1000), 0], function (err) {
+        user_data.run(insertSql, [discord_id, playerid, 0, role, player_uuid, 0, Math.round(new Date() / 1000)], function (err) {
             if (err) console.log(err)
         });
 
