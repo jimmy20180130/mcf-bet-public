@@ -65,12 +65,13 @@ async function process_bet_task() {
             cache.bet.shift()
             fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
         }
+
         await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
     setTimeout(() => {
         process_bet_task();
-    }, 1500);
+    }, 1000);
 }
 
 async function active_redstone(bot, playerid, amount, type) {
@@ -96,16 +97,32 @@ async function active_redstone(bot, playerid, amount, type) {
             
             let no_permission_Promise = bot.awaitMessage(/^\[領地\] 您沒有(.+)/);
             let bet_result = new Promise(resolve => {
-                bot._client.on('entity_metadata', async (entity) => {
+
+                const metedata = async (entity) => {
                     try {
                         let item_id = JSON.parse(JSON.stringify(entity.metadata[0].value)).itemId;
-                        if (item_id == 180) {
-                            resolve('yes')
-                        } else if (item_id == 195) {
-                            resolve('no')
+                        if (item_id == undefined) return
+
+                        for (const listener of bot._client.listeners('entity_metadata')) {
+                            bot._client.removeListener('entity_metadata', listener);
                         }
+
+                        for (listener of bot.listeners('messagestr')) {
+                            bot.removeListener('messagestr', listener);
+                        }
+
+                        switch (item_id) {
+                            case 195:
+                                resolve('no')
+                                break;
+                            case 180:
+                                resolve('yes')
+                                break;
+                        }
+                        
                     } catch (e) {
-                        for (listener of bot._client.listeners('entity_metadata')) {
+
+                        for (const listener of bot._client.listeners('entity_metadata')) {
                             bot._client.removeListener('entity_metadata', listener);
                         }
 
@@ -122,7 +139,9 @@ async function active_redstone(bot, playerid, amount, type) {
                         await channel.send({ embeds: [embed] });
                         resolve('error');
                     }
-                });
+                }
+
+                bot._client.on('entity_metadata', metedata);
             });
 
             let timeout_Promise = new Promise((resolve) => {
@@ -143,14 +162,17 @@ async function active_redstone(bot, playerid, amount, type) {
                     const embed = await error_embed('您沒有足夠的權限')
                     const channel = await client.channels.fetch(config.discord_channels.errors);
                     await channel.send({ embeds: [embed] });
+
                 } else if (value == 'timeout') {
                     await mc_error_handler(bot, 'bet', 'timeout', playerid)
                     await pay_handler(bot, playerid, amount, type, true)
                     const embed = await error_embed('操作超時')
                     const channel = await client.channels.fetch(config.discord_channels.errors);
                     await channel.send({ embeds: [embed] });
+
                 } else if (value == 'error') {
                     await pay_handler(bot, playerid, amount, type, true)
+
                 } else {
                     await process_bet_result(bot, await bet_result, amount, playerid, type);
                 }

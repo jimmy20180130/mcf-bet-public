@@ -56,6 +56,8 @@ async function pay_handler(bot, player_id, amount, type, is_bet) {
                     resolve('busy')
 
                 } else if (string.startsWith('[系統] 轉帳金額需為正數')) {
+                    console.log('amount: ' + amount)
+
                     if (is_bet) {
                         const uuid = await write_errors(0, amount, config.bet.eodds, 'negative', await get_player_uuid(player_id), type)
                         await mc_error_handler(bot, 'pay', 'negative', player_id, '', uuid)
