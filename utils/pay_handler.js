@@ -77,7 +77,7 @@ async function pay_handler(bot, player_id, amount, type, is_bet) {
     } else if (type == 'c' || type == 'coin') {
         await chat(bot, `/cointrans ${player_id} ${Math.floor(amount)}`)
         await chat(bot, player_id)
-        resolve('success')
+        return 'success'
     }
 }
 
