@@ -66,12 +66,12 @@ async function process_bet_task() {
             fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
         }
 
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 700));
     }
 
     setTimeout(() => {
         process_bet_task();
-    }, 1000);
+    }, 500);
 }
 
 async function active_redstone(bot, playerid, amount, type) {
@@ -118,6 +118,8 @@ async function active_redstone(bot, playerid, amount, type) {
                             case 180:
                                 resolve('yes')
                                 break;
+                            default:
+                                return
                         }
                         
                     } catch (e) {
