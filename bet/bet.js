@@ -178,16 +178,16 @@ async function active_redstone(bot, playerid, amount, type) {
                 } else if (value.startsWith('[區域]')) {
                     var regex = /\區域\] (\d{2}:\d{2}:\d{2}) 物品 (白|黑)色羊毛 x 1 自座標 \( (-?\d+) (-?\d+) (-?\d+) \) 被吐出。/
                     var result = value.match(regex)
-                    
+
                     if (result[2] == '白') {
-                        value = 'no'
-                    } else if (result[2] == '黑') {
                         value = 'yes'
+                    } else if (result[2] == '黑') {
+                        value = 'no'
                     }
 
                     await process_bet_result(bot, value, amount, playerid, type)
                 
-                }else {
+                } else {
                     await process_bet_result(bot, await bet_result, amount, playerid, type);
                 }
 
