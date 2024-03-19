@@ -99,7 +99,7 @@ async function active_redstone(bot, playerid, amount, type) {
 
             const wool_msg = new Promise(async resolve => {
                 let value = await bot.awaitMessage(/\區域\] (\d{2}:\d{2}:\d{2}) 物品 (白|黑)色羊毛 x 1 自座標 \( (-?\d+) (-?\d+) (-?\d+) \) 被吐出。/)
-                await new Promise(resolve => {setTimeout(resolve, 1000)})
+                await new Promise(resolve => setTimeout(resolve, 1000));
                 resolve(value)
             })
 
@@ -158,6 +158,14 @@ async function active_redstone(bot, playerid, amount, type) {
             });
 
             await Promise.race([no_permission_Promise, bet_result, timeout_Promise, wool_msg]).then(async (value) => {
+                for (listener of bot.listeners('messagestr')) {
+                    bot.removeListener('messagestr', listener);
+                }
+
+                for (listener of bot._client.listeners('entity_metadata')) {
+                    bot._client.removeListener('entity_metadata', listener);
+                }
+
                 if (value.startsWith('[領地] 您沒有')) {
                     await mc_error_handler(bot, 'bet', 'no_permission', playerid,)
                     switch (await pay_handler(bot, playerid, amount, type, true)) {
@@ -194,13 +202,6 @@ async function active_redstone(bot, playerid, amount, type) {
                 
                 } else {
                     await process_bet_result(bot, await bet_result, amount, playerid, type);
-                }
-
-                for (listener of bot.listeners('messagestr')) {
-                    bot.removeListener('messagestr', listener);
-                }
-                for (listener of bot._client.listeners('entity_metadata')) {
-                    bot._client.removeListener('entity_metadata', listener);
                 }
             });
         } else {
