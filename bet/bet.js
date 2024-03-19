@@ -96,8 +96,13 @@ async function active_redstone(bot, playerid, amount, type) {
             }
             
             let no_permission_Promise = bot.awaitMessage(/^\[領地\] 您沒有(.+)/);
-            const white_wool_msg = bot.awaitMessage(/\區域\] (\d{2}:\d{2}:\d{2}) 物品 白色羊毛 x 1 自座標 \( (-?\d+) (-?\d+) (-?\d+) \) 被吐出。/)
-            const black_wool_msg = bot.awaitMessage(/\區域\] (\d{2}:\d{2}:\d{2}) 物品 黑色羊毛 x 1 自座標 \( (-?\d+) (-?\d+) (-?\d+) \) 被吐出。/)
+
+            const wool_msg = new Promise(async resolve => {
+                let value = await bot.awaitMessage(/\區域\] (\d{2}:\d{2}:\d{2}) 物品 (白|黑)色羊毛 x 1 自座標 \( (-?\d+) (-?\d+) (-?\d+) \) 被吐出。/)
+                await new Promise(resolve => {setTimeout(resolve, 1000)})
+                resolve(value)
+            })
+
             let bet_result = new Promise(resolve => {
 
                 const metedata = async (entity) => {
@@ -152,7 +157,7 @@ async function active_redstone(bot, playerid, amount, type) {
                 }, 20000);
             });
 
-            await Promise.race([no_permission_Promise, bet_result, timeout_Promise, white_wool_msg, black_wool_msg]).then(async (value) => {
+            await Promise.race([no_permission_Promise, bet_result, timeout_Promise, wool_msg]).then(async (value) => {
                 if (value.startsWith('[領地] 您沒有')) {
                     await mc_error_handler(bot, 'bet', 'no_permission', playerid,)
                     switch (await pay_handler(bot, playerid, amount, type, true)) {
