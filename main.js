@@ -215,6 +215,10 @@ const init_bot = async () => {
             if (!config.console.region && /^\[區域\]/.test(textMessage)) return true;
             if (!config.console.facility && /^\[設施\]/.test(textMessage) || /^\[\!\]/.test(textMessage) || /^\[\*\]/.test(textMessage)) return true;
             if (!config.console.claim && /^\[領地\]/.test(textMessage)) return true;
+            if (config.lottery_text && config.lottery_text != "" && textMessage.includes(config.lottery_text.replaceAll(/&[0-9a-f]/gi, ''))) return true
+            if (config.trade_text && config.trade_text != "" && textMessage.includes(config.trade_text.replaceAll(/&[0-9a-f]/gi, ''))) return true
+            if (config.facility_text && config.facility_text != "" && textMessage.includes(config.facility_text.replaceAll(/&[0-9a-f]/gi, ''))) return true
+            if (config.claim_text && config.claim_text != "" && textMessage.includes(config.claim_text.replaceAll(/&[0-9a-f]/gi, ''))) return true
 
             if (!config.console.system) {
                 if (/^\[系統\] 新玩家|系統\] 吉日|系統\] 凶日|系統\] .*凶日|系統\] .*吉日/.test(textMessage)) return true;
@@ -514,6 +518,10 @@ const init_dc = () => {
                     await add_user_role(newMember.id, 'none')
                 }
             }
+        });
+
+        client.on('error', async (error) => {
+            console.log(`[ERROR] Discord 機器人發生錯誤，錯誤如下 ${error.message}`)
         });
 
         client.login(config.discord.bot_token)

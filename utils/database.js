@@ -74,6 +74,24 @@ async function get_user_data(player_uuid) {
     });
 }
 
+async function get_all_user_data() {
+    return new Promise((resolve) => {
+        const user_data = new sqlite3.Database(`${process.cwd()}/data/user_data.db`);
+        user_data.all('SELECT * FROM user', (err, rows) => {
+            if (err) {
+                console.error(err);
+                resolve('error');
+            } else if (rows === undefined || rows.length == 0) {
+                resolve('Not Found');
+            } else {
+                resolve(rows);
+            }
+
+            user_data.close();
+        });
+    });
+}
+
 async function get_user_data_from_dc(discord_id) {
     return new Promise((resolve) => {
         const user_data = new sqlite3.Database(`${process.cwd()}/data/user_data.db`);
@@ -382,5 +400,6 @@ module.exports = {
     add_user_role,
     get_player_wallet_discord,
     add_player_wallet_dc,
-    clear_player_wallet_dc
+    clear_player_wallet_dc,
+    get_all_user_data
 };

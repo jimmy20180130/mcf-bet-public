@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, escapeEscape } = require('discord.js');
-const { get_pay_history, getPlayerRole, get_user_data, get_user_data_from_dc, get_all_pay_history } = require(`${process.cwd()}/utils/database.js`);
+const { get_pay_history, getPlayerRole, get_user_data, get_user_data_from_dc, get_all_pay_history, get_all_user_data } = require(`${process.cwd()}/utils/database.js`);
 const { get_player_uuid, get_player_name } = require(`${process.cwd()}/utils/get_player_info.js`);
 const { orderStrings } = require(`${process.cwd()}/utils/permissions.js`);
 const { bet_record } = require(`${process.cwd()}/discord/embed.js`);
@@ -20,8 +20,10 @@ module.exports = {
 			"zh-CN": "目前不支援简体中文",
 			"zh-TW": "查詢資料"
 		})
+			
 		.addStringOption(option =>
 			option.setName('playerid')
+				.setAutocomplete(true)
 				.setRequired(true)
 				.setNameLocalizations({
 					"en-US": "playerid",
@@ -34,6 +36,7 @@ module.exports = {
 					'zh-CN': '目前不支援简体中文',
 					"zh-TW": "您欲查詢的玩家 ID"
 				})
+				
 		.addStringOption(option =>
 			option.setName('late')
 				.setNameLocalizations({
@@ -125,6 +128,74 @@ module.exports = {
 					'zh-CN': '目前不支援简体中文',
 					"zh-TW": "是否讓您的結果公開"
 				}),
+
+	async autocomplete(interaction) {
+		const focusedValue = interaction.options.getFocused();
+		console.log(focusedValue)
+		
+		let roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf8'));
+
+		let user_uuid = undefined
+		const user_data = (await get_user_data_from_dc(String(interaction.member.id)))[0]
+		if (user_data.player_uuid) user_uuid = user_data.player_uuid
+		const user_role = orderStrings(await getPlayerRole(user_uuid), roles)
+
+		if (user_data && roles[user_role[0]] && !roles[user_role[0]].record_settings.others) {
+			if (user_data && roles[user_role[0]] && roles[user_role[0]].record_settings.me == false) {
+				const all_user_data = await get_all_user_data()
+				const player_ids = []
+
+				for (const user of all_user_data) {
+					if (user.realname && user.player_uuid != user_uuid) {
+						player_ids.push(user.realname)
+						console.log(user.realname)
+					}
+				}
+
+				let filtered = choices.filter(choice => choice.startsWith(focusedValue));
+				filtered.push('所有人')
+
+				await interaction.respond(
+					filtered.map(choice => ({ name: choice, value: choice }))
+				);
+				
+				return
+			} else {
+				const all_user_data = await get_all_user_data()
+				const player_ids = []
+
+				for (const user of all_user_data) {
+					if (user.realname) {
+						player_ids.push(user.realname)
+						console.log(user.realname)
+					}
+				}
+
+				let filtered = choices.filter(choice => choice.startsWith(focusedValue));
+				filtered.push('所有人')
+
+				await interaction.respond(
+					filtered.map(choice => ({ name: choice, value: choice }))
+				);
+				
+				return
+			}
+
+
+		} else if (user_data && roles[user_role[0]] && !roles[user_role[0]].record_settings.others) {
+			if (user_data && roles[user_role[0]] && roles[user_role[0]].record_settings.me == false) {
+				await interaction.respond([])
+				return
+
+			} else {
+				await interaction.respond(
+					[user_data.realname]
+				);
+				
+				return
+			}
+		}
+	},
 
 	async execute(interaction) {
 		if (interaction.options.getBoolean('public')) { await interaction.deferReply() } else { await interaction.deferReply({ ephemeral: true }) }
@@ -353,6 +424,9 @@ module.exports = {
 					return;
 				} else if (user_data && roles[await getPlayerRole(user_uuid)] && roles[await getPlayerRole(user_uuid)].record_settings.me == false && player_uuid == user_uuid) {
 					interaction.editReply('no permission')
+					return
+				} else if (await get_player_uuid(player_id) != player_uuid) {
+					interaction.editReply('您無權限查詢其他玩家的紀錄')
 					return
 				}
 
