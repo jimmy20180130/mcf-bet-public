@@ -468,9 +468,9 @@ const init_dc = () => {
                 console.log(error)
                 console.log(`[ERROR] Discord 機器人發生錯誤，錯誤如下: ${error.message}`);
                 if (interaction.replied || interaction.deferred) {
-                    await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
+                    await interaction.followUp({ content: `執行指令時發生了錯誤，請將此訊息回報給管理員，錯誤原因: ${error.message}`, ephemeral: true });
                 } else {
-                    await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+                    await interaction.reply({ content: `執行指令時發生了錯誤，請將此訊息回報給管理員，錯誤原因: ${error.message}`, ephemeral: true });
                 }
             }
         });
@@ -478,6 +478,7 @@ const init_dc = () => {
         client.on('guildMemberUpdate', async (oldMember, newMember) => {
             const old_player_roles = oldMember.roles.cache.filter(role => role.name !== '@everyone').map(role => role.id);
             const new_player_roles = newMember.roles.cache.filter(role => role.name !== '@everyone').map(role => role.id);
+            
             if (old_player_roles.length < new_player_roles.length) {
                 const role = newMember.roles.cache.filter(role => role.name !== '@everyone').map(role => role.id).filter(role => !old_player_roles.includes(role));
                 const roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));

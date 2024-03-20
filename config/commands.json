@@ -75,39 +75,11 @@
     "wallet": {
         "display_name": "&6wallet&r",
         "name": [
-            "錢包",
-            "wallet"
+            "領錢",
+            "withdraw"
         ],
         "description": "&7[&6%command_name% &7-> &b錢包&7]",
-        "usage": "wallet [withdraw / amount / add]",
-        "sub_commands": {
-            "withdraw": {
-                "display_name": "&6withdraw&r",
-                "name": [
-                    "領出",
-                    "withdraw",
-                    "領取"
-                ],
-                "description": "&7[&6%command_name% &7-> &b錢包領取&7]"
-            },
-            "amount": {
-                "display_name": "&6amount&r",
-                "name": [
-                    "金額",
-                    "amount",
-                    "餘額"
-                ],
-                "description": "&7[&6%command_name% &7-> &b錢包餘額&7]"
-            },
-            "add": {
-                "display_name": "&6add&r",
-                "name": [
-                    "新增",
-                    "add"
-                ],
-                "description": "&7[&6%command_name% &7-> &b錢包新增&7]"
-            }
-        }
+        "usage": "wallet [withdraw / amount / add]"
     },
     "donate": {
         "display_name": "&6donate&r",

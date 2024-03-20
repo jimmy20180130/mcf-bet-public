@@ -148,6 +148,20 @@ async function get_player_wallet(player_uuid) {
     });
 }
 
+async function get_player_wallet_discord(discord_id) {
+    return new Promise((resolve) => {
+        const user_data = new sqlite3.Database(`${process.cwd()}/data/user_data.db`);
+        user_data.all(`SELECT wallet FROM user WHERE discord_id = ?`, [discord_id], (err, rows) => {
+            if (err) resolve('error');
+            if (!rows || rows.length == 0) resolve('Not Found');
+            rows.forEach((row) => {
+                resolve(row.wallet);
+            });
+        });
+        user_data.close();
+    });
+}
+
 async function create_player_wallet(playerid, player_uuid) {
     const user_data = new sqlite3.Database(`${process.cwd()}/data/user_data.db`);
     const insertSql = 'INSERT INTO user (discord_id, realname, wallet, roles, player_uuid, quiet, create_time) VALUES (?, ?, ?, ?, ?, ?, ?)';
@@ -182,10 +196,44 @@ async function add_player_wallet(player_uuid, amount) {
     user_data.close()
 }
 
+async function add_player_wallet_dc(discord_id, amount) {
+    const user_data = new sqlite3.Database(`${process.cwd()}/data/user_data.db`);
+
+    const selectsql = `SELECT wallet FROM user WHERE discord_id = ?`
+    const updateSql = 'UPDATE user SET wallet = ? WHERE discord_id = ?';
+
+    const user_wallet  = await new Promise(async resolve => {
+        user_data.all(selectsql, [player_uuid], (err, rows) => {
+            if (err) resolve('error');
+            if (!rows || rows.length == 0) resolve('Not Found');
+            rows.forEach((row) => {
+                resolve(row.wallet);
+            });
+        });
+    })
+
+    user_data.run(updateSql, [parseInt(user_wallet) + parseInt(amount), player_uuid], function (err) {
+        if (err) console.log(err)
+    });
+
+    user_data.close()
+}
+
 async function clear_player_wallet(player_uuid) {
     const user_data = new sqlite3.Database(`${process.cwd()}/data/user_data.db`);
 
     const updateSql = 'UPDATE user SET wallet = 0 WHERE player_uuid = ?';
+    user_data.run(updateSql, [player_uuid], function (err) {
+        if (err) console.log(err)
+    });
+
+    user_data.close()
+}
+
+async function clear_player_wallet_dc(discord_id) {
+    const user_data = new sqlite3.Database(`${process.cwd()}/data/user_data.db`);
+
+    const updateSql = 'UPDATE user SET wallet = 0 WHERE discord_id = ?';
     user_data.run(updateSql, [player_uuid], function (err) {
         if (err) console.log(err)
     });
@@ -331,5 +379,8 @@ module.exports = {
     create_player_data,
     get_all_pay_history,
     remove_user_role,
-    add_user_role
+    add_user_role,
+    get_player_wallet_discord,
+    add_player_wallet_dc,
+    clear_player_wallet_dc
 };

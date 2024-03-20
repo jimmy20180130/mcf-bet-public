@@ -214,25 +214,45 @@ module.exports = {
 				break;
 
 			case '交易頻道':
-				config.trade_text = interaction.options.getString('宣傳文');
+				if (!interaction.options.getString('宣傳文')) {
+					config.trade_text = ''
+				} else {
+					config.trade_text = interaction.options.getString('宣傳文');
+				}
+				
 				fs.writeFileSync(`${process.cwd()}/config/config.json`, JSON.stringify(config, null, 4));
 				await interaction.reply({ content: '設定完成', ephemeral: true });
 				break;
 
 			case '公設頻道':
-				config.facility_text = interaction.options.getString('宣傳文');
+				if (!interaction.options.getString('宣傳文')) {
+					config.facility_text = ''
+				} else {
+					config.facility_text = interaction.options.getString('宣傳文');
+				}
+
 				fs.writeFileSync(`${process.cwd()}/config/config.json`, JSON.stringify(config, null, 4));
 				await interaction.reply({ content: '設定完成', ephemeral: true });
 				break;
 
 			case '抽獎頻道':
-				config.lottery_text = interaction.options.getString('宣傳文');
+				if (!interaction.options.getString('宣傳文')) {
+					config.lottery_text = ''
+				} else {
+					config.lottery_text = interaction.options.getString('宣傳文');
+				}
+				
 				fs.writeFileSync(`${process.cwd()}/config/config.json`, JSON.stringify(config, null, 4));
 				await interaction.reply({ content: '設定完成', ephemeral: true });
 				break;
 
 			case '領地頻道':
-				config.claim_text = interaction.options.getString('宣傳文');
+				if (!interaction.options.getString('宣傳文')) {
+					config.claim_text = ''
+				} else {
+					config.claim_text = interaction.options.getString('宣傳文');
+				}
+				
 				fs.writeFileSync(`${process.cwd()}/config/config.json`, JSON.stringify(config, null, 4));
 				await interaction.reply({ content: '設定完成', ephemeral: true });
 				break;
