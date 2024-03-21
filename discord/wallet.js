@@ -93,7 +93,8 @@ module.exports = {
                 break
 
             case '新增餘額':
-                await add_player_wallet_dc(user.id, interaction.options.getInterger('數量'))
+                await add_player_wallet_dc(user.id, interaction.options.getInteger('數量'))
+                await new Promise(resolve => setTimeout(resolve, 1000))
                 wallet = await get_player_wallet_discord(user.id)
 
                 switch (wallet) {
@@ -110,7 +111,8 @@ module.exports = {
                 break
 
             case '減少餘額':
-                await add_player_wallet_dc(user.id, -interaction.options.getInterger('數量'))
+                await add_player_wallet_dc(user.id, -interaction.options.getInteger('數量'))
+                await new Promise(resolve => setTimeout(resolve, 1000))
                 wallet = await get_player_wallet_discord(user.id)
 
                 switch (wallet) {
@@ -128,6 +130,7 @@ module.exports = {
 
             case '清空餘額':
                 wallet = await clear_player_wallet_dc(user.id)
+                await new Promise(resolve => setTimeout(resolve, 1000))
 
                 switch (wallet) {
                     case 'error':
