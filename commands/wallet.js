@@ -36,8 +36,8 @@ async function executeCommand(bot, playerid, args) {
             console.log(now_money)
 
             if (now_money > 0) {
-                await clear_player_wallet(await get_player_uuid(playerid))
                 const pay_result = await pay_handler(bot, playerid, await get_player_wallet(await get_player_uuid(playerid)), 'e')
+                await clear_player_wallet(await get_player_uuid(playerid))
                 if (pay_result != 'success') {
                     await add_player_wallet(await get_player_uuid(playerid), now_money)
                 }

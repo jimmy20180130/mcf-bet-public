@@ -1,7 +1,7 @@
 const mineflayer = require('mineflayer');
 const fs = require('fs');
 let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
-const { add_bet_task, add_client } = require(`./bet/bet.js`);
+const { add_bet_task, add_client, process_bet_task, add_bot } = require(`./bet/bet.js`);
 const { chat } = require(`./utils/chat.js`);
 const { get_player_uuid } = require(`./utils/get_player_info.js`);
 const { start_rl, stop_rl } = require(`./utils/readline.js`);
@@ -11,12 +11,15 @@ const { start_msg, stop_msg } = require(`./utils/chat.js`);
 const { add_msg, discord_console, clear_last_msg, discord_console_2 } = require(`./discord/log.js`);
 const { Client, GatewayIntentBits, Collection, Events, Partials, REST, Routes } = require('discord.js');
 const { check_codes } = require(`./utils/link_handler.js`);
-const { command_records } = require(`./discord/command_record.js`);
+const { command_records, dc_command_records } = require(`./discord/command_record.js`);
 const { bot_on, bot_off, bot_kicked } = require(`./discord/embed.js`);
 const { get_user_data_from_dc, remove_user_role, add_user_role, getPlayerRole } = require(`./utils/database.js`);
 const { orderStrings, canUseCommand } = require(`./utils/permissions.js`);
 const { check_token } = require(`./auth/auth.js`);
 const moment = require('moment-timezone');
+const { initDB, closeDB } = require(`./utils/db_write.js`);
+
+initDB()
 
 const botArgs = {
     host: config.bot_args.host,
@@ -31,7 +34,9 @@ const commands = {}
 let trade_and_lottery;
 let facility;
 let auto_warp;
-let claim
+let claim;
+let is_on_timeout;
+let add_bott;
 
 let bot;
 let client;
@@ -47,7 +52,7 @@ const init_bot = async () => {
     console.log('[INFO] 正在讓 Minecraft 機器人上線...')
     const donate_list = [];
     bot = mineflayer.createBot(botArgs);
-    
+
     bot.on('message', async (jsonMsg) => {
         const messages = JSON.parse(fs.readFileSync(`${process.cwd()}/config/messages.json`, 'utf-8'));
         if (/^\[([A-Za-z0-9_]+) -> 您\] .*/.exec(jsonMsg.toString())) {
@@ -220,6 +225,21 @@ const init_bot = async () => {
             if (config.facility_text && config.facility_text != "" && textMessage.includes(config.facility_text.replaceAll(/&[0-9a-f]/gi, ''))) return true
             if (config.claim_text && config.claim_text != "" && textMessage.includes(config.claim_text.replaceAll(/&[0-9a-f]/gi, ''))) return true
 
+            if (!config.console.system) {
+                if (/^\[系統\] 新玩家|系統\] 吉日|系統\] 凶日|系統\] .*凶日|系統\] .*吉日/.test(textMessage)) return true;
+                if (/^ \> /.test(textMessage)) return true;
+                if (/^\[系統\] .*提供了 小幫手提示/.test(textMessage)) return true;
+                if (/^\[系統\] 您的訊息沒有玩家看見/.test(textMessage)) return true;
+                if (/^┌─回覆自/.test(textMessage)) return true;
+                if (/^.* (has made the advancement|has completed the challenge|has reached the goal)/.test(textMessage)) return true;
+                if (/players sleeping$/.test(textMessage)) return true;
+                if (/目標生命 \: ❤❤❤❤❤❤❤❤❤❤ \/ ([\S]+)/g.test(textMessage)) return true;
+                if (/^\[\?\]/.test(textMessage)) return true;
+                if (/^\=\=/.test(textMessage)) return true;
+                if (/^\[>\]/.test(textMessage)) return true;
+                if (/\[~\]/.test(textMessage)) return true;
+            }
+
             return false;
         };
 
@@ -231,7 +251,6 @@ const init_bot = async () => {
 
     bot.once('spawn', async () => {
         console.log('[INFO] Minecraft 機器人已上線!');
-        is_on = true;
         let botSocket = bot._client.socket;
         let time = moment(new Date()).tz('Asia/Taipei').format('YYYY-MM-DD HH:mm:ss');
         await new Promise(resolve => setTimeout(resolve, 2000));
@@ -244,28 +263,43 @@ const init_bot = async () => {
             const channel = await client.channels.fetch(config.discord_channels.status);
             await channel.send({ embeds: [embed] });
             let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'));
-            if (cache.bet.length > 0) {
-                for (const item of cache.bet) {
-                    const playerid = item.player_id
-                    const amount = item.amount
-                    const type = item.type
-                    await add_bet_task(bot, playerid, amount, type);
-                }
 
-                cache.bet = []
-                fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
-            }
-
-            if (cache.msg.length > 0) {
-                for (const item of cache.msg) {
-                    await chat(bot, item);
-                }
-
-                cache.msg = []
-                fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
-            }
+            process_bet_task()
 
             await chat(bot, `[${moment(new Date()).tz('Asia/Taipei').format('HH:mm:ss')}] Jimmy Bot 已上線!`)
+
+            is_on_timeout = setTimeout(() => {
+                is_on = true;
+
+                new Promise(async (resolve) => {
+                    let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'));
+                    
+                    if (cache.bet.length > 0) {
+                        let cache_bet = cache.bet
+                
+                        for (const item of cache_bet) {
+                            const playerid = item.player_id
+                            const amount = item.amount
+                            const type = item.type
+                            await add_bet_task(bot, playerid, amount, type);
+                        }
+                
+                        cache.bet = []
+                        fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
+                    }
+                
+                    if (cache.msg.length > 0) {
+                        for (const item of cache.msg) {
+                            await chat(bot, item);
+                        }
+                
+                        cache.msg = []
+                        fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
+                    }
+                
+                    resolve()
+                })
+            }, 10000);
 
             const ad = () => {
                 trade_and_lottery = setInterval(function () {
@@ -290,6 +324,10 @@ const init_bot = async () => {
                     config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'))
                     try { bot.chat(config.claim_text) } catch {}
                 }, 120000)
+
+                add_bott = setInterval(function () {
+                    add_bot(bot)
+                }, 1000)
             }
 
             try {
@@ -297,6 +335,7 @@ const init_bot = async () => {
                 if (config.lottery_text && config.lottery_text !== '') bot.chat(`%${config.lottery_text}`)
                 if (config.facility_text && config.facility_text !== '') bot.chat(`!${config.facility_text}`)
                 if (config.claim_text && config.claim_text !== '') bot.chat(config.claim_text)
+                if (bot) add_bot(bot)
             } catch {}
     
             setTimeout(() => {
@@ -319,6 +358,7 @@ const init_bot = async () => {
         } else {
             console.log(`[ERROR] Minecraft 機器人發生錯誤，原因如下: ${err.message}`)
             is_on = false;
+            closeDB()
             process.exit(1000)
         }
     })
@@ -328,16 +368,20 @@ const init_bot = async () => {
         clearInterval(facility)
         clearInterval(auto_warp)
         clearInterval(claim)
+        clearTimeout(is_on_timeout)
+        clearInterval(add_bott)
         stop_rl()
         stop_msg()
         console.log('[WARN] Minecraft 機器人被伺服器踢出了!');
         console.log(`[WARN] 原因如下: ${reason}`);
         let time = moment(new Date()).tz('Asia/Taipei').format('YYYY-MM-DD HH:mm:ss');
-        const string = `【踢出時間】${time}\n【踢出原因】${reason}`
-        const embed = await bot_kicked(string)
-        const channel = await client.channels.fetch(config.discord_channels.status);
-        await channel.send({ embeds: [embed] });
-        await new Promise(r => setTimeout(r, 2000))
+        if (is_on == true) {
+            const string = `【踢出時間】${time}\n【踢出原因】${reason}`
+            const embed = await bot_kicked(string)
+            const channel = await client.channels.fetch(config.discord_channels.status);
+            await channel.send({ embeds: [embed] });
+        }
+
         bot.end();
     });
 
@@ -345,7 +389,9 @@ const init_bot = async () => {
         clearInterval(trade_and_lottery)
         clearInterval(facility)
         clearInterval(auto_warp)
+        clearTimeout(is_on_timeout)
         clearInterval(claim)
+        clearInterval(add_bott)
         stop_rl()
         stop_msg()
         console.log('[WARN] Minecraft 機器人下線了!');
@@ -357,8 +403,8 @@ const init_bot = async () => {
             await channel.send({ embeds: [embed] });
             is_on = false;
         }
-        await new Promise(r => setTimeout(r, 10000))
-        init_bot()
+        await new Promise(r => setTimeout(r, 5000))
+        process.exit(246)
     });
 }
 
@@ -443,9 +489,30 @@ const init_dc = () => {
 
         client.on(Events.InteractionCreate, async interaction => {
             if (!interaction.isChatInputCommand()) return;
-
+        
             const command = interaction.client.commands.get(interaction.commandName);
-            interaction.client.commands
+
+            let logMessage = `/${interaction.commandName}`;
+
+            // 處理子命令組
+            if (interaction.options.getSubcommandGroup(false)) {
+                const subcommandGroup = interaction.options.getSubcommandGroup();
+                logMessage += ` ${subcommandGroup}`;
+            }
+
+            // 處理子命令
+            if (interaction.options.getSubcommand(false)) {
+                const subcommand = interaction.options.getSubcommand();
+                logMessage += ` ${subcommand}`;
+            }
+
+            // 處理參數
+            const commandArgs = interaction.options._hoistedOptions.map(option => option.value);
+            if (commandArgs.length > 0) {
+                logMessage += ` ${commandArgs.join(' ')}`;
+            }
+
+            await dc_command_records(client, `<@${interaction.user.id}>`, logMessage)
         
             if (!command) {
                 console.log(`[ERROR] Discord 機器人的指令 ${interaction.commandName} 並不存在`);
@@ -458,9 +525,9 @@ const init_dc = () => {
                 console.log(error)
                 console.log(`[ERROR] Discord 機器人發生錯誤，錯誤如下: ${error.message}`);
                 if (interaction.replied || interaction.deferred) {
-                    await interaction.followUp({ content: `執行指令時發生了錯誤，請將此訊息回報給管理員，錯誤原因: ${error.message}`, ephemeral: true });
+                    await interaction.followUp({ content: `執行指令時發生了錯誤，錯誤原因為: ${error.message} ，請將此截圖並回報給管理員`, ephemeral: true });
                 } else {
-                    await interaction.reply({ content: `執行指令時發生了錯誤，請將此訊息回報給管理員，錯誤原因: ${error.message}`, ephemeral: true });
+                    await interaction.reply({ content: `執行指令時發生了錯誤，錯誤原因為: ${error.message} ，請將此截圖並回報給管理員`, ephemeral: true });
                 }
             }
         });
@@ -468,7 +535,6 @@ const init_dc = () => {
         client.on('guildMemberUpdate', async (oldMember, newMember) => {
             const old_player_roles = oldMember.roles.cache.filter(role => role.name !== '@everyone').map(role => role.id);
             const new_player_roles = newMember.roles.cache.filter(role => role.name !== '@everyone').map(role => role.id);
-            
             if (old_player_roles.length < new_player_roles.length) {
                 const role = newMember.roles.cache.filter(role => role.name !== '@everyone').map(role => role.id).filter(role => !old_player_roles.includes(role));
                 const roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
@@ -506,32 +572,33 @@ const init_dc = () => {
             }
         });
 
-        client.on('error', async (error) => {
-            console.log(`[ERROR] Discord 機器人發生錯誤，錯誤如下 ${error.message}`)
-        });
-
         client.login(config.discord.bot_token)
     } catch (e) {
         console.log(`[ERROR] Discord 機器人發生錯誤，錯誤如下 ${e.message}`)
+        is_on = false;
+        closeDB()
         process.exit(1)
     }
 }
 
 process.on("unhandledRejection", async (error) => {
-    console.log(error.stack)
+    console.log(error)
     is_on = false;
+    closeDB()
     process.exit(1)
 });
 
 process.on("uncaughtException", async (error) => {
-    console.log(error.stack)
+    console.log(error)
     is_on = false;
+    closeDB()
     process.exit(1)
 });
 
 process.on("uncaughtExceptionMonitor", async (error) => {
-    console.log(error.stack)
+    console.log(error)
     is_on = false;
+    closeDB()
     process.exit(1)
 });
 
