@@ -3,7 +3,7 @@ cls
 echo bot will restart when it crashes
 title Jimmy Bot
 
-:: 检查是否以管理员权限运行
+:: 檢查是否以系統管理員執行
 net session >nul 2>&1
 if %errorLevel% neq 0 (
     echo Administrator permissions required. Please run as administrator.
@@ -11,7 +11,7 @@ if %errorLevel% neq 0 (
     exit /b
 )
 
-:: 检查是否安装了 Node.js
+:: 檢查是否安装了 Node.js
 where node >nul 2>&1
 if %errorLevel% neq 0 (
     echo Node.js is not installed. Installing Node.js...
@@ -22,23 +22,29 @@ if %errorLevel% neq 0 (
     echo installed Node.js successfully
 )
 
-:: 检查特定文件是否存在，如果不存在，则从 GitHub 下载
-if not exist "update.txt" (
+:: 如果 update.txt 不存在，就下載整個檔案
+if not exist "%~dp0\update.txt" (
     echo file does not exist
     powershell -Command Invoke-WebRequest -Uri "https://github.com/jimmy20180130/mcf-bet-public/archive/refs/heads/main.zip" -OutFile "$env:TEMP\bot.zip"
-    move "%TEMP%\bot.zip" "bot.zip"
+    move "%TEMP%\bot.zip" "%~dp0\bot.zip"
 ) else (
     echo file exists
 )
 
-:: 解压文件
-echo Decompressing zip file...
-powershell Expand-Archive -Path "bot.zip" -DestinationPath .
+:: 把下載下來的 zip 解壓縮
+if exist "%~dp0\bot.zip" (
+    echo Decompressing zip file...
+    powershell -Command "Expand-Archive -Path '%~dp0\bot.zip' -DestinationPath '%~dp0'"
+    del "%~dp0\bot.zip"
+) else (
+    echo file decompressed
+)
 
-echo Installation completed
+:: 安裝套件
+start /wait npm i mineflayer
 
 :StartServer
 echo (%time%) starting the bot
-start node start.js
+start /wait node %~dp0/mcf-bet-public-main/start.js
 echo (%time%) restarting the bot
 goto StartServer
