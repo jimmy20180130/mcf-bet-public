@@ -143,7 +143,7 @@ async function get_user_data_from_dc(discord_id) {
 
 async function create_player_data(playerid, player_uuid, discord_id, role) {
     const updateSql = 'UPDATE user SET discord_id = ? WHERE player_uuid = ?';
-    const insertSql = 'INSERT INTO user (discord_id, realname, wallet, roles, player_uuid, quiet, create_time) VALUES (?, ?, ?, ?, ?, ?, ?)';
+    const insertSql = 'INSERT INTO user (discord_id, realname, wallet, roles, player_uuid, quiet, create_time, tickets) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
 
     try {
         if (await get_user_data(player_uuid) != 'Not Found' && await get_user_data(player_uuid) != 'error') {
@@ -165,7 +165,7 @@ async function create_player_data(playerid, player_uuid, discord_id, role) {
         
         } else {
             let rows = await new Promise((resolve, reject) => {
-                executeQuery('user_data', insertSql, [discord_id, playerid, 0, role, player_uuid, 0, Math.round(new Date() / 1000)], (err, rows) => {
+                executeQuery('user_data', insertSql, [discord_id, playerid, 0, role, player_uuid, 0, Math.round(new Date() / 1000), 0], (err, rows) => {
                     if (err) {
                         console.log(err)
                         resolve('error')

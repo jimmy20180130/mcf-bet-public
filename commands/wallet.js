@@ -33,8 +33,6 @@ async function executeCommand(bot, playerid, args) {
     if (await getPlayerRole(await get_player_uuid(playerid))) {
         if (await canUseCommand(await get_player_uuid(playerid), args.split(' ')[0])) {
             const now_money = await get_player_wallet(await get_player_uuid(playerid))
-            console.log(now_money)
-
             if (now_money > 0) {
                 const pay_result = await pay_handler(bot, playerid, await get_player_wallet(await get_player_uuid(playerid)), 'e')
                 await clear_player_wallet(await get_player_uuid(playerid))

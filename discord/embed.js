@@ -6,7 +6,7 @@ async function bet_record(field0, field1, field2, field3, field4, field5, field6
         .setColor(0x00FFFF)
         .setTitle('流水查詢')
         .addFields(
-            { name: '玩家 ID', value: field0, inline: true },
+            { name: '玩家 ID', value: field0.replaceAll(/([^\\])_/g, '$1\\_'), inline: true },
             { name: 'Discord', value: field1, inline: true },
             { name: '查詢場所', value: field2, inline: true },
             { name: '玩家 UUID', value: field3, inline: false },
@@ -27,7 +27,19 @@ async function command_record(field0, field1) {
     const embed = new EmbedBuilder()
         .setColor("#0097f5")
         .setTitle("指令紀錄")
-        .setDescription(`玩家 ${field0} 觸發了指令 ${field1}`)
+        .setDescription(`玩家 ${field0.replaceAll(/([^\\])_/g, '$1\\_')} 觸發了指令 ${field1}`)
+        .setColor("#313338")
+        .setFooter({ text: 'Jimmy Bot', iconURL: 'https://cdn.discordapp.com/icons/1173075041030787233/bbf79773eab98fb335edc9282241f9fe.webp?size=1024&format=webp&width=0&height=256' })
+        .setTimestamp();
+
+    return embed;
+}
+
+async function dc_command_record(field0, field1) {
+    const embed = new EmbedBuilder()
+        .setColor("#0097f5")
+        .setTitle("Discord 指令紀錄")
+        .setDescription(`玩家 ${field0.replaceAll(/([^\\])_/g, '$1\\_')} 觸發了 Discord 指令 ${field1}`)
         .setColor("#313338")
         .setFooter({ text: 'Jimmy Bot', iconURL: 'https://cdn.discordapp.com/icons/1173075041030787233/bbf79773eab98fb335edc9282241f9fe.webp?size=1024&format=webp&width=0&height=256' })
         .setTimestamp();
@@ -41,7 +53,7 @@ async function bet_win(field0, field1) {
         .addFields(
             {
                 name: "中獎者",
-                value: field0,
+                value: field0.replaceAll(/([^\\])_/g, '$1\\_'),
                 inline: true
             },
             {
@@ -66,7 +78,7 @@ async function bet_lose(field0, field1) {
         .addFields(
             {
                 name: "玩家",
-                value: field0,
+                value: field0.replaceAll(/([^\\])_/g, '$1\\_'),
                 inline: true
             },
             {
@@ -130,11 +142,11 @@ async function bot_kicked(field0) {
 async function link_embed(playerid, player_uuid, dc_tag, dc_id, player_id) {
     const embed = new EmbedBuilder()
         .setTitle("綁定成功")
-        .setDescription(`玩家 ${playerid} 成功綁定帳號`)
+        .setDescription(`玩家 ${playerid.replaceAll(/([^\\])_/g, '$1\\_')} 成功綁定帳號`)
         .addFields(
             {
                 name: "玩家名稱",
-                value: playerid,
+                value: playerid.replaceAll(/([^\\])_/g, '$1\\_'),
                 inline: true
             },
             {
@@ -189,14 +201,50 @@ async function error_embed(field0) {
     return embed;
 }
 
+async function lottery_embed(field0, field1, field2, field3) {
+    const embed = new EmbedBuilder()
+        .setTitle(field0)
+        .addFields(
+            {
+                name: '頭獎',
+                value: field1,
+                inline: false
+            }
+        )
+        .addFields(
+            {
+                name: '二獎',
+                value: field2,
+                inline: false
+            }
+        )
+        .addFields(
+            {
+                name: '三獎',
+                value: field3,
+                inline: false
+            }
+        )
+        .setColor("#f50000")
+        .setFooter({
+            text: "Jimmy Bot",
+            iconURL: "https://cdn.discordapp.com/icons/1173075041030787233/bbf79773eab98fb335edc9282241f9fe.webp?size=1024&format=webp&width=0&height=256",
+        })
+        .setTimestamp();
+
+    return embed;
+}
+
 module.exports = {
     bet_record,
     command_record,
+    dc_command_record,
     bet_win,
     bet_lose,
     bot_on,
     bot_off,
     bot_kicked,
     link_embed,
-    error_embed
+    error_embed,
+    lottery_embed
 }

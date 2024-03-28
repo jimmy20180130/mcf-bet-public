@@ -200,6 +200,11 @@ module.exports = {
 	async execute(interaction) {
 		if (interaction.options.getBoolean('public')) { await interaction.deferReply() } else { await interaction.deferReply({ ephemeral: true }) }
 
+		if (!interaction.member) {
+			await interaction.editReply('請在伺服器中使用此指令');
+			return;
+		}
+
 		const roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf8'));
 		let player_uuid = await get_player_uuid(interaction.options.getString('playerid'));
 		if (interaction.options.getString('playerid') == '所有人') {

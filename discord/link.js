@@ -41,6 +41,12 @@ module.exports = {
 		const roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf8'));
 
 		const verification_code = interaction.options.getString('驗證碼')
+
+		if (!interaction.member) {
+			await interaction.editReply('請在伺服器中使用此指令');
+			return;
+		}
+
 		const verify_success = await validate_code(verification_code, interaction.member.id)
         if (verify_success && verify_success != 'already_linked') {
             await interaction.editReply(`成功綁定您的 Minecraft 帳號 (${(await get_player_name(verify_success)).replace(/(_)/g, "\\$1")}) 至您的 Discord 帳號 (<@${interaction.member.id}>)`);

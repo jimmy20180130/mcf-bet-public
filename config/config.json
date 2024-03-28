@@ -30,10 +30,7 @@
         "cmin": 1,
         "eodds": 2,
         "codds": 1.85,
-        "bet_position": [3069, 112, 5134],
-        "event_position": [3069, 112, 5136],
-        "event_min": 1000000,
-        "event_only_once": true
+        "bet_position": [3069, 112, 5134]
     },
     "console": {
         "mode": 1,

@@ -17,9 +17,11 @@ async function pay_handler(bot, player_id, amount, type, is_bet) {
         const success_Promise = bot.awaitMessage(/\[系統\] 成功轉帳 (.*) 綠寶石 給 (.*) \(目前擁有 (.*) 綠寶石\)/);
         const negative_Promise = bot.awaitMessage(/^\[系統\] 轉帳金額需為正數/)
         const can_not_send_msg_Promise = bot.awaitMessage(/^\[系統\] 無法傳送訊息/)
+
+        let timeout;
         
         const timeout_Promise = new Promise((resolve) => {
-            setTimeout(() => {
+            timeout = setTimeout(() => {
                 resolve('timeout');
             }, 10000);
         });
@@ -29,6 +31,8 @@ async function pay_handler(bot, player_id, amount, type, is_bet) {
                 for (listener of bot.listeners('messagestr')) {
                     bot.removeListener('messagestr', listener);
                 }
+
+                clearTimeout(timeout);
                 
                 if (string.startsWith('[系統] 成功轉帳')) {
                     resolve('success')
@@ -68,6 +72,8 @@ async function pay_handler(bot, player_id, amount, type, is_bet) {
                     }
                     resolve('negative')
                 } else if (string == 'timeout') {
+                    console.log(`[ERROR] 轉帳 ${amount} 個 ${type} 給 ${player_id} 時發生錯誤: 操作超時`)
+                    
                     if (is_bet) {
                         const uuid = await write_errors(0, amount, config.bet.eodds, 'timeout', await get_player_uuid(player_id), type)
                         await mc_error_handler(bot, 'pay', 'timeout', player_id, '', uuid)

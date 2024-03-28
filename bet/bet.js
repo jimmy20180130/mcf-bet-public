@@ -4,14 +4,16 @@ const { mc_error_handler } = require(`${process.cwd()}/error/mc_handler.js`)
 const { process_msg } = require(`${process.cwd()}/utils/process_msg.js`)
 const { pay_handler } = require(`${process.cwd()}/utils/pay_handler.js`)
 const { activateBlock } = require(`${process.cwd()}/utils/better-mineflayer.js`)
-const { write_pay_history, write_errors } = require(`${process.cwd()}/utils/database.js`)
+const { write_pay_history, write_errors, get_user_data, add_lottery_ticket } = require(`${process.cwd()}/utils/database.js`)
 const { get_player_uuid } = require(`${process.cwd()}/utils/get_player_info.js`);
 const { bet_win, bet_lose, error_embed } = require(`${process.cwd()}/discord/embed.js`);
 const Vec3 = require('vec3');
 const Decimal = require('decimal.js');
+const { resolve } = require('path');
 
 let bet_task = [];
 let client = undefined
+let bot = undefined
 
 async function add_bet_task(bot, player_id, amount, type) {
     bet_task.push({
@@ -30,48 +32,85 @@ async function add_bet_task(bot, player_id, amount, type) {
 }
 
 async function process_bet_task() {
-    while (bet_task.length > 0) {
-        const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
-        const emeraldRegex = /綠寶石餘額 : (\d[\d,]*)/;
-        const coinRegex = /村民錠餘額 : (\d[\d,]*)/;
-        let task = bet_task.shift();
-        const emerald = task.bot.tablist.header.toString().match(emeraldRegex)[1].replaceAll(',', '');
-        const coin = task.bot.tablist.header.toString().match(coinRegex)[1].replaceAll(',', '');
-        if (task.type == 'emerald' && emerald < task.amount*config.bet.eodds) {
-            await mc_error_handler(task.bot, 'bet', 'no_money', task.player_id)
-            await write_errors(0, task.amount, config.bet.eodds, 'bot_no_money', await get_player_uuid(task.player_id), task.type)
-            await pay_handler(task.bot, task.player_id, task.amount, task.type, true)
-            let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'))
-            cache.bet.shift()
-            fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
-            continue
-        } else if (task.type == 'coin' && coin < task.amount*config.bet.codds) {
-            await mc_error_handler(task.bot, 'bet', 'no_money', task.player_id)
-            await write_errors(0, task.amount, config.bet.codds, 'bot_no_money', await get_player_uuid(task.player_id), task.type)
-            await pay_handler(task.bot, task.player_id, task.amount, task.type, true)
-            let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'))
-            cache.bet.shift()
-            fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
-            continue
-        } else {
-            if (task.player_id == undefined || task.amount == undefined || task.type == undefined) {
+    while (bet_task.length > 0 && bot != undefined) {
+        const process_task_promise = new Promise(async resolve => {
+            const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
+            const emeraldRegex = /綠寶石餘額 : (\d[\d,]*)/;
+            const coinRegex = /村民錠餘額 : (\d[\d,]*)/;
+            let task = bet_task.shift();
+            const emerald = bot.tablist.header.toString().match(emeraldRegex)[1].replaceAll(',', '');
+            const coin = bot.tablist.header.toString().match(coinRegex)[1].replaceAll(',', '');
+            if (task.type == 'emerald' && emerald < task.amount*config.bet.eodds) {
+                await mc_error_handler(bot, 'bet', 'no_money', task.player_id)
+                await write_errors(0, task.amount, config.bet.eodds, 'bot_no_money', await get_player_uuid(task.player_id), task.type)
+                await pay_handler(bot, task.player_id, task.amount, task.type, true)
                 let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'))
                 cache.bet.shift()
                 fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
-                continue
+                resolve()
+            } else if (task.type == 'coin' && coin < task.amount*config.bet.codds) {
+                await mc_error_handler(bot, 'bet', 'no_money', task.player_id)
+                await write_errors(0, task.amount, config.bet.codds, 'bot_no_money', await get_player_uuid(task.player_id), task.type)
+                await pay_handler(bot, task.player_id, task.amount, task.type, true)
+                let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'))
+                cache.bet.shift()
+                fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
+                resolve()
+            } else {
+                if (task.player_id == undefined || task.amount == undefined || task.type == undefined) {
+                    let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'))
+                    cache.bet.shift()
+                    fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
+                    resolve()
+                }
+                console.log(`[INFO] 開始處理下注任務: ${task.player_id} 下注 ${task.amount} 個 ${task.type}`)
+                await active_redstone(bot, task.player_id, task.amount, task.type);
+                let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'))
+                cache.bet.shift()
+                fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
             }
-            await active_redstone(task.bot, task.player_id, task.amount, task.type);
-            let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'))
-            cache.bet.shift()
-            fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
-        }
 
-        await new Promise(resolve => setTimeout(resolve, 800));
+            resolve()
+        })
+
+        const timeout_promise = new Promise(resolve => {
+            setTimeout(() => {
+                resolve('timeout')
+            }, 30000)
+        })
+
+        let stop_handler_function
+
+        const stop_promise = new Promise(resolve => {
+            stop_handler_function = function stop_handler() {
+                bot.removeListener('end', stop_handler)
+                resolve('stop')
+            }
+            
+            bot.once('end', stop_handler_function)
+        })
+        
+        let should_stop = false
+
+        await Promise.race([process_task_promise, timeout_promise, stop_promise]).then(async (value) => {
+            if (value == 'timeout') {
+                console.log('[INFO] 處理下注任務超時')
+            } else if (value == 'stop') {
+                console.log('[INFO] Bot 離線，停止處理下注任務')
+                should_stop = true
+            } else {
+                console.log('[INFO] 繼續處理下一筆任務')
+            }
+
+            bot.removeListener('end', stop_handler_function)
+        })
+
+        if (should_stop) return
     }
 
     setTimeout(() => {
         process_bet_task();
-    }, 400);
+    }, 100);
 }
 
 async function active_redstone(bot, playerid, amount, type) {
@@ -96,40 +135,17 @@ async function active_redstone(bot, playerid, amount, type) {
             }
             
             let no_permission_Promise = bot.awaitMessage(/^\[領地\] 您沒有(.+)/);
-
-            const wool_msg = new Promise(async resolve => {
-                let value = await bot.awaitMessage(/\區域\] (\d{2}:\d{2}:\d{2}) 物品 (白|黑)色羊毛 x 1 自座標 \( (-?\d+) (-?\d+) (-?\d+) \) 被吐出。/)
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                resolve(value)
-            })
-
             let bet_result = new Promise(resolve => {
-
-                const metedata = async (entity) => {
+                bot._client.on('entity_metadata', async (entity) => {
                     try {
                         let item_id = JSON.parse(JSON.stringify(entity.metadata[0].value)).itemId;
-                        if (item_id == undefined) return
-
-                        for (const listener of bot._client.listeners('entity_metadata')) {
-                            bot._client.removeListener('entity_metadata', listener);
+                        if (item_id == 180) {
+                            resolve('yes')
+                        } else if (item_id == 195) {
+                            resolve('no')
                         }
-
-                        for (listener of bot.listeners('messagestr')) {
-                            bot.removeListener('messagestr', listener);
-                        }
-
-                        switch (item_id) {
-                            case 195:
-                                resolve('no')
-                                break;
-                            case 180:
-                                resolve('yes')
-                                break;
-                        }
-                        
                     } catch (e) {
-
-                        for (const listener of bot._client.listeners('entity_metadata')) {
+                        for (listener of bot._client.listeners('entity_metadata')) {
                             bot._client.removeListener('entity_metadata', listener);
                         }
 
@@ -146,27 +162,17 @@ async function active_redstone(bot, playerid, amount, type) {
                         await channel.send({ embeds: [embed] });
                         resolve('error');
                     }
-                }
-
-                bot._client.on('entity_metadata', metedata);
+                });
             });
 
             let timeout_Promise = new Promise((resolve) => {
                 setTimeout(() => {
                     resolve('timeout');
-                }, 20000);
+                }, 10000);
             });
 
-            await Promise.race([no_permission_Promise, bet_result, timeout_Promise, wool_msg]).then(async (value) => {
-                for (listener of bot.listeners('messagestr')) {
-                    bot.removeListener('messagestr', listener);
-                }
-
-                for (listener of bot._client.listeners('entity_metadata')) {
-                    bot._client.removeListener('entity_metadata', listener);
-                }
-
-                if (value.startsWith('[領地] 您沒有')) {
+            await Promise.race([no_permission_Promise, bet_result, timeout_Promise]).then(async (value) => {
+                if (value.startsWith('[領地]')) {
                     await mc_error_handler(bot, 'bet', 'no_permission', playerid,)
                     switch (await pay_handler(bot, playerid, amount, type, true)) {
                         case 'success':
@@ -177,31 +183,23 @@ async function active_redstone(bot, playerid, amount, type) {
                     const embed = await error_embed('您沒有足夠的權限')
                     const channel = await client.channels.fetch(config.discord_channels.errors);
                     await channel.send({ embeds: [embed] });
-
                 } else if (value == 'timeout') {
                     await mc_error_handler(bot, 'bet', 'timeout', playerid)
                     await pay_handler(bot, playerid, amount, type, true)
                     const embed = await error_embed('操作超時')
                     const channel = await client.channels.fetch(config.discord_channels.errors);
                     await channel.send({ embeds: [embed] });
-
                 } else if (value == 'error') {
                     await pay_handler(bot, playerid, amount, type, true)
-
-                } else if (value.startsWith('[區域]')) {
-                    var regex = /\區域\] (\d{2}:\d{2}:\d{2}) 物品 (白|黑)色羊毛 x 1 自座標 \( (-?\d+) (-?\d+) (-?\d+) \) 被吐出。/
-                    var result = value.match(regex)
-
-                    if (result[2] == '白') {
-                        value = 'yes'
-                    } else if (result[2] == '黑') {
-                        value = 'no'
-                    }
-
-                    await process_bet_result(bot, value, amount, playerid, type)
-                
                 } else {
                     await process_bet_result(bot, await bet_result, amount, playerid, type);
+                }
+
+                for (listener of bot.listeners('messagestr')) {
+                    bot.removeListener('messagestr', listener);
+                }
+                for (listener of bot._client.listeners('entity_metadata')) {
+                    bot._client.removeListener('entity_metadata', listener);
                 }
             });
         } else {
@@ -233,6 +231,7 @@ async function process_bet_result(bot, wool, amount, player_id, type) {
     if (wool == 'yes') {
         if (type == 'emerald') {
             const pay_result = await pay_handler(bot, player_id, Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber()), 'e')
+            console.log(pay_result)
             await chat(bot, `${await process_msg(bot, messages.bet.ewin.replaceAll('%multiply%', config.bet.eodds).replaceAll('%amount%', amount).replaceAll('%after_amount%', Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber())), player_id)}`)
             await write_pay_history(amount, Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber()), config.bet.eodds, pay_result, await get_player_uuid(player_id), type)
             const channel = await client.channels.fetch(config.discord_channels.bet_record);
@@ -262,7 +261,7 @@ async function process_bet_result(bot, wool, amount, player_id, type) {
             const embed = await bet_lose(player_id, `下注 ${amount} 個村民錠 🪙，未中獎 (賠率為 ${config.bet.codds})`)
             await channel.send({ embeds: [embed] });
         }
-
+        
     } else if (wool == 'error') {
         if (type == 'emerald') {
             await pay_handler(bot, player_id, amount, 'e')
@@ -277,9 +276,13 @@ const add_client = (dc_client) => {
     client = dc_client;
 }
 
-process_bet_task();
+const add_bot = (mc_bot) => {
+    bot = mc_bot;
+}
 
 module.exports = {
     add_bet_task,
-    add_client
+    add_client,
+    process_bet_task,
+    add_bot
 };

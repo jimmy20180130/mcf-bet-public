@@ -8,7 +8,12 @@ let rl = readline.createInterface({
 });
 
 rl.on('line', async function (line) {
-    if (bot_is_on) await chat(bot_is_on, line.replaceAll('\n', ''))
+    if (line.startsWith('direct')) {
+        if (bot_is_on) bot_is_on.chat(line.replace('direct', ''))
+    } else if (bot_is_on) {
+        await chat(bot_is_on, line.replaceAll('\n', ''))
+    }
+
 });
 
 const start_rl = (bot) => {

@@ -9,11 +9,7 @@ async function mc_error_handler(bot, type, error_code, playerid, err_msg = '', u
         uuid = `，錯誤 ID 為 ${uuid}`
     }
 
-    if (type == 'bet') {
-        await chat(bot, `/mail ${playerid} ${await process_msg(bot, error_msg[type][error_code].replaceAll('%error_msg%', err_msg), playerid)} ${uuid}`)
-    } else {
-        await chat(bot, `/m ${playerid} ${await process_msg(bot, error_msg[type][error_code].replaceAll('%error_msg%', err_msg), playerid)} ${uuid}`)
-    }
+    await chat(bot, `/m ${playerid} ${await process_msg(bot, error_msg[type][error_code].replaceAll('%error_msg%', err_msg), playerid)} ${uuid}`)
 }
 
 module.exports = {

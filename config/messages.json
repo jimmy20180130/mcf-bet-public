@@ -52,7 +52,6 @@
             "not_completed": "&c參數未填寫完整"
         },
         "bet": {
-            "no_money": "錯誤: 機器人沒錢了",
             "timeout": "錯誤: 下注超時",
             "no_permission": "錯誤: 沒有足夠的權限",
             "redstone_not_found": "錯誤: 找不到紅石粉",
@@ -65,7 +64,8 @@
             "not_same_place": "付款時發生了錯誤: 我和你不同分流",
             "busy": "付款時發生了錯誤: 忙碌中",
             "negative": "付款時發生了錯誤: 金額不為正",
-            "timeout": "付款時發生了錯誤: 付款超時"
+            "timeout": "付款時發生了錯誤: 付款超時",
+            "can't send msg": "付款時發生了錯誤: 無法傳送訊息"
         }
     },
     "bet": {

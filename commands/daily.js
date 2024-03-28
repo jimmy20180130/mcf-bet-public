@@ -31,7 +31,7 @@ async function executeCommand(bot, playerid, args) {
     const roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf8'));
 
     if (await getPlayerRole(await get_player_uuid(playerid))) {
-        if (await canUseCommand(await get_player_uuid(playerid), args.split(' ')[0])) {
+        if (await canUseCommand(await get_player_uuid(playerid), args.split(' ')[0].toLowerCase())) {
             let daily_data = await getDailyData(await get_player_uuid(playerid))
             if (new Date(daily_data['time']).toDateString() === new Date().toDateString()) {
                 await chat(bot, `/m ${playerid} ${await process_msg(bot, messages.commands.daily.already_signed, playerid)}`)

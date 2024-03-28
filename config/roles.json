@@ -43,7 +43,7 @@
     },
     "none": {
         "name": "無",
-        "daily": 10000,
+        "daily": 0,
         "record_settings": {
             "advanced": false,
             "others": false,
@@ -53,10 +53,7 @@
         "disallowed_commands": [
             "link",
             "help",
-            "wallet withdraw",
-            "wallet amount",
-            "wallet",
-            "daily"
+            "wallet"
         ]
     }
 }
