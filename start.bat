@@ -41,7 +41,7 @@ if exist "%~dp0\bot.zip" (
 )
 
 :: 安裝套件
-start /wait npm i mineflayer
+call npm i mineflayer
 
 :StartServer
 echo (%time%) starting the bot
