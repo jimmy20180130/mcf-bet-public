@@ -125,10 +125,10 @@ module.exports = {
                     subcommand
                         .setName('資訊')
                         .setDescription('身份組的資訊')
-                        .addStringOption(option =>
+                        .addRoleOption(option =>
                             option
-                                .setName('身份組名稱')
-                                .setDescription('要查詢資訊的身份組名稱')
+                                .setName('dc身份組')
+                                .setDescription('要查詢資訊的身份組')
                                 .setRequired(true)
                         )
                 )
@@ -212,7 +212,7 @@ module.exports = {
 
                 members = members.filter(member => member[1].user.id == user.id)
 
-                const roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
+                roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
 
                 for (const member of members) {
                     const player_data = (await get_user_data_from_dc(member[1].user.id))[0]
@@ -287,7 +287,15 @@ module.exports = {
             case '資訊':
                 roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
 
-                let response_string = `名稱: ${role_name}\n每日簽到獎勵: ${roles[role_name].daily} 元\n連結之身份組: <@${roles[role_name].discord_id}>\n查自己的流水: ${roles[role_name].record_settings.me}\n查別人的流水: ${roles[role_name].record_settings.others}\n查盈虧: ${roles[role_name].record_settings.advanced}`
+                //get role_name using discord_role_id from roles
+                role_name = Object.keys(roles).find(key => roles[key].discord_id === dc_role.id)
+
+                if (!role_name || !roles[role_name]) {
+                    await interaction.editReply('找不到身份組' + role_name)
+                    return
+                }
+
+                let response_string = `名稱: ${role_name}\n每日簽到獎勵: ${roles[role_name].daily} 元\n連結之身份組: <@&${roles[role_name].discord_id}>\n查自己的流水: ${roles[role_name].record_settings.me}\n查別人的流水: ${roles[role_name].record_settings.others}\n查盈虧: ${roles[role_name].record_settings.advanced}`
 
                 await interaction.editReply('身份組' + role_name + '的資料為\n' + response_string)
 
