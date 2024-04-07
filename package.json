@@ -15,6 +15,8 @@
         "crypto-js": "^4.2.0",
         "bignumber.js": "^4.0.4",
         "discord.js": "^14.13.0",
-        "decimal.js": "10.4.3"
+        "decimal.js": "10.4.3",
+        "sqlite3": "5.1.7",
+        "axios": "^1.6.8"
     }
 }
