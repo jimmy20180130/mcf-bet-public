@@ -291,13 +291,13 @@ module.exports = {
                 role_name = Object.keys(roles).find(key => roles[key].discord_id === dc_role.id)
 
                 if (!role_name || !roles[role_name]) {
-                    await interaction.editReply('找不到身份組' + role_name)
+                    await interaction.editReply('找不到身份組 ' + '<@&' + dc_role.id + '>')
                     return
                 }
 
                 let response_string = `名稱: ${role_name}\n每日簽到獎勵: ${roles[role_name].daily} 元\n連結之身份組: <@&${roles[role_name].discord_id}>\n查自己的流水: ${roles[role_name].record_settings.me}\n查別人的流水: ${roles[role_name].record_settings.others}\n查盈虧: ${roles[role_name].record_settings.advanced}`
 
-                await interaction.editReply('身份組' + role_name + '的資料為\n' + response_string)
+                await interaction.editReply('身份組 ' + role_name + ' 的資料為\n' + response_string)
 
                 break
 
