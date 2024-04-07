@@ -2,7 +2,7 @@
     "admin": {
         "name": "管理員",
         "daily": 10000,
-        "discord_id": "1173080154260648017",
+        "discord_id": "1226095590874681354",
         "record_settings": {
             "advanced": true,
             "others": true,
@@ -14,7 +14,11 @@
     "member": {
         "name": "一般會員",
         "daily": 10000,
-        "discord_id": "1189582479036788756",
+        "discord_id": "1226095181514936360",
+        "apply": {
+            "type": 1,
+            "more_than": 100
+        },
         "record_settings": {
             "advanced": false,
             "others": false,

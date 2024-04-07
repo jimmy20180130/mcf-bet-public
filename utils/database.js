@@ -48,6 +48,24 @@ async function remove_user_role(discord_id, role) {
     }
 }
 
+async function set_user_role(discord_id, role) {
+    const updateSql = 'UPDATE user SET roles = ? WHERE discord_id = ?';
+
+    try {
+        await new Promise((resolve, reject) => {
+            executeQuery('user_data', updateSql, [role, discord_id], (err) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve();
+                }
+            });
+        });
+    } catch (err) {
+        console.error(err);
+    }
+}
+
 async function add_user_role(discord_id, role) {
     const selectSql = 'SELECT roles FROM user WHERE discord_id = ?';
     const updateSql = 'UPDATE user SET roles = ? WHERE discord_id = ?';
@@ -78,7 +96,8 @@ async function add_user_role(discord_id, role) {
         } else {
             const existing_roles = rows[0].roles.split(', ');
             if (!existing_roles.includes(role)) {
-                const new_roles = [...existing_roles, role].join(', ');
+                let new_roles = [...existing_roles, role].filter(r => r !== 'none').filter((r, i) => new_roles.indexOf(r) === i).sort().join(', ');
+                
                 await new Promise((resolve, reject) => {
                     executeQuery('user_data', updateSql, [new_roles, discord_id], (err) => {
                         if (err) {
@@ -143,7 +162,7 @@ async function get_user_data_from_dc(discord_id) {
 
 async function create_player_data(playerid, player_uuid, discord_id, role) {
     const updateSql = 'UPDATE user SET discord_id = ? WHERE player_uuid = ?';
-    const insertSql = 'INSERT INTO user (discord_id, realname, wallet, roles, player_uuid, quiet, create_time, tickets) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+    const insertSql = 'INSERT INTO user (discord_id, realname, wallet, roles, player_uuid, quiet, create_time) VALUES (?, ?, ?, ?, ?, ?, ?)';
 
     try {
         if (await get_user_data(player_uuid) != 'Not Found' && await get_user_data(player_uuid) != 'error') {
@@ -165,7 +184,7 @@ async function create_player_data(playerid, player_uuid, discord_id, role) {
         
         } else {
             let rows = await new Promise((resolve, reject) => {
-                executeQuery('user_data', insertSql, [discord_id, playerid, 0, role, player_uuid, 0, Math.round(new Date() / 1000), 0], (err, rows) => {
+                executeQuery('user_data', insertSql, [discord_id, playerid, 0, role, player_uuid, 0, Math.round(new Date() / 1000)], (err, rows) => {
                     if (err) {
                         console.log(err)
                         resolve('error')
@@ -531,10 +550,10 @@ async function get_all_user_data() {
             if (err) {
                 console.error(err);
                 resolve('error');
-            } else if (rows === undefined || rows.length == 0) {
+            } else if (row === undefined || row.length == 0) {
                 resolve('Not Found');
             } else {
-                resolve(rows);
+                resolve(row);
             }
         })
     })
@@ -562,5 +581,6 @@ module.exports = {
     get_player_wallet_discord,
     add_player_wallet_dc,
     clear_player_wallet_dc,
-    get_all_user_data
+    get_all_user_data,
+    set_user_role
 };

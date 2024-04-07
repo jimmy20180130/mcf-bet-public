@@ -13,34 +13,8 @@
         "readline-sync": "^1.4.10",
         "silly-datetime": "^0.1.2",
         "crypto-js": "^4.2.0",
-        "bignumber.js": "^10.4.3",
+        "bignumber.js": "^4.0.4",
         "discord.js": "^14.13.0",
         "decimal.js": "10.4.3"
-    },
-    "pkg": {
-        "scripts": [
-            "./start.js",
-            "./main.js"
-        ],
-        "assets": [
-            "./node_modules/minecraft-data",
-            "./node_modules/minecraft-protocol",
-            "./node_modules/mineflayer",
-            "./node_modules/prismarine-entity",
-            "./node_modules/readline-sync",
-            "./node_modules/readline",
-            "./node_modules/silly-datetime",
-            "./node_modules/moment-timezone",
-            "./node_modules/crypto-js",
-            "./node_modules/bignumber.js",
-            "./node_modules/discord.js",
-            "./node_modules/decimal.js",
-            "./auth/**/*.js",
-            "./bet/**/*.js",
-            "./commands/**/*.js",
-            "./discord/**/*.js",
-            "./error/**/*.js",
-            "./utils/**/*.js"
-        ]
     }
 }

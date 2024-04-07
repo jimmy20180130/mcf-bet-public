@@ -20,8 +20,19 @@ module.exports = {
         )
         .addSubcommand(subcommand =>
             subcommand
-                .setName('重新整理')
-                .setDescription('重新整理身份組')
+                .setName('照資料庫重新整理')
+                .setDescription('照資料庫重新整理身份組')
+                .addUserOption(option =>
+                    option
+                        .setName('使用者')
+                        .setDescription('要重新整理的使用者')
+                        .setRequired(true)
+                )
+        )
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('照discord重新整理')
+                .setDescription('照discord重新整理身份組')
                 .addUserOption(option =>
                     option
                         .setName('使用者')
@@ -74,26 +85,93 @@ module.exports = {
                                 .setRequired(true)
                         )
                 )
+                .addSubcommand(subcommand =>
+                    subcommand
+                        .setName('調整')
+                        .setDescription('調整身份組')
+                        .addStringOption(option =>
+                            option
+                                .setName('身份組名稱')
+                                .setDescription('要調整的身份組名稱')
+                                .setRequired(true)
+                        )
+                        .addIntegerOption(option =>
+                            option
+                                .setName('簽到金額')
+                                .setDescription('調整每日簽到獎勵金額')
+                        )
+                        .addRoleOption(option =>
+                            option
+                                .setName('dc身份組')
+                                .setDescription('調整連動 Discord 的身份組')
+                        )
+                        .addBooleanOption(option =>
+                            option
+                                .setName('基本流水查詢')
+                                .setDescription('調整是否可查詢自己的流水 (不包括盈虧)')
+                        )
+                        .addBooleanOption(option =>
+                            option
+                                .setName('全域流水查詢')
+                                .setDescription('調整是否可查詢除自己外全部人的流水資料 (不包括盈虧)')
+                        )
+                        .addBooleanOption(option =>
+                            option
+                                .setName('盈虧流水查詢')
+                                .setDescription('調整是否可查詢盈虧')
+                        )
+                )
+                .addSubcommand(subcommand =>
+                    subcommand
+                        .setName('資訊')
+                        .setDescription('身份組的資訊')
+                        .addStringOption(option =>
+                            option
+                                .setName('身份組名稱')
+                                .setDescription('要查詢資訊的身份組名稱')
+                                .setRequired(true)
+                        )
+                )
+                .addSubcommand(subcommand =>
+                    subcommand
+                        .setName('刪除')
+                        .setDescription('刪除身份組')
+                        .addStringOption(option =>
+                            option
+                                .setName('身份組名稱')
+                                .setDescription('要刪除的身份組名稱')
+                                .setRequired(true)
+                        )
+                )
         ),
 
     async execute(interaction) {
         await interaction.deferReply({ ephemeral: true });
-        let role = interaction.options.getRole('身份組');
         let user = interaction.options.getUser('使用者');
+        let rolesToAdd = [];
+        let rolesToRemove = [];
+        let userRoles
+        let player_data
+        let role_name = interaction.options.getString('身份組名稱');
+        let dc_role = interaction.options.getRole('dc身份組');
+        let daily_reward = interaction.options.getInteger('簽到金額');
+        let basic_query = interaction.options.getBoolean('基本流水查詢');
+        let global_query = interaction.options.getBoolean('全域流水查詢');
+        let win_loss_query = interaction.options.getBoolean('盈虧流水查詢');
         let roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
 
         switch (interaction.options.getSubcommand()) {
-            case '重新整理':
+            case '照資料庫重新整理':
                 roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
-                let userRoles = interaction.guild.members.cache.find(member => member.id == user.id).roles.cache.filter(role => role.name !== '@everyone').map(role => role.id);
-                const player_data = (await get_user_data_from_dc(user.id))[0];
+                userRoles = interaction.guild.members.cache.find(member => member.id == user.id).roles.cache.filter(role => role.name !== '@everyone').map(role => role.id);
+                player_data = (await get_user_data_from_dc(user.id))[0];
 
                 if (player_data == undefined || player_data == 'Not Found' || player_data == 'error' || player_data.roles == undefined) return;
 
                 const player_role = orderStrings(player_data.roles, roles);
 
-                let rolesToAdd = [];
-                let rolesToRemove = [];
+                rolesToAdd = [];
+                rolesToRemove = [];
 
                 for (const config_role of Object.keys(roles)) {
                     const discordRoleId = roles[config_role].discord_id;
@@ -124,20 +202,51 @@ module.exports = {
 
                 break
 
-            case '建立':
-                let role_name = interaction.options.getString('身份組名稱');
-                let role = interaction.options.getRole('dc身份組');
-                let daily_reward = interaction.options.getInteger('簽到金額');
-                let basic_query = interaction.options.getBoolean('基本流水查詢');
-                let global_query = interaction.options.getBoolean('全域流水查詢');
-                let win_loss_query = interaction.options.getBoolean('盈虧流水查詢');
+            case '照discord重新整理':
+                //get members from a guild
+                let members = await interaction.guild.members.fetch().then(member => {
+                    return member
+                }).catch(err => {
+                    console.log(err)
+                });
 
+                members = members.filter(member => member[1].user.id == user.id)
+
+                const roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
+
+                for (const member of members) {
+                    const player_data = (await get_user_data_from_dc(member[1].user.id))[0]
+                    if (player_data == undefined || player_data == 'Not Found' || player_data == 'error' || player_data.roles == undefined) continue
+                    const player_role = orderStrings(player_data.roles, roles)
+                    
+                    if (!player_data.discord_id && player_role.includes('none')) continue
+
+                    let discord_user_roles = []
+
+                    for (const config_role of Object.keys(roles)) {
+                        if (guild.members.cache.get(member[1].user.id).roles.cache.map(role => role.id).includes(roles[config_role].discord_id)) {
+                            discord_user_roles.push(config_role)
+                        }
+                    }
+
+                    if (discord_user_roles.length == 0) {
+                        discord_user_roles.push('none')
+                    }
+
+                    set_user_role(member[1].user.id, discord_user_roles.join(', '))
+                }
+
+                await interaction.editReply(`身份組重新整理完成`);
+
+                break
+
+            case '建立':
                 roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
                 
                 roles[role_name] = {
                     name: role_name,
                     daily: daily_reward,
-                    discord_id: role.id,
+                    discord_id: dc_role.id,
                     record_settings: {
                         advanced: win_loss_query,
                         others: global_query,
@@ -157,6 +266,46 @@ module.exports = {
                 fs.writeFileSync(`${process.cwd()}/config/roles.json`, JSON.stringify(roles, null, 4));
 
                 await interaction.editReply('身份組 ' + role_name + ' 已建立');
+
+                break
+
+            case '調整':
+                roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
+                
+                if (dc_role) roles[role_name].discord_id = dc_role.id
+                if (daily_reward) roles[role_name].daily = daily_reward
+                if (basic_query) roles[role_name].record_settings.me = basic_query
+                if (global_query) roles[role_name].record_settings.others = global_query
+                if (win_loss_query) roles[role_name].record_settings.advanced = win_loss_query
+
+                fs.writeFileSync(`${process.cwd()}/config/roles.json`, JSON.stringify(roles, null, 4));
+
+                await interaction.editReply('身份組 ' + role_name + ' 已調整成功');
+
+                break
+
+            case '資訊':
+                roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
+
+                let response_string = `名稱: ${role_name}\n每日簽到獎勵: ${roles[role_name].daily} 元\n連結之身份組: <@${roles[role_name].discord_id}>\n查自己的流水: ${roles[role_name].record_settings.me}\n查別人的流水: ${roles[role_name].record_settings.others}\n查盈虧: ${roles[role_name].record_settings.advanced}`
+
+                await interaction.editReply('身份組' + role_name + '的資料為\n' + response_string)
+
+                break
+
+            case '刪除':
+                roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
+
+                delete roles[role_name]
+
+                fs.writeFileSync(`${process.cwd()}/config/roles.json`, JSON.stringify(roles, null, 4));
+
+                await interaction.editReply('已刪除身份組' + role_name)
+
+                break
+
+            case '申請':
+                await interaction.editReply('功能製作中...')
 
                 break
         }

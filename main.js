@@ -13,11 +13,12 @@ const { Client, GatewayIntentBits, Collection, Events, Partials, REST, Routes } 
 const { check_codes } = require(`./utils/link_handler.js`);
 const { command_records, dc_command_records } = require(`./discord/command_record.js`);
 const { bot_on, bot_off, bot_kicked } = require(`./discord/embed.js`);
-const { get_user_data_from_dc, remove_user_role, add_user_role, getPlayerRole } = require(`./utils/database.js`);
+const { get_user_data_from_dc, remove_user_role, add_user_role, getPlayerRole, set_user_role } = require(`./utils/database.js`);
 const { orderStrings, canUseCommand } = require(`./utils/permissions.js`);
 const { check_token } = require(`./auth/auth.js`);
 const moment = require('moment-timezone');
 const { initDB, closeDB } = require(`./utils/db_write.js`);
+const { get_all_user_data } = require(`./utils/database.js`)
 
 initDB()
 
@@ -37,6 +38,7 @@ let auto_warp;
 let claim;
 let is_on_timeout;
 let add_bott;
+let auto_update_role
 
 let bot;
 let client;
@@ -251,9 +253,10 @@ const init_bot = async () => {
 
     bot.once('spawn', async () => {
         console.log('[INFO] Minecraft 機器人已上線!');
+        init_dc()
         let botSocket = bot._client.socket;
         let time = moment(new Date()).tz('Asia/Taipei').format('YYYY-MM-DD HH:mm:ss');
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 10000));
         try {
             const roundedX = Math.round(bot.entity.position.x);
             const roundedY = Math.round(bot.entity.position.y);
@@ -485,7 +488,77 @@ const init_dc = () => {
                 clear_last_msg()
             }
         });
-        // add role
+
+        client.on('interactionCreate', async interaction => {
+            if (!interaction.isAutocomplete()) return;
+            if (interaction.commandName !== 'record') return;
+
+            const focusedValue = interaction.options.getFocused();
+            
+            let roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf8'));
+
+            let user_uuid = undefined
+            const user_data = (await get_user_data_from_dc(String(interaction.member.id)))[0]
+            if (user_data.player_uuid) user_uuid = user_data.player_uuid
+            const user_role = orderStrings(await getPlayerRole(user_uuid), roles)
+
+            if (user_data && roles[user_role[0]] && roles[user_role[0]].record_settings.others) {
+                if (user_data && roles[user_role[0]] && roles[user_role[0]].record_settings.me == false) {
+                    const all_user_data = await get_all_user_data()
+                    const player_ids = []
+
+                    for (const user of all_user_data) {
+                        if (user.realname && user.player_uuid != user_uuid) {
+                            player_ids.push(user.realname)
+                        }
+                    }
+
+                    let filtered = ['所有人']
+                    filtered.push(...player_ids.filter(choice => choice.toLowerCase().startsWith(focusedValue)));
+
+                    await interaction.respond(
+                        filtered.map(choice => ({ name: choice, value: choice })).slice(0, 25)
+                    );
+                    
+                    return
+                } else {
+                    const all_user_data = await get_all_user_data()
+                    const player_ids = []
+
+                    for (const user of all_user_data) {
+                        if (user.realname) {
+                            player_ids.push(user.realname)
+                        }
+                    }
+
+                    let filtered = ['所有人']
+                    filtered.push(...player_ids.filter(choice => choice.toLowerCase().startsWith(focusedValue)));
+
+                    await interaction.respond(
+                        filtered.map(choice => ({ name: choice, value: choice })).slice(0, 25)
+                    );
+                    
+                    return
+                }
+
+
+            } else if (user_data && roles[user_role[0]] && !roles[user_role[0]].record_settings.others) {
+                let filtered = []
+                filtered.push(user_data.realname)
+
+                if (user_data && roles[user_role[0]] && roles[user_role[0]].record_settings.me == false) {
+                    await interaction.respond([{name: '查無結果', value: '查無結果'}])
+                    return
+
+                } else {
+                    await interaction.respond(
+                        filtered.map(choice => ({ name: choice, value: choice }))
+                    );
+                    
+                    return
+                }
+            }
+        })
 
         client.on(Events.InteractionCreate, async interaction => {
             if (!interaction.isChatInputCommand()) return;
@@ -571,6 +644,42 @@ const init_dc = () => {
                 }
             }
         });
+    
+        auto_update_role = setInterval(async () => {
+            if (client) {
+                const guild = await client.guilds.cache.get(config.discord.guild_id);
+                //get members from a guild
+                const members = await guild.members.fetch().then(member => {
+                    return member
+                }).catch(err => {
+                    console.log(err)
+                });
+
+                const roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
+
+                for (const member of members) {
+                    const player_data = (await get_user_data_from_dc(member[1].user.id))[0]
+                    if (player_data == undefined || player_data == 'Not Found' || player_data == 'error' || player_data.roles == undefined) continue
+                    const player_role = orderStrings(player_data.roles, roles)
+                    
+                    if (!player_data.discord_id && player_role.includes('none')) continue
+
+                    let discord_user_roles = []
+
+                    for (const config_role of Object.keys(roles)) {
+                        if (guild.members.cache.get(member[1].user.id).roles.cache.map(role => role.id).includes(roles[config_role].discord_id)) {
+                            discord_user_roles.push(config_role)
+                        }
+                    }
+
+                    if (discord_user_roles.length == 0) {
+                        discord_user_roles.push('none')
+                    }
+
+                    set_user_role(member[1].user.id, discord_user_roles.join(', '))
+                }
+            }
+        }, 60000)
 
         client.login(config.discord.bot_token)
     } catch (e) {
@@ -607,7 +716,6 @@ async function start_bot() {
     if (await check_token() == true) {
         console.log('[INFO] 金鑰驗證成功，正在啟動機器人...')
         init_bot()
-        init_dc()
 
         let check_bot_token = setInterval(async () => {
             if (!await check_token()) {
