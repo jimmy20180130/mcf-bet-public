@@ -13,7 +13,8 @@
     },
     "discord": {
         "bot_token": "token",
-        "bot_client_id": "id"
+        "bot_client_id": "id",
+        "guild_id": "id"
     },
     "discord_channels": {
         "console": "id",

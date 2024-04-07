@@ -545,15 +545,22 @@ const init_dc = () => {
             } else if (user_data && roles[user_role[0]] && !roles[user_role[0]].record_settings.others) {
                 let filtered = []
                 filtered.push(user_data.realname)
+                filtered = filtered.filter(choice => choice != undefined && choice.toLowerCase().startsWith(focusedValue));
 
                 if (user_data && roles[user_role[0]] && roles[user_role[0]].record_settings.me == false) {
                     await interaction.respond([{name: '查無結果', value: '查無結果'}])
                     return
 
                 } else {
-                    await interaction.respond(
-                        filtered.map(choice => ({ name: choice, value: choice }))
-                    );
+
+                    if (filtered.length == 0) {
+                        await interaction.respond([{name: '查無結果', value: '查無結果'}])
+                        return
+                    } else {
+                        await interaction.respond(
+                            filtered.map(choice => ({ name: choice, value: choice }))
+                        );
+                    }
                     
                     return
                 }
