@@ -9,17 +9,6 @@ module.exports = {
         .setDescription('身份組相關')
         .addSubcommand(subcommand =>
             subcommand
-                .setName('申請')
-                .setDescription('申請身份組')
-                .addRoleOption(option =>
-                    option
-                        .setName('身份組')
-                        .setDescription('要申請的身份組')
-                        .setRequired(true)
-                )
-        )
-        .addSubcommand(subcommand =>
-            subcommand
                 .setName('照資料庫重新整理')
                 .setDescription('照資料庫重新整理身份組')
                 .addUserOption(option =>
@@ -89,7 +78,7 @@ module.exports = {
                     subcommand
                         .setName('調整')
                         .setDescription('調整身份組')
-                        .addStringOption(option =>
+                        .addRoleOption(option =>
                             option
                                 .setName('身份組名稱')
                                 .setDescription('要調整的身份組名稱')
@@ -136,7 +125,7 @@ module.exports = {
                     subcommand
                         .setName('刪除')
                         .setDescription('刪除身份組')
-                        .addStringOption(option =>
+                        .addRoleOption(option =>
                             option
                                 .setName('身份組名稱')
                                 .setDescription('要刪除的身份組名稱')
@@ -271,6 +260,8 @@ module.exports = {
 
             case '調整':
                 roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
+
+                role_name = Object.keys(roles).find(key => roles[key].discord_id === dc_role.id)
                 
                 if (dc_role) roles[role_name].discord_id = dc_role.id
                 if (daily_reward) roles[role_name].daily = daily_reward
@@ -304,16 +295,13 @@ module.exports = {
             case '刪除':
                 roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
 
+                role_name = Object.keys(roles).find(key => roles[key].discord_id === dc_role.id)
+
                 delete roles[role_name]
 
                 fs.writeFileSync(`${process.cwd()}/config/roles.json`, JSON.stringify(roles, null, 4));
 
                 await interaction.editReply('已刪除身份組' + role_name)
-
-                break
-
-            case '申請':
-                await interaction.editReply('功能製作中...')
 
                 break
         }

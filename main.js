@@ -38,7 +38,7 @@ let auto_warp;
 let claim;
 let is_on_timeout;
 let add_bott;
-let auto_update_role
+let auto_update_role;
 
 let bot;
 let client;

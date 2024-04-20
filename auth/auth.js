@@ -81,7 +81,7 @@ async function check_token() {
         axios.post(url, {}, { headers })
             .then(async response => {
                 const decryptedMessage = await decryptMessage(response.data);
-                if (JSON.parse(decryptedMessage.replaceAll('\'', '"')).status == 'success') {
+                if (decryptedMessage.includes('{') && JSON.parse(decryptedMessage.replaceAll('\'', '"')).status == 'success') {
                     resolve(true)
                 } else if (decryptedMessage.startsWith('錯誤')) {
                     if (decryptedMessage == '錯誤，已有ip在使用此金鑰') {

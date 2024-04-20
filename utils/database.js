@@ -561,6 +561,23 @@ async function get_all_user_data() {
     return rows
 }
 
+async function get_all_user() {
+    let players = []
+
+    let rows = await new Promise(resolve => {
+        executeQuery('pay_history', 'SELECT player_id FROM pay_history', [], (err, row) => {
+            if (err) {
+                console.error(err);
+                resolve('error');
+            } else if (row === undefined || row.length == 0) {
+                resolve('Not Found');
+            } else {
+                resolve(row);
+            }
+        })
+    })
+}
+
 module.exports = {
     getPlayerRole,
     getDailyData,
