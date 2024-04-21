@@ -19,6 +19,7 @@ const { check_token } = require(`./auth/auth.js`);
 const moment = require('moment-timezone');
 const { initDB, closeDB } = require(`./utils/db_write.js`);
 const { get_all_user_data } = require(`./utils/database.js`)
+const { doAuth } = require(`./auth/login.js`);
 
 initDB()
 
@@ -694,6 +695,12 @@ process.on("unhandledRejection", async (error) => {
 });
 
 process.on("uncaughtException", async (error) => {
+    if (error.message.startsWith('Failed to obtain profile data for')) {
+        const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
+
+        await doAuth(config.botArgs.username)
+    }
+
     console.log(error)
     is_on = false;
     closeDB()
