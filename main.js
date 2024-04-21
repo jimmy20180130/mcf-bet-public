@@ -228,18 +228,7 @@ const init_bot = async () => {
             if (config.claim_text && config.claim_text != "" && textMessage.includes(config.claim_text.replaceAll(/&[0-9a-f]/gi, ''))) return true
 
             if (!config.console.system) {
-                if (/^\[系統\] 新玩家|系統\] 吉日|系統\] 凶日|系統\] .*凶日|系統\] .*吉日/.test(textMessage)) return true;
-                if (/^ \> /.test(textMessage)) return true;
-                if (/^\[系統\] .*提供了 小幫手提示/.test(textMessage)) return true;
-                if (/^\[系統\] 您的訊息沒有玩家看見/.test(textMessage)) return true;
-                if (/^┌─回覆自/.test(textMessage)) return true;
-                if (/^.* (has made the advancement|has completed the challenge|has reached the goal)/.test(textMessage)) return true;
-                if (/players sleeping$/.test(textMessage)) return true;
-                if (/目標生命 \: ❤❤❤❤❤❤❤❤❤❤ \/ ([\S]+)/g.test(textMessage)) return true;
-                if (/^\[\?\]/.test(textMessage)) return true;
-                if (/^\=\=/.test(textMessage)) return true;
-                if (/^\[>\]/.test(textMessage)) return true;
-                if (/\[~\]/.test(textMessage)) return true;
+                if (/^\[系統\] (新玩家|吉日|凶日|.*凶日|.*吉日)|^ \> |\[系統\] .*提供了 小幫手提示|\[系統\] 您的訊息沒有玩家看見|^┌─回覆自|.* (has made the advancement|has completed the challenge|has reached the goal)|players sleeping$|目標生命 \: ❤❤❤❤❤❤❤❤❤❤ \/ ([\S]+)|^\[\?\]|\=\=|\[>\]|\[~\]/.test(textMessage)) return true;
             }
 
             return false;
