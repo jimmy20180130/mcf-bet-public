@@ -10,6 +10,8 @@ call npm install .
 title Jimmy Bot
 
 :StartServer
+echo (%time%) updating the bot
+start /min node update.js
 echo (%time%) starting the bot
 start /wait node start.js
 echo (%time%) restarting the bot
