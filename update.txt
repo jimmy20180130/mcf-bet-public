@@ -1,2 +1,2 @@
-1713876605
-https://raw.githubusercontent.com/jimmy20180130/mcf-bet-public/main/main.js
+171381
+https://raw.githubusercontent.com/jimmy20180130/mcf-bet-public/main/auth/auth.js
