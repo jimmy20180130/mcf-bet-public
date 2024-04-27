@@ -1,7 +1,7 @@
 const mineflayer = require('mineflayer');
 const fs = require('fs');
 let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
-const { add_bet_task, add_client, process_bet_task, add_bot } = require(`./bet/bet.js`);
+const { add_bet_task, add_client } = require(`./bet/bet.js`);
 const { chat } = require(`./utils/chat.js`);
 const { get_player_uuid } = require(`./utils/get_player_info.js`);
 const { start_rl, stop_rl } = require(`./utils/readline.js`);
@@ -13,13 +13,11 @@ const { Client, GatewayIntentBits, Collection, Events, Partials, REST, Routes } 
 const { check_codes } = require(`./utils/link_handler.js`);
 const { command_records, dc_command_records } = require(`./discord/command_record.js`);
 const { bot_on, bot_off, bot_kicked } = require(`./discord/embed.js`);
-const { get_user_data_from_dc, remove_user_role, add_user_role, getPlayerRole, set_user_role } = require(`./utils/database.js`);
+const { get_user_data_from_dc, remove_user_role, add_user_role, getPlayerRole } = require(`./utils/database.js`);
 const { orderStrings, canUseCommand } = require(`./utils/permissions.js`);
 const { check_token } = require(`./auth/auth.js`);
 const moment = require('moment-timezone');
 const { initDB, closeDB } = require(`./utils/db_write.js`);
-const { get_all_user_data } = require(`./utils/database.js`)
-const { doAuth } = require(`./auth/login.js`);
 
 initDB()
 
@@ -38,8 +36,7 @@ let facility;
 let auto_warp;
 let claim;
 let is_on_timeout;
-let add_bott;
-let auto_update_role;
+let auto_update_role
 
 let bot;
 let client;
@@ -229,7 +226,18 @@ const init_bot = async () => {
             if (config.claim_text && config.claim_text != "" && textMessage.includes(config.claim_text.replaceAll(/&[0-9a-f]/gi, ''))) return true
 
             if (!config.console.system) {
-                if (/^\[系統\] (新玩家|吉日|凶日|.*凶日|.*吉日)|^ \> |\[系統\] .*提供了 小幫手提示|\[系統\] 您的訊息沒有玩家看見|^┌─回覆自|.* (has made the advancement|has completed the challenge|has reached the goal)|players sleeping$|目標生命 \: ❤❤❤❤❤❤❤❤❤❤ \/ ([\S]+)|^\[\?\]|\=\=|\[>\]|\[~\]/.test(textMessage)) return true;
+                if (/^\[系統\] 新玩家|系統\] 吉日|系統\] 凶日|系統\] .*凶日|系統\] .*吉日/.test(textMessage)) return true;
+                if (/^ \> /.test(textMessage)) return true;
+                if (/^\[系統\] .*提供了 小幫手提示/.test(textMessage)) return true;
+                if (/^\[系統\] 您的訊息沒有玩家看見/.test(textMessage)) return true;
+                if (/^┌─回覆自/.test(textMessage)) return true;
+                if (/^.* (has made the advancement|has completed the challenge|has reached the goal)/.test(textMessage)) return true;
+                if (/players sleeping$/.test(textMessage)) return true;
+                if (/目標生命 \: ❤❤❤❤❤❤❤❤❤❤ \/ ([\S]+)/g.test(textMessage)) return true;
+                if (/^\[\?\]/.test(textMessage)) return true;
+                if (/^\=\=/.test(textMessage)) return true;
+                if (/^\[>\]/.test(textMessage)) return true;
+                if (/\[~\]/.test(textMessage)) return true;
             }
 
             return false;
@@ -257,9 +265,8 @@ const init_bot = async () => {
             await channel.send({ embeds: [embed] });
             let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'));
 
-            process_bet_task()
-
             await chat(bot, `[${moment(new Date()).tz('Asia/Taipei').format('HH:mm:ss')}] Jimmy Bot 已上線!`)
+            await chat(bot, `如果剛剛有尚未處理的任務，請稍待 10 秒鐘，機器人應會繼續執行，感謝您的配合`)
 
             is_on_timeout = setTimeout(() => {
                 is_on = true;
@@ -317,10 +324,6 @@ const init_bot = async () => {
                     config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'))
                     try { bot.chat(config.claim_text) } catch {}
                 }, 120000)
-
-                add_bott = setInterval(function () {
-                    add_bot(bot)
-                }, 1000)
             }
 
             try {
@@ -328,7 +331,6 @@ const init_bot = async () => {
                 if (config.lottery_text && config.lottery_text !== '') bot.chat(`%${config.lottery_text}`)
                 if (config.facility_text && config.facility_text !== '') bot.chat(`!${config.facility_text}`)
                 if (config.claim_text && config.claim_text !== '') bot.chat(config.claim_text)
-                if (bot) add_bot(bot)
             } catch {}
     
             setTimeout(() => {
@@ -362,7 +364,6 @@ const init_bot = async () => {
         clearInterval(auto_warp)
         clearInterval(claim)
         clearTimeout(is_on_timeout)
-        clearInterval(add_bott)
         stop_rl()
         stop_msg()
         console.log('[WARN] Minecraft 機器人被伺服器踢出了!');
@@ -384,7 +385,6 @@ const init_bot = async () => {
         clearInterval(auto_warp)
         clearTimeout(is_on_timeout)
         clearInterval(claim)
-        clearInterval(add_bott)
         stop_rl()
         stop_msg()
         console.log('[WARN] Minecraft 機器人下線了!');
@@ -478,84 +478,7 @@ const init_dc = () => {
                 clear_last_msg()
             }
         });
-
-        client.on('interactionCreate', async interaction => {
-            if (!interaction.isAutocomplete()) return;
-            if (interaction.commandName !== 'record') return;
-
-            const focusedValue = interaction.options.getFocused();
-            
-            let roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf8'));
-
-            let user_uuid = undefined
-            const user_data = (await get_user_data_from_dc(String(interaction.member.id)))[0]
-            if (user_data.player_uuid) user_uuid = user_data.player_uuid
-            const user_role = orderStrings(await getPlayerRole(user_uuid), roles)
-
-            if (user_data && roles[user_role[0]] && roles[user_role[0]].record_settings.others) {
-                if (user_data && roles[user_role[0]] && roles[user_role[0]].record_settings.me == false) {
-                    const all_user_data = await get_all_user_data()
-                    const player_ids = []
-
-                    for (const user of all_user_data) {
-                        if (user.realname && user.player_uuid != user_uuid) {
-                            player_ids.push(user.realname)
-                        }
-                    }
-
-                    let filtered = ['所有人']
-                    filtered.push(...player_ids.filter(choice => choice.toLowerCase().startsWith(focusedValue)));
-
-                    await interaction.respond(
-                        filtered.map(choice => ({ name: choice, value: choice })).slice(0, 25)
-                    );
-                    
-                    return
-                } else {
-                    const all_user_data = await get_all_user_data()
-                    const player_ids = []
-
-                    for (const user of all_user_data) {
-                        if (user.realname) {
-                            player_ids.push(user.realname)
-                        }
-                    }
-
-                    let filtered = ['所有人']
-                    filtered.push(...player_ids.filter(choice => choice.toLowerCase().startsWith(focusedValue)));
-
-                    await interaction.respond(
-                        filtered.map(choice => ({ name: choice, value: choice })).slice(0, 25)
-                    );
-                    
-                    return
-                }
-
-
-            } else if (user_data && roles[user_role[0]] && !roles[user_role[0]].record_settings.others) {
-                let filtered = []
-                filtered.push(user_data.realname)
-                filtered = filtered.filter(choice => choice != undefined && choice.toLowerCase().startsWith(focusedValue));
-
-                if (user_data && roles[user_role[0]] && roles[user_role[0]].record_settings.me == false) {
-                    await interaction.respond([{name: '查無結果', value: '查無結果'}])
-                    return
-
-                } else {
-
-                    if (filtered.length == 0) {
-                        await interaction.respond([{name: '查無結果', value: '查無結果'}])
-                        return
-                    } else {
-                        await interaction.respond(
-                            filtered.map(choice => ({ name: choice, value: choice }))
-                        );
-                    }
-                    
-                    return
-                }
-            }
-        })
+        // add role
 
         client.on(Events.InteractionCreate, async interaction => {
             if (!interaction.isChatInputCommand()) return;
@@ -641,42 +564,30 @@ const init_dc = () => {
                 }
             }
         });
-    
-        auto_update_role = setInterval(async () => {
-            if (client) {
-                const guild = await client.guilds.cache.get(config.discord.guild_id);
-                //get members from a guild
-                const members = await guild.members.fetch().then(member => {
-                    return member
-                }).catch(err => {
-                    console.log(err)
-                });
 
-                const roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
-
-                for (const member of members) {
-                    const player_data = (await get_user_data_from_dc(member[1].user.id))[0]
-                    if (player_data == undefined || player_data == 'Not Found' || player_data == 'error' || player_data.roles == undefined) continue
-                    const player_role = orderStrings(player_data.roles, roles)
-                    
-                    if (!player_data.discord_id && player_role.includes('none')) continue
-
-                    let discord_user_roles = []
-
-                    for (const config_role of Object.keys(roles)) {
-                        if (guild.members.cache.get(member[1].user.id).roles.cache.map(role => role.id).includes(roles[config_role].discord_id)) {
-                            discord_user_roles.push(config_role)
-                        }
-                    }
-
-                    if (discord_user_roles.length == 0) {
-                        discord_user_roles.push('none')
-                    }
-
-                    set_user_role(member[1].user.id, discord_user_roles.join(', '))
-                }
-            }
-        }, 60000)
+        // auto_update_role = setInterval(async () => {
+        //     if (client) {
+        //         const guild = await client.guilds.fetch(config.discord.guild_id);
+        //         const members = await guild.members.fetch();
+        //         for (const member of members) {
+        //             const player_data = (await get_user_data_from_dc(member[1].user.id))[0]
+        //             if (player_data == undefined || player_data == 'Not Found' || player_data == 'error' || player_data.roles == undefined) return
+        //             const player_role = orderStrings(player_data.roles, roles)
+        //             if (!player_data.discord_id && player_role.includes('none')) return
+        //             for (const config_role of Object.keys(roles)) {
+        //                 if (player_data.roles.includes(config_role)) {
+        //                     if (!member[1].roles.cache.find(role => role.name == roles[config_role].name)) {
+        //                         await add_user_role(member[1].user.id, config_role)
+        //                     }
+        //                 } else {
+        //                     if (member[1].roles.cache.find(role => role.name == roles[config_role].name)) {
+        //                         await remove_user_role(member[1].user.id, config_role)
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }, 60000)
 
         client.login(config.discord.bot_token)
     } catch (e) {
@@ -695,12 +606,6 @@ process.on("unhandledRejection", async (error) => {
 });
 
 process.on("uncaughtException", async (error) => {
-    if (error.message.startsWith('Failed to obtain profile data for')) {
-        const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
-
-        await doAuth(config.botArgs.username)
-    }
-
     console.log(error)
     is_on = false;
     closeDB()
