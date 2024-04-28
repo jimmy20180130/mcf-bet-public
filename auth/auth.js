@@ -16,7 +16,7 @@ async function decryptMessage(encryptedMessage) {
         "time": Math.round(new Date() / 1000)
     }
 
-    await axios.default.post('https://8wxq26-20030.csb.app', { data }, { headers }).then(async response => {
+    await axios.default.post('https://8wxq26-20030.csb.app/get_key', { data }, { headers }).then(async response => {
         if (response.data.error != undefined) {
             console.log('[WARN] 請確認您的金鑰是否正確，如果您認為這是個錯誤，請聯絡管理員')
 
@@ -71,7 +71,7 @@ async function decryptMessage(encryptedMessage) {
 async function check_token() {
     return await new Promise(resolve => {
         const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf-8'));
-        const url = 'https://8wxq26-20030.csb.app';
+        const url = 'https://8wxq26-20030.csb.app/verify';
         const headers = {
             Authorization: `Bearer ${config.key}`,
             Accept: 'application/json',
