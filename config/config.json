@@ -44,10 +44,6 @@
         "system": false,
         "claim": true
     },
-    "trade_text": "",
-    "lottery_text": "",
-    "facility_text": "",
-    "claim_text": "",
     "advertisement": [
         {
             "text": "trade_text",
