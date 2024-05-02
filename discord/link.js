@@ -7,6 +7,8 @@ const fs = require('fs')
 
 module.exports = {
 	data: new SlashCommandBuilder()
+		.setName('綁定')
+		.setDescription('綁定您的 Minecraft 帳號')
 		.addSubcommand(subcommand =>
 			subcommand
 				.setName('link')
@@ -22,7 +24,8 @@ module.exports = {
 					"zh-TW": "綁定您的 Minecraft 帳號"
 				})
 				.addStringOption(option =>
-					option.setName('驗證碼')
+					option
+						.setName('驗證碼')
 						.setRequired(true)
 						.setNameLocalizations({
 							"en-US": "verify-code",
@@ -34,9 +37,8 @@ module.exports = {
 							"en-US": "the verification code you get in the game",
 							'zh-CN': '目前不支援简体中文',
 							"zh-TW": "您在遊戲中收到的驗證碼"
-						}
+						})
 				)
-			)
 		)
 		.addSubcommand(subcommand =>
 			subcommand

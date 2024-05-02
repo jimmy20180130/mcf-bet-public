@@ -13,7 +13,7 @@ const { Client, GatewayIntentBits, Collection, Events, Partials, REST, Routes } 
 const { check_codes } = require(`./utils/link_handler.js`);
 const { command_records, dc_command_records } = require(`./discord/command_record.js`);
 const { bot_on, bot_off, bot_kicked } = require(`./discord/embed.js`);
-const { get_user_data_from_dc, remove_user_role, add_user_role, getPlayerRole } = require(`./utils/database.js`);
+const { get_user_data_from_dc, remove_user_role, add_user_role, getPlayerRole, set_user_role } = require(`./utils/database.js`);
 const { orderStrings, canUseCommand } = require(`./utils/permissions.js`);
 const { check_token } = require(`./auth/auth.js`);
 const moment = require('moment-timezone');
@@ -583,7 +583,7 @@ const init_dc = () => {
 
         client.login(config.discord.bot_token)
     } catch (e) {
-        console.log(e)
+        console.log(e.stack)
         console.log(`[ERROR] Discord 機器人發生錯誤，錯誤如下 ${e.message}`)
         is_on = false;
         closeDB()
