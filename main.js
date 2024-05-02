@@ -262,11 +262,14 @@ const init_bot = async () => {
             const channel = await client.channels.fetch(config.discord_channels.status);
             await channel.send({ embeds: [embed] });
 
+            add_bot(bot)
             await chat(bot, `[${moment(new Date()).tz('Asia/Taipei').format('HH:mm:ss')}] Jimmy Bot 已上線!`)
             await chat(bot, `如果剛剛有尚未處理的任務，請稍待 10 秒鐘，機器人應會繼續執行，感謝您的配合`)
 
             is_on_timeout = setTimeout(() => {
                 is_on = true;
+
+                process_bet_task()
 
                 new Promise(async (resolve) => {
                     let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'));
@@ -297,8 +300,6 @@ const init_bot = async () => {
                     resolve()
                 })
             }, 10000);
-
-            process_bet_task()
 
             const ad = () => {
                 let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'))

@@ -104,6 +104,7 @@ module.exports = {
         let rolesToAdd = [];
         let rolesToRemove = [];
         let userRoles
+        let role_name
         let player_data
         let dc_role = interaction.options.getRole('dc身份組');
         let daily_reward = interaction.options.getInteger('簽到金額');
@@ -233,7 +234,7 @@ module.exports = {
                 }
 
                 // get role name using id
-                let role_name = dc_role.name
+                role_name = dc_role.name
                 
                 roles[role_name] = {
                     name: role_name,
