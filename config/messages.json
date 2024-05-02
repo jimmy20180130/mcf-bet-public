@@ -22,8 +22,8 @@
         },
         "daily": {
             "already_signed": "您今天已經簽到過了！",
-            "success": "您累積簽到 %count% 次，總金額為 %amount% 個綠寶，最近一次簽到時間為 %time%",
-            "failed": "簽到失敗，請再試一次"
+            "success": "%time% 您已成功領取身分組 %role% (僅列出第一項) 的每日簽到獎勵 %amount% 個綠寶石，您至今共簽到了 %count% 次",
+            "failed": "[%time%] &c&l簽到失敗，請截圖此訊息並聯絡管理員 (%uuid%)"
         },
         "donate": {
             "start_donate": "現在您可以轉帳給我了，20 秒後將會失效",
@@ -48,8 +48,9 @@
     },
     "errors": {
         "general": {
-            "no_permission": "&c您沒有權限使用此指令",
-            "not_completed": "&c參數未填寫完整"
+            "no_permission": "",
+            "not_completed": "&c參數未填寫完整",
+            "not_linked": "&c執行此指令需綁定您的帳號，如要綁定，請私訊我 link ，以進行綁定"
         },
         "bet": {
             "timeout": "錯誤: 下注超時",

@@ -1,7 +1,7 @@
 const mineflayer = require('mineflayer');
 const fs = require('fs');
 let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
-const { add_bet_task, add_client } = require(`./bet/bet.js`);
+const { add_bet_task, add_client, add_bot, process_bet_task } = require(`./bet/bet.js`);
 const { chat } = require(`./utils/chat.js`);
 const { get_player_uuid } = require(`./utils/get_player_info.js`);
 const { start_rl, stop_rl } = require(`./utils/readline.js`);
@@ -31,12 +31,9 @@ const botArgs = {
 
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 const commands = {}
-let trade_and_lottery;
-let facility;
-let auto_warp;
-let claim;
 let is_on_timeout;
-let auto_update_role
+let auto_update_role;
+let intervals = [];
 
 let bot;
 let client;
@@ -152,8 +149,6 @@ const init_bot = async () => {
                         return
                     }
                 }
-
-                bot.chat(`/m ${playerid} 指令不存在`);
             }
         } else if (jsonMsg.toString().startsWith(`[系統] 您收到了 `)) {
             const msg = jsonMsg.toString();
@@ -163,6 +158,7 @@ const init_bot = async () => {
             const cmatch = c_regex.exec(msg);
 
             if (ematch) {
+                let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
                 let playerid = ematch[1];
                 if (donate_list.includes(playerid)) return
                 let amount = parseInt(ematch[2].split(',').join(''))
@@ -175,7 +171,9 @@ const init_bot = async () => {
                 }
 
                 await add_bet_task(bot, playerid, amount, 'emerald');
+
             } else if (cmatch) {
+                let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
                 let playerid = cmatch[1];
                 if (donate_list.includes(playerid)) return
                 let amount = parseInt(cmatch[2].split(',').join(''))
@@ -263,7 +261,6 @@ const init_bot = async () => {
             const embed = await bot_on(string)
             const channel = await client.channels.fetch(config.discord_channels.status);
             await channel.send({ embeds: [embed] });
-            let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'));
 
             await chat(bot, `[${moment(new Date()).tz('Asia/Taipei').format('HH:mm:ss')}] Jimmy Bot 已上線!`)
             await chat(bot, `如果剛剛有尚未處理的任務，請稍待 10 秒鐘，機器人應會繼續執行，感謝您的配合`)
@@ -301,37 +298,23 @@ const init_bot = async () => {
                 })
             }, 10000);
 
-            const ad = () => {
-                trade_and_lottery = setInterval(function () {
-                    config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'))
-                    try {
-                        if (config.trade_text && config.trade_text !== '') bot.chat(`$${config.trade_text}`)
-                        if (config.lottery_text && config.lottery_text !== '') bot.chat(`%${config.lottery_text}`)
-                    } catch {}
-                }, 605000)
-        
-                facility = setInterval(function () {
-                    config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'))
-                    try { if (config.facility_text && config.facility_text !== '') bot.chat(`!${config.facility_text}`) } catch {}
-                }, 1805000)
-        
-                auto_warp = setInterval(function () {
-                    config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'))
-                    try { bot.chat(config.warp) } catch {}
-                }, 600000)
+            process_bet_task()
 
-                claim = setInterval(function () {
-                    config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'))
-                    try { bot.chat(config.claim_text) } catch {}
-                }, 120000)
+            const ad = () => {
+                let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'))
+
+                for (let item of config.advertisement) {
+                    intervals.push(setInterval(async () => {
+                        try {
+                            await chat(bot, item.text)
+                        } catch {}
+                    }, item.interval))
+                }
             }
 
-            try {
-                if (config.trade_text && config.trade_text !== '') bot.chat(`$${config.trade_text}`)
-                if (config.lottery_text && config.lottery_text !== '') bot.chat(`%${config.lottery_text}`)
-                if (config.facility_text && config.facility_text !== '') bot.chat(`!${config.facility_text}`)
-                if (config.claim_text && config.claim_text !== '') bot.chat(config.claim_text)
-            } catch {}
+            for (let item of config.advertisement) {
+                await chat(bot, item.text)
+            }
     
             setTimeout(() => {
                 ad()
@@ -359,10 +342,6 @@ const init_bot = async () => {
     })
 
     bot.once('kicked', async (reason) => {
-        clearInterval(trade_and_lottery)
-        clearInterval(facility)
-        clearInterval(auto_warp)
-        clearInterval(claim)
         clearTimeout(is_on_timeout)
         stop_rl()
         stop_msg()
@@ -380,11 +359,7 @@ const init_bot = async () => {
     });
 
     bot.once('end', async () => {
-        clearInterval(trade_and_lottery)
-        clearInterval(facility)
-        clearInterval(auto_warp)
         clearTimeout(is_on_timeout)
-        clearInterval(claim)
         stop_rl()
         stop_msg()
         console.log('[WARN] Minecraft 機器人下線了!');
@@ -565,29 +540,41 @@ const init_dc = () => {
             }
         });
 
-        // auto_update_role = setInterval(async () => {
-        //     if (client) {
-        //         const guild = await client.guilds.fetch(config.discord.guild_id);
-        //         const members = await guild.members.fetch();
-        //         for (const member of members) {
-        //             const player_data = (await get_user_data_from_dc(member[1].user.id))[0]
-        //             if (player_data == undefined || player_data == 'Not Found' || player_data == 'error' || player_data.roles == undefined) return
-        //             const player_role = orderStrings(player_data.roles, roles)
-        //             if (!player_data.discord_id && player_role.includes('none')) return
-        //             for (const config_role of Object.keys(roles)) {
-        //                 if (player_data.roles.includes(config_role)) {
-        //                     if (!member[1].roles.cache.find(role => role.name == roles[config_role].name)) {
-        //                         await add_user_role(member[1].user.id, config_role)
-        //                     }
-        //                 } else {
-        //                     if (member[1].roles.cache.find(role => role.name == roles[config_role].name)) {
-        //                         await remove_user_role(member[1].user.id, config_role)
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }, 60000)
+        auto_update_role = setInterval(async () => {
+            if (client) {
+                const guild = await client.guilds.cache.get(config.discord.guild_id);
+                //get members from a guild
+                const members = await guild.members.fetch().then(member => {
+                    return member
+                }).catch(err => {
+                    console.log(err)
+                });
+
+                const roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
+
+                for (const member of members) {
+                    const player_data = (await get_user_data_from_dc(member[1].user.id))[0]
+                    if (player_data == undefined || player_data == 'Not Found' || player_data == 'error' || player_data.roles == undefined) continue
+                    const player_role = orderStrings(player_data.roles, roles)
+                    
+                    if (!player_data.discord_id && player_role.includes('none')) continue
+
+                    let discord_user_roles = []
+
+                    for (const config_role of Object.keys(roles)) {
+                        if (guild.members.cache.get(member[1].user.id).roles.cache.map(role => role.id).includes(roles[config_role].discord_id)) {
+                            discord_user_roles.push(config_role)
+                        }
+                    }
+
+                    if (discord_user_roles.length == 0) {
+                        discord_user_roles.push('none')
+                    }
+
+                    set_user_role(member[1].user.id, discord_user_roles.join(', '))
+                }
+            }
+        }, 60000)
 
         client.login(config.discord.bot_token)
     } catch (e) {

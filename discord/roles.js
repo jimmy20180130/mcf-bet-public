@@ -1,6 +1,6 @@
 const fs = require('fs');
 const { SlashCommandBuilder } = require('discord.js');
-const { add_user_role, get_user_data_from_dc, remove_user_role } = require(`${process.cwd()}/utils/database.js`); 
+const { add_user_role, get_user_data_from_dc, remove_user_role,  } = require(`${process.cwd()}/utils/database.js`); 
 const { orderStrings } = require(`${process.cwd()}/utils/permissions.js`);
 
 module.exports = {
@@ -37,12 +37,6 @@ module.exports = {
                     subcommand
                         .setName('建立')
                         .setDescription('建立身份組')
-                        .addStringOption(option =>
-                            option
-                                .setName('身份組名稱')
-                                .setDescription('要建立的身份組名稱')
-                                .setRequired(true)
-                        )
                         .addIntegerOption(option =>
                             option
                                 .setName('簽到金額')
@@ -73,41 +67,11 @@ module.exports = {
                                 .setDescription('是否可查詢盈虧')
                                 .setRequired(true)
                         )
-                )
-                .addSubcommand(subcommand =>
-                    subcommand
-                        .setName('調整')
-                        .setDescription('調整身份組')
-                        .addRoleOption(option =>
+                        .addBooleanOption(option =>
                             option
-                                .setName('身份組名稱')
-                                .setDescription('要調整的身份組名稱')
+                                .setName('管理員')
+                                .setDescription('是否為管理員')
                                 .setRequired(true)
-                        )
-                        .addIntegerOption(option =>
-                            option
-                                .setName('簽到金額')
-                                .setDescription('調整每日簽到獎勵金額')
-                        )
-                        .addRoleOption(option =>
-                            option
-                                .setName('dc身份組')
-                                .setDescription('調整連動 Discord 的身份組')
-                        )
-                        .addBooleanOption(option =>
-                            option
-                                .setName('基本流水查詢')
-                                .setDescription('調整是否可查詢自己的流水 (不包括盈虧)')
-                        )
-                        .addBooleanOption(option =>
-                            option
-                                .setName('全域流水查詢')
-                                .setDescription('調整是否可查詢除自己外全部人的流水資料 (不包括盈虧)')
-                        )
-                        .addBooleanOption(option =>
-                            option
-                                .setName('盈虧流水查詢')
-                                .setDescription('調整是否可查詢盈虧')
                         )
                 )
                 .addSubcommand(subcommand =>
@@ -141,12 +105,12 @@ module.exports = {
         let rolesToRemove = [];
         let userRoles
         let player_data
-        let role_name = interaction.options.getString('身份組名稱');
         let dc_role = interaction.options.getRole('dc身份組');
         let daily_reward = interaction.options.getInteger('簽到金額');
         let basic_query = interaction.options.getBoolean('基本流水查詢');
         let global_query = interaction.options.getBoolean('全域流水查詢');
         let win_loss_query = interaction.options.getBoolean('盈虧流水查詢');
+        let is_admin = interaction.options.getBoolean('管理員');
         let roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
 
         switch (interaction.options.getSubcommand()) {
@@ -229,8 +193,48 @@ module.exports = {
 
                 break
 
-            case '建立':
+            case '設定':
                 roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
+
+                for (const role of Object.keys(roles)) {
+                    if (roles[role].discord_id == dc_role.id) {
+                        //edit role
+                        if (daily_reward) {
+                            roles[role].daily = daily_reward
+                        }
+                        if (basic_query) {
+                            roles[role].record_settings.me = basic_query
+                        }
+                        if (global_query) {
+                            roles[role].record_settings.others = global_query
+                        }
+                        if (win_loss_query) {
+                            roles[role].record_settings.advanced = win_loss_query
+                        }
+                        if (is_admin) {
+                            roles[role].disallowed_commands = []
+                            roles[role].reverse_blacklist = false
+                        } else {
+                            roles[role].disallowed_commands = [
+                                "help",
+                                "hi",
+                                "unlink",
+                                "play",
+                                "daily",
+                                "wallet"
+                            ]
+                            roles[role].reverse_blacklist = true
+                        }
+
+                        fs.writeFileSync(`${process.cwd()}/config/roles.json`, JSON.stringify(roles, null, 4));
+
+                        await interaction.editReply('身份組 <@&' + dc_role.id + '> 已更新');
+                        return
+                    }
+                }
+
+                // get role name using id
+                let role_name = dc_role.name
                 
                 roles[role_name] = {
                     name: role_name,
@@ -252,26 +256,14 @@ module.exports = {
                     ]
                 }
 
-                fs.writeFileSync(`${process.cwd()}/config/roles.json`, JSON.stringify(roles, null, 4));
-
-                await interaction.editReply('身份組 ' + role_name + ' 已建立');
-
-                break
-
-            case '調整':
-                roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
-
-                role_name = Object.keys(roles).find(key => roles[key].discord_id === dc_role.id)
-                
-                if (dc_role) roles[role_name].discord_id = dc_role.id
-                if (daily_reward) roles[role_name].daily = daily_reward
-                if (basic_query) roles[role_name].record_settings.me = basic_query
-                if (global_query) roles[role_name].record_settings.others = global_query
-                if (win_loss_query) roles[role_name].record_settings.advanced = win_loss_query
+                if (is_admin) {
+                    roles[role_name].disallowed_commands = []
+                    roles[role_name].reverse_blacklist = false
+                }
 
                 fs.writeFileSync(`${process.cwd()}/config/roles.json`, JSON.stringify(roles, null, 4));
 
-                await interaction.editReply('身份組 ' + role_name + ' 已調整成功');
+                await interaction.editReply('身份組 <@&' + dc_role.id + '> 已建立');
 
                 break
 
@@ -286,22 +278,22 @@ module.exports = {
                     return
                 }
 
-                let response_string = `名稱: ${role_name}\n每日簽到獎勵: ${roles[role_name].daily} 元\n連結之身份組: <@&${roles[role_name].discord_id}>\n查自己的流水: ${roles[role_name].record_settings.me}\n查別人的流水: ${roles[role_name].record_settings.others}\n查盈虧: ${roles[role_name].record_settings.advanced}`
+                let response_string = `名稱: ${role_name}\n每日簽到獎勵: ${roles[role_name].daily} 元\n連結之身份組: <@&${roles[role_name].discord_id}>\n查自己的流水: ${roles[role_name].record_settings.me}\n查別人的流水: ${roles[role_name].record_settings.others}\n查盈虧: ${roles[role_name].record_settings.advanced}\n管理員: ${roles[role_name].disallowed_commands.length == 0 ? '是' : '否'}`
 
-                await interaction.editReply('身份組 ' + role_name + ' 的資料為\n' + response_string)
+                await interaction.editReply('身份組 <@&' + dc_role.id + '> 的資料為\n' + response_string)
 
                 break
 
             case '刪除':
                 roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
 
-                role_name = Object.keys(roles).find(key => roles[key].discord_id === dc_role.id)
+                role_name = Object.keys(roles).find(key => roles[key].discord_id == dc_role.id)
 
                 delete roles[role_name]
 
                 fs.writeFileSync(`${process.cwd()}/config/roles.json`, JSON.stringify(roles, null, 4));
 
-                await interaction.editReply('已刪除身份組' + role_name)
+                await interaction.editReply('已刪除身份組 <@&' + dc_role.id + '>')
 
                 break
         }

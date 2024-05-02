@@ -106,6 +106,12 @@ module.exports = {
                         break
                     default:
                         await interaction.editReply(`已成功新增玩家 <@${user.id}> 的錢，他目前有 ${wallet} 元`)
+
+                        const dm = await user.createDM()
+
+                        try {
+                            await dm.send(`管理員已新增 ${interaction.options.getInteger('數量')} 元至您的錢包中，您目前有 ${wallet} 元，在遊戲中私訊我 "領錢" 即可領取。`)
+                        } catch (error) {}
                 }
 
                 break

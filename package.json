@@ -4,19 +4,20 @@
         "mcf-bet": "./start.js"
     },
     "dependencies": {
+        "axios": "^1.6.8",
+        "bignumber.js": "^4.0.4",
+        "crypto-js": "^4.2.0",
+        "decimal.js": "10.4.3",
+        "discord.js": "^14.13.0",
         "minecraft-data": "^3.48.0",
         "minecraft-protocol": "^1.44.0",
         "mineflayer": "^4.17.0",
         "moment-timezone": "^0.5.44",
         "prismarine-entity": "^2.3.1",
+        "puppeteer": "^22.7.1",
         "readline": "^1.3.0",
         "readline-sync": "^1.4.10",
         "silly-datetime": "^0.1.2",
-        "crypto-js": "^4.2.0",
-        "bignumber.js": "^4.0.4",
-        "discord.js": "^14.13.0",
-        "decimal.js": "10.4.3",
-        "sqlite3": "5.1.7",
-        "axios": "^1.6.8"
+        "sqlite3": "5.1.7"
     }
 }

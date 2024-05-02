@@ -561,6 +561,24 @@ async function get_all_user_data() {
     return rows
 }
 
+async function delete_user_data(player_uuid) {
+    const deleteSql = 'DELETE FROM user WHERE player_uuid = ?';
+
+    try {
+        await new Promise((resolve, reject) => {
+            executeQuery('user_data', deleteSql, [player_uuid], (err) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve();
+                }
+            });
+        });
+    } catch (err) {
+        console.error(err);
+    }
+}
+
 async function get_all_user() {
     let players = []
 
@@ -599,5 +617,6 @@ module.exports = {
     add_player_wallet_dc,
     clear_player_wallet_dc,
     get_all_user_data,
-    set_user_role
+    set_user_role,
+    delete_user_data
 };

@@ -4,6 +4,7 @@ const { process_msg } = require(`${process.cwd()}/utils/process_msg.js`);
 const { mc_error_handler } = require(`${process.cwd()}/error/mc_handler.js`)
 const { chat } = require(`${process.cwd()}/utils/chat.js`);
 const { pay_handler } = require(`${process.cwd()}/utils/pay_handler.js`);
+const { generateUUID } = require(`${process.cwd()}/utils/uuid.js`);
 const moment = require('moment-timezone');
 
 const {
@@ -48,17 +49,21 @@ async function executeCommand(bot, playerid, args) {
                 await writeDailyData(await get_player_uuid(playerid), total_money);
                 
                 const result = await pay_handler(bot, playerid, total_money, 'emerald', false)
+
                 if (result != 'success') {
-                    await chat(bot, `/m ${playerid} ${await process_msg(bot, messages.commands.daily.failed, playerid)}`)
+                    let uuid = generateUUID()
+                    await mc_error_handler(bot, 'general', 'pay', playerid, messages[result], uuid)
+                    await chat(bot, `/m ${playerid} ${(await process_msg(bot, messages.commands.daily.failed, playerid)).replaceAll('%time%', moment(new Date()).tz('Asia/Taipei').format('YYYY-MM-DD HH:mm:ss')).replaceAll('%uuid%', uuid)}`)
                     return;
                 }
+
                 daily_data = await getDailyData(await get_player_uuid(playerid))
-                await chat(bot, `/m ${playerid} ${await process_msg(bot, messages.commands.daily.success.replaceAll('%count%', daily_data['count']).replaceAll('%amount%', daily_data['amount']).replaceAll('%time%', moment(new Date(daily_data['time'])).tz('Asia/Taipei').format('YYYY-MM-DD HH:mm:ss')), playerid)}`)
+                await chat(bot, `/m ${playerid} ${await process_msg(bot, messages.commands.daily.success.replaceAll('%count%', daily_data['count']).replaceAll('%amount%', total_money).replaceAll('%time%', moment(new Date()).tz('Asia/Taipei').format('YYYY-MM-DD HH:mm:ss')).replaceAll('%role%', player_role[0]), playerid)}`)
             }
         } else {
-            await mc_error_handler(bot, 'general', 'no_permission', playerid)
+            await mc_error_handler(bot, 'general', 'not_linked', playerid)
         }
     } else {
-        await mc_error_handler(bot, 'general', 'no_permission', playerid)
+        await mc_error_handler(bot, 'general', 'not_linked', playerid)
     }
 }

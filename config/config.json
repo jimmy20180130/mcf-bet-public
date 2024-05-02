@@ -48,6 +48,24 @@
     "lottery_text": "",
     "facility_text": "",
     "claim_text": "",
+    "advertisement": [
+        {
+            "text": "trade_text",
+            "interval": 605000
+        },
+        {
+            "text": "lottery_text",
+            "interval": 605000
+        },
+        {
+            "text": "facility_text",
+            "interval": 1805000
+        },
+        {
+            "text": "claim_text",
+            "interval": 120000
+        }
+    ],
     "roles": {
         "link_role": "member"
     }

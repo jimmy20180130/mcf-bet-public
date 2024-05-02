@@ -4,12 +4,11 @@ const { mc_error_handler } = require(`${process.cwd()}/error/mc_handler.js`)
 const { process_msg } = require(`${process.cwd()}/utils/process_msg.js`)
 const { pay_handler } = require(`${process.cwd()}/utils/pay_handler.js`)
 const { activateBlock } = require(`${process.cwd()}/utils/better-mineflayer.js`)
-const { write_pay_history, write_errors, get_user_data, add_lottery_ticket } = require(`${process.cwd()}/utils/database.js`)
+const { write_pay_history, write_errors } = require(`${process.cwd()}/utils/database.js`)
 const { get_player_uuid } = require(`${process.cwd()}/utils/get_player_info.js`);
 const { bet_win, bet_lose, error_embed } = require(`${process.cwd()}/discord/embed.js`);
 const Vec3 = require('vec3');
 const Decimal = require('decimal.js');
-const { resolve } = require('path');
 
 let bet_task = [];
 let client = undefined

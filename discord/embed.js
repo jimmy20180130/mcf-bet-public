@@ -49,19 +49,7 @@ async function dc_command_record(field0, field1) {
 
 async function bet_win(field0, field1) {
     const embed = new EmbedBuilder()
-        .setTitle("💵 有人中獎囉")
-        .addFields(
-            {
-                name: "中獎者",
-                value: field0.replaceAll(/([^\\])_/g, '$1\\_'),
-                inline: true
-            },
-            {
-                name: "結果",
-                value: field1,
-                inline: false
-            },
-        )
+        .setTitle("中獎" + "【" + field0.replaceAll(/([^\\])_/g, '$1\\_') + "】" + field1)
         .setColor("#00f597")
         .setFooter({
             text: "Jimmy Bot",
@@ -74,19 +62,7 @@ async function bet_win(field0, field1) {
 
 async function bet_lose(field0, field1) {
     const embed = new EmbedBuilder()
-        .setTitle(" 💴 老闆你賺錢囉")
-        .addFields(
-            {
-                name: "玩家",
-                value: field0.replaceAll(/([^\\])_/g, '$1\\_'),
-                inline: true
-            },
-            {
-                name: "結果",
-                value: field1,
-                inline: false
-            }
-        )
+        .setTitle("未中獎" + "【" + field0.replaceAll(/([^\\])_/g, '$1\\_') + "】" + field1)
         .setColor("#f50000")
         .setFooter({
             text: "Jimmy Bot",
@@ -201,40 +177,6 @@ async function error_embed(field0) {
     return embed;
 }
 
-async function lottery_embed(field0, field1, field2, field3) {
-    const embed = new EmbedBuilder()
-        .setTitle(field0)
-        .addFields(
-            {
-                name: '頭獎',
-                value: field1,
-                inline: false
-            }
-        )
-        .addFields(
-            {
-                name: '二獎',
-                value: field2,
-                inline: false
-            }
-        )
-        .addFields(
-            {
-                name: '三獎',
-                value: field3,
-                inline: false
-            }
-        )
-        .setColor("#f50000")
-        .setFooter({
-            text: "Jimmy Bot",
-            iconURL: "https://cdn.discordapp.com/icons/1173075041030787233/bbf79773eab98fb335edc9282241f9fe.webp?size=1024&format=webp&width=0&height=256",
-        })
-        .setTimestamp();
-
-    return embed;
-}
-
 module.exports = {
     bet_record,
     command_record,
@@ -245,6 +187,5 @@ module.exports = {
     bot_off,
     bot_kicked,
     link_embed,
-    error_embed,
-    lottery_embed
+    error_embed
 }
