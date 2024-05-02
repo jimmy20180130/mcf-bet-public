@@ -156,7 +156,6 @@ module.exports = {
                 break
 
             case '照discord重新整理':
-                //get members from a guild
                 let members = await interaction.guild.members.fetch().then(member => {
                     return member
                 }).catch(err => {

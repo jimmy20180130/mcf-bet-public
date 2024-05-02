@@ -576,8 +576,14 @@ const init_dc = () => {
             }
         }, 60000)
 
+        client.on('error', async (error) => {
+            console.log(error.stack)
+        })
+
+
         client.login(config.discord.bot_token)
     } catch (e) {
+        console.log(e)
         console.log(`[ERROR] Discord 機器人發生錯誤，錯誤如下 ${e.message}`)
         is_on = false;
         closeDB()

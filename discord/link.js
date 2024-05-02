@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { get_pay_history, getPlayerRole, get_user_data, delete_user_data } = require(`${process.cwd()}/utils/database.js`);
 const { validate_code } = require(`${process.cwd()}/utils/link_handler.js`);
 const { get_player_uuid, get_player_name } = require(`${process.cwd()}/utils/get_player_info.js`);
@@ -29,12 +29,14 @@ module.exports = {
 							"zh-CN": "aregre简体中文",
 							"zh-TW": "驗證碼"
 						})
-						.setDescription('您在遊戲中收到的驗證碼'))
-				.setDescriptionLocalizations({
-					"en-US": "the verification code you get in the game",
-					'zh-CN': '目前不支援简体中文',
-					"zh-TW": "您在遊戲中收到的驗證碼"
-				})
+						.setDescription('您在遊戲中收到的驗證碼')
+						.setDescriptionLocalizations({
+							"en-US": "the verification code you get in the game",
+							'zh-CN': '目前不支援简体中文',
+							"zh-TW": "您在遊戲中收到的驗證碼"
+						}
+				)
+			)
 		)
 		.addSubcommand(subcommand =>
 			subcommand
@@ -103,7 +105,7 @@ module.exports = {
 				interaction.editReply({ embeds: [embed], components: [actionRow] })
 
 				const filter = (interaction) => interaction.customId === 'confirm' || interaction.customId === 'cancel';
-				const collector = message.createMessageComponentCollector({ filter, time: 60000 });
+				const collector = interaction.channel.createMessageComponentCollector({ filter, time: 15000 });
 
 				collector.on('collect', async (interaction) => {
 					if (interaction.customId === 'confirm') {
@@ -111,7 +113,7 @@ module.exports = {
 
 						const player_uuid = await get_player_uuid(interaction.member.id);
 						await delete_user_data(player_uuid);
-						
+
 					} else {
 						await interaction.update({ content: '已取消操作', components: [] });
 					}
