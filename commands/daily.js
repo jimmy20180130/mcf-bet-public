@@ -34,7 +34,8 @@ async function executeCommand(bot, playerid, args) {
     if (await getPlayerRole(await get_player_uuid(playerid))) {
         if (await canUseCommand(await get_player_uuid(playerid), args.split(' ')[0].toLowerCase())) {
             let daily_data = await getDailyData(await get_player_uuid(playerid))
-            if (new Date(daily_data['time']).toDateString() === new Date().toDateString()) {
+
+            if (daily_data != 'Not Found' && moment.tz(daily_data['time'], 'Asia/Taipei').isSame(moment(new Date()), 'day')) {
                 await chat(bot, `/m ${playerid} ${await process_msg(bot, messages.commands.daily.already_signed, playerid)}`)
                 return;
             } else {

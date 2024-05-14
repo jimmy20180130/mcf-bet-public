@@ -49,7 +49,7 @@ async function dc_command_record(field0, field1) {
 
 async function bet_win(field0, field1) {
     const embed = new EmbedBuilder()
-        .setTitle("中獎" + "【" + field0.replaceAll(/([^\\])_/g, '$1\\_') + "】" + field1)
+        .setDescription("中獎" + "【" + field0.replaceAll(/([^\\])_/g, '$1\\_') + "】" + field1)
         .setColor("#00f597")
         .setFooter({
             text: "Jimmy Bot",
@@ -62,7 +62,7 @@ async function bet_win(field0, field1) {
 
 async function bet_lose(field0, field1) {
     const embed = new EmbedBuilder()
-        .setTitle("未中獎" + "【" + field0.replaceAll(/([^\\])_/g, '$1\\_') + "】" + field1)
+        .setDescription("未中獎" + "【" + field0.replaceAll(/([^\\])_/g, '$1\\_') + "】" + field1)
         .setColor("#f50000")
         .setFooter({
             text: "Jimmy Bot",

@@ -1,5 +1,5 @@
 const fs = require('fs');
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
 const { add_user_role, get_user_data_from_dc, remove_user_role,  } = require(`${process.cwd()}/utils/database.js`); 
 const { orderStrings } = require(`${process.cwd()}/utils/permissions.js`);
 
@@ -7,6 +7,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('身份組')
         .setDescription('身份組相關')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addSubcommand(subcommand =>
             subcommand
                 .setName('照資料庫重新整理')
@@ -182,6 +183,8 @@ module.exports = {
                         }
                     }
 
+                    if (player_data.discord_id && config.roles.link_role == 'default') discord_user_roles.push('default')
+
                     if (discord_user_roles.length == 0) {
                         discord_user_roles.push('none')
                     }
@@ -296,6 +299,7 @@ module.exports = {
                 await interaction.editReply('已刪除身份組 <@&' + dc_role.id + '>')
 
                 break
+
         }
 
     }

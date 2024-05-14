@@ -78,6 +78,8 @@ module.exports = {
 					const channel = await interaction.client.channels.fetch(config.discord_channels.link)
 					await channel.send({ embeds: [embed] });
 
+					if (config.link_role == 'default') return
+
 					const role = await interaction.guild.roles.fetch(roles[config.roles.link_role].discord_id);
 					await interaction.member.roles.add(role);
 				} else if (verify_success == 'already_linked') {

@@ -9,7 +9,7 @@ const { process_msg } = require(`./utils/process_msg.js`);
 const { mc_error_handler } = require(`./error/mc_handler.js`)
 const { start_msg, stop_msg } = require(`./utils/chat.js`);
 const { add_msg, discord_console, clear_last_msg, discord_console_2 } = require(`./discord/log.js`);
-const { Client, GatewayIntentBits, Collection, Events, Partials, REST, Routes } = require('discord.js');
+const { Client, GatewayIntentBits, Collection, Events, Partials, REST, Routes, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { check_codes } = require(`./utils/link_handler.js`);
 const { command_records, dc_command_records } = require(`./discord/command_record.js`);
 const { bot_on, bot_off, bot_kicked } = require(`./discord/embed.js`);
@@ -34,6 +34,7 @@ const commands = {}
 let is_on_timeout;
 let auto_update_role;
 let intervals = [];
+let auto_ckeck_giveaway;
 
 let bot;
 let client;
@@ -188,21 +189,17 @@ const init_bot = async () => {
 
                 await add_bet_task(bot, playerid, amount, 'coin');
             }
-        } else if (jsonMsg.toString().startsWith(`[系統] `) && jsonMsg.toString().toLowerCase().includes(`想要你傳送到 該玩家 的位置`)) {
+        } else if (jsonMsg.toString().startsWith(`[系統] `) && jsonMsg.toString().toLowerCase().includes(`想要你傳送到 該玩家 的位置`) || jsonMsg.toString().toLowerCase().includes(`想要傳送到 你 的位置`)) {
+            //將字串以空格切開，例如 '1 2 3' => [1, 2, 3]
             let msg = jsonMsg.toString().split(" ")
+            //取得玩家 id (訊息切開的第一個，例如 [1, 2, 3] => 2)
             let playerid = msg[1]
-            if (playerid == 'XiaoXi_YT') { 
-                await chat(bot, `/tok`)
+            //判斷玩家是否在白名單內，是的話就說 /tok ，否的話 /tno
+            
+            if (config.roles.tpa.includes(playerid) || config .roles.tpa.includes(playerid.toLowerCase())) {
+                await chat(bot, '/tok')
             } else {
-                await chat(bot, `/tno`)
-            }
-        } else if (jsonMsg.toString().startsWith(`[系統] `) && jsonMsg.toString().toLowerCase().includes(`想要傳送到 你 的位置`)) {
-            let msg = jsonMsg.toString().split(" ")
-            let playerid = msg[1]
-            if (playerid == 'XiaoXi_YT') { 
-                await chat(bot, `/tok`)
-            } else {
-                await chat(bot, `/tno`)
+                await chat(bot, '/tno')
             }
         }
     });
@@ -224,18 +221,7 @@ const init_bot = async () => {
             if (config.claim_text && config.claim_text != "" && textMessage.includes(config.claim_text.replaceAll(/&[0-9a-f]/gi, ''))) return true
 
             if (!config.console.system) {
-                if (/^\[系統\] 新玩家|系統\] 吉日|系統\] 凶日|系統\] .*凶日|系統\] .*吉日/.test(textMessage)) return true;
-                if (/^ \> /.test(textMessage)) return true;
-                if (/^\[系統\] .*提供了 小幫手提示/.test(textMessage)) return true;
-                if (/^\[系統\] 您的訊息沒有玩家看見/.test(textMessage)) return true;
-                if (/^┌─回覆自/.test(textMessage)) return true;
-                if (/^.* (has made the advancement|has completed the challenge|has reached the goal)/.test(textMessage)) return true;
-                if (/players sleeping$/.test(textMessage)) return true;
-                if (/目標生命 \: ❤❤❤❤❤❤❤❤❤❤ \/ ([\S]+)/g.test(textMessage)) return true;
-                if (/^\[\?\]/.test(textMessage)) return true;
-                if (/^\=\=/.test(textMessage)) return true;
-                if (/^\[>\]/.test(textMessage)) return true;
-                if (/\[~\]/.test(textMessage)) return true;
+                if (/^(?:\[系統\] (?:新玩家|吉日|凶日|.*凶日|.*吉日)|\>|\[系統\] .*提供了 小幫手提示|\[系統\] 您的訊息沒有玩家看見|┌─回覆自|.* (?:has made the advancement|has completed the challenge|has reached the goal)|players sleeping|目標生命 \: ❤❤❤❤❤❤❤❤❤❤ \/ ([\S]+)|^\[\?]|^\=\=|\[>\]|\[~\])/.test(textMessage)) return true
             }
 
             return false;
@@ -541,6 +527,142 @@ const init_dc = () => {
             }
         });
 
+        client.on(Events.InteractionCreate, async interaction => {
+            if (!interaction.isButton()) return;
+            if (interaction.customId != 'giveaway_join' && interaction.customId != 'giveaway_total' && !interaction.customId.startsWith('giveaway_leave')) return;
+
+            if (interaction.customId === 'giveaway_join') {
+                let giveaways = JSON.parse(fs.readFileSync(`${process.cwd()}/data/giveaways.json`, 'utf-8'));
+                let giveaway = giveaways[Object.keys(giveaways).filter(giveaway => giveaways[giveaway].message_id == interaction.message.id)[0]]
+
+                if (!giveaway || giveaway.length == 0) {
+                    await interaction.reply({ content: '此抽獎活動不存在!', ephemeral: true });
+                    return;
+                }
+
+                const leave = new ButtonBuilder()
+                    .setCustomId('giveaway_leave' + giveaway.message_id)
+                    .setLabel('離開抽獎')
+                    .setStyle(ButtonStyle.Danger)
+                    .setDisabled(false)
+
+                const leave_actionRow = new ActionRowBuilder()
+                    .addComponents(leave)
+
+                if (giveaway.entries.includes(interaction.user.id)) {
+                    await interaction.reply({ content: '您已在參與抽獎人員的名單中!', ephemeral: true, components: [leave_actionRow] });
+                    return;
+                }
+
+                if (giveaway.excluded_role && interaction.member.roles.cache.has(giveaway.excluded_role) || giveaway.include_role && !interaction.member.roles.cache.has(giveaway.include_role)) {
+                    await interaction.reply({ content: '您無參與此次抽獎的權限!', ephemeral: true });
+                    return;
+                }
+
+                giveaway.entries.push(interaction.user.id);
+
+                fs.writeFileSync(`${process.cwd()}/data/giveaways.json`, JSON.stringify(giveaways, null, 4));
+
+                interaction.message.components[0].components[1].data.label = `參加人數 ${giveaway.entries.length}`
+
+                await interaction.update({ components: [new ActionRowBuilder().addComponents(interaction.message.components[0].components[0]).addComponents(interaction.message.components[0].components[1])] })
+
+                await interaction.followUp({ content: `您已成功參與抽獎`, ephemeral: true, components: [leave_actionRow] });
+
+            } else if (interaction.customId.startsWith('giveaway_leave')) {
+                let message_id = interaction.customId.replace('giveaway_leave', '')
+                let giveaways = JSON.parse(fs.readFileSync(`${process.cwd()}/data/giveaways.json`, 'utf-8'));
+                let giveaway = giveaways[Object.keys(giveaways).filter(giveaway => giveaways[giveaway].message_id == message_id)[0]]
+
+                interaction.message.components[0].components[0].data.disabled = true
+                await interaction.update({ components: [new ActionRowBuilder().addComponents(interaction.message.components[0].components[0])] });
+
+                if (!giveaway || giveaway.length == 0) {
+                    await interaction.reply({ content: '此抽獎活動不存在!', ephemeral: true });
+                    return;
+                }
+
+                if (!giveaway.entries.includes(interaction.user.id)) {
+                    if (interaction.replied) {
+                        await interaction.followUp({ content: '您並未在參與抽獎人員的名單中!', ephemeral: true, components: [] });
+                    } else {
+                        await interaction.reply({ content: '您並未在參與抽獎人員的名單中!', ephemeral: true, components: [] });
+                    }
+                    return;
+                }
+
+                giveaway.entries = giveaway.entries.filter(entry => entry != interaction.user.id);
+
+                fs.writeFileSync(`${process.cwd()}/data/giveaways.json`, JSON.stringify(giveaways, null, 4));
+
+                if (interaction.replied) {
+                    await interaction.followUp({ content: `您已成功離開抽獎`, ephemeral: true, components: [] });
+                } else {
+                    await interaction.reply({ content: `您已成功離開抽獎`, ephemeral: true, components: [] });
+                }
+
+                // challel
+                let channel = await client.channels.cache.get(giveaway.channel)
+                let message = await channel.messages.fetch(giveaway.message_id)
+
+                message.components[0].components[1].data.label = `參加人數 ${giveaway.entries.length}`
+
+                await message.edit({ components: [new ActionRowBuilder().addComponents(message.components[0].components[0]).addComponents(message.components[0].components[1])] })
+            }
+        })
+
+        auto_ckeck_giveaway = setInterval(async () => {
+            let giveaways = JSON.parse(fs.readFileSync(`${process.cwd()}/data/giveaways.json`, 'utf-8'));
+            
+            for (const giveaway of Object.keys(giveaways)) {
+                if (new Date() / 1000 > giveaways[giveaway].duration + giveaways[giveaway].start_time) {
+                    let giveaway_copy = giveaways[giveaway] 
+                    delete giveaways[giveaway]
+                    fs.writeFileSync(`${process.cwd()}/data/giveaways.json`, JSON.stringify(giveaways, null, 4));
+
+                    let entries = giveaway_copy.entries
+                    let winner = entries[Math.floor(Math.random() * entries.length)]
+                    let channel = await client.channels.fetch(giveaway_copy.channel)
+                    let message = await channel.messages.fetch(giveaway_copy.message_id)
+                    let prize = giveaway_copy.prize
+                    let user = await client.users.fetch(winner)
+
+                    message.components[0].components[0].data.disabled = true
+
+                    await message.edit({ components: [new ActionRowBuilder().addComponents(message.components[0].components[0]).addComponents(message.components[0].components[1])] })
+                    
+                    if (!winner) {
+                        await message.reply({ content: '抽獎已結束，無人中獎' })
+                    } else {
+                        await message.reply({ content: `抽獎已結束，獲獎者為 <@${winner}>，獎品已自動新增至您的錢包中，私訊 ${bot.username} 領錢 即可領取` })
+
+                        const { add_player_wallet_dc, get_player_wallet_discord } = require('./utils/database.js')
+
+                        await add_player_wallet_dc(winner, Number(prize))
+                        await new Promise(resolve => setTimeout(resolve, 1000))
+                        wallet = await get_player_wallet_discord(winner)
+
+                        switch (wallet) {
+                            case 'error':
+                                await channel.send('新增錢至錢包時發生錯誤')
+                                break
+                            case 'Not Found':
+                                await channel.send(`該玩家無綁定資料`)
+                                break
+                            default:
+                                await channel.send(`已成功新增玩家 <@${winner}> 的錢，如未收到，請聯絡管理員`)
+
+                                const dm = await user.createDM()
+
+                                try {
+                                    await dm.send(`管理員已新增 ${Number(prize)} 元至您的錢包中，您目前有 ${wallet} 元，在遊戲中私訊我 "領錢" 即可領取。`)
+                                } catch (error) { }
+                        }
+                    }
+                }
+            }
+        }, 700)
+
         auto_update_role = setInterval(async () => {
             if (client) {
                 const guild = await client.guilds.cache.get(config.discord.guild_id);
@@ -558,7 +680,7 @@ const init_dc = () => {
                     if (player_data == undefined || player_data == 'Not Found' || player_data == 'error' || player_data.roles == undefined) continue
                     const player_role = orderStrings(player_data.roles, roles)
                     
-                    if (!player_data.discord_id && player_role.includes('none')) continue
+                    if (!player_data.discord_id || player_role.includes('none') || player_role == '') continue
 
                     let discord_user_roles = []
 
@@ -567,6 +689,8 @@ const init_dc = () => {
                             discord_user_roles.push(config_role)
                         }
                     }
+
+                    if (player_data.discord_id && config.roles.link_role == 'default') discord_user_roles.push('default')
 
                     if (discord_user_roles.length == 0) {
                         discord_user_roles.push('none')

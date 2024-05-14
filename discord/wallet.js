@@ -5,12 +5,13 @@ const {
     clear_player_wallet_dc
 } = require(`${process.cwd()}/utils/database.js`);
 
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('錢包')
         .setDescription('錢包設定')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addSubcommand(subcommand =>
             subcommand
                 .setName('查詢餘額')

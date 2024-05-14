@@ -1,5 +1,5 @@
 {
-    "key": "key",
+    "key": "",
     "bot_args": {
         "host": "sg.mcfallout.net",
         "port": "25565",
@@ -63,6 +63,7 @@
         }
     ],
     "roles": {
-        "link_role": "member"
+        "link_role": "member",
+        "tpa": []
     }
 }
