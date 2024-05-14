@@ -36,7 +36,7 @@ module.exports = {
                 .setDescription('身分組設定')
                 .addSubcommand(subcommand =>
                     subcommand
-                        .setName('建立')
+                        .setName('設定')
                         .setDescription('建立身份組')
                         .addIntegerOption(option =>
                             option
