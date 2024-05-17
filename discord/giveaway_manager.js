@@ -23,7 +23,8 @@ async function send_giveaway(client, giveaway) {
     //     role: interaction.options.getRole("include_role") || null,
     //     excluded_role: interaction.options.getRole("excluded_role") || null,
     //     description: interaction.options.getString("description") || null,
-    //     entries: []
+    //     entries: [],
+    //     ended: false
     // }
 
     let description = giveaway.description ? `## 備註     👉 ${giveaway.description}\n` : '';
@@ -53,7 +54,6 @@ async function send_giveaway(client, giveaway) {
         .setCustomId('giveaway_total')
         .setLabel('參加人數 0')
         .setStyle(ButtonStyle.Secondary)
-        .setDisabled(true);
 
     const actionRow = new ActionRowBuilder()
         .addComponents(join)

@@ -64,6 +64,7 @@
     ],
     "roles": {
         "link_role": "member",
+        "link_role_dc": "",
         "tpa": []
     }
 }

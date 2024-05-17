@@ -16,7 +16,6 @@ function orderStrings(strings, data) {
 }
 
 async function canUseCommand(player_uuid, command) {
-    let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf-8'))
     let roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf8'))
     let commands = JSON.parse(fs.readFileSync(`${process.cwd()}/config/commands.json`, 'utf-8'))
     let playerRole = await getPlayerRole(player_uuid);
@@ -27,49 +26,58 @@ async function canUseCommand(player_uuid, command) {
 
     playerRole = orderStrings(playerRole, roles);
 
-    let isReversed = roles[playerRole[0]]['reverse_blacklist'];
-    const inputArray = command.split(' ');
-    let currentCommand = commands;
-    let final_command = []
-    for (const word of inputArray) {
-        let matchingName = Object.keys(currentCommand).find((key) => {
-            const names = currentCommand[key].name;
-            return names && names.includes(word);
-        });
-        final_command.push(matchingName);
-        if (inputArray.length > 1 && matchingName && currentCommand[matchingName].sub_commands) {
-            currentCommand = currentCommand[matchingName].sub_commands;
-            matchingName = Object.keys(currentCommand).find((key) => {
-                const names = currentCommand[key].name;
-                return names && names.includes(inputArray[inputArray.indexOf(word)+1]);
-            });
-        } else if (matchingName) {
-            const commandName = final_command.join(' ');
-            if (isReversed) {
-                if (
-                    roles[playerRole[0]].disallowed_commands === undefined ||
-                    !roles[playerRole[0]].disallowed_commands.includes(commandName)
-                ) {
-                    return false;
-                } else {
-                    return true;
-                }
+    let command_can_use = [];
+    let command_cannot_use = [];
+    let full_command = Object.keys(commands);
+
+    for (const role of playerRole) {
+        try {
+            if (roles[role].reverse_blacklist == false) {
+                command_cannot_use.push(roles[role]['disallowed_commands'])
+                command_can_use.push(full_command.filter((command) => !roles[role]['disallowed_commands'].includes(command)))
+
             } else {
-                if (
-                    roles[playerRole[0]].disallowed_commands === undefined ||
-                    !roles[playerRole[0]].disallowed_commands.includes(commandName)
-                ) {
-                    return true;
-                } else {
-                    return false;
-                }
+                command_can_use.push(roles[role]['disallowed_commands'])
+                command_cannot_use.push(full_command.filter((command) => !roles[role]['disallowed_commands'].includes(command)))
             }
-        } else {
-            return false;
+        } catch (e) {
+            continue;
         }
     }
 
-    return true;
+    command_can_use = [...new Set(command_can_use.flat())];
+    command_cannot_use = [...new Set(command_cannot_use.flat())];
+
+    command_cannot_use = command_cannot_use.filter((command) => {
+        return !command_can_use.includes(command);
+    })
+
+    let final_command;
+
+    if (!Object.keys(commands).includes(command)) {
+        for (const cmd of Object.keys(commands)) {
+            if (commands[cmd].name.includes(command)) {
+                final_command = cmd;
+                break;
+            }
+        }
+    } else {
+        final_command = command;
+    }
+
+    console.log(final_command)
+    console.log(command_can_use)
+    console.log(command_cannot_use)
+
+    if (!final_command) {
+        return false;
+    } else if (command_cannot_use.includes(final_command)) {
+        return false;
+    } else if (command_can_use.includes(final_command)) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 module.exports = {

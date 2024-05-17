@@ -200,7 +200,7 @@ module.exports = {
                 roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
 
                 for (const role of Object.keys(roles)) {
-                    if (roles[role].discord_id == dc_role.id) {
+                    if (role == dc_role.id) {
                         //edit role
                         if (daily_reward) {
                             roles[role].daily = daily_reward
@@ -239,7 +239,7 @@ module.exports = {
                 // get role name using id
                 role_name = dc_role.name
                 
-                roles[role_name] = {
+                roles[dc_role.id] = {
                     name: role_name,
                     daily: daily_reward,
                     discord_id: dc_role.id,
@@ -260,8 +260,8 @@ module.exports = {
                 }
 
                 if (is_admin) {
-                    roles[role_name].disallowed_commands = []
-                    roles[role_name].reverse_blacklist = false
+                    roles[dc_role.id].disallowed_commands = []
+                    roles[dc_role.id].reverse_blacklist = false
                 }
 
                 fs.writeFileSync(`${process.cwd()}/config/roles.json`, JSON.stringify(roles, null, 4));
@@ -274,14 +274,14 @@ module.exports = {
                 roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
 
                 //get role_name using discord_role_id from roles
-                role_name = Object.keys(roles).find(key => roles[key].discord_id === dc_role.id)
+                role_name = dc_role.id
 
                 if (!role_name || !roles[role_name]) {
                     await interaction.editReply('找不到身份組 ' + '<@&' + dc_role.id + '>')
                     return
                 }
 
-                let response_string = `名稱: ${role_name}\n每日簽到獎勵: ${roles[role_name].daily} 元\n連結之身份組: <@&${roles[role_name].discord_id}>\n查自己的流水: ${roles[role_name].record_settings.me}\n查別人的流水: ${roles[role_name].record_settings.others}\n查盈虧: ${roles[role_name].record_settings.advanced}\n管理員: ${roles[role_name].disallowed_commands.length == 0 ? '是' : '否'}`
+                let response_string = `名稱: ${roles[role_name].name}\n每日簽到獎勵: ${roles[role_name].daily} 元\n連結之身份組: <@&${roles[role_name].discord_id}>\n查自己的流水: ${roles[role_name].record_settings.me}\n查別人的流水: ${roles[role_name].record_settings.others}\n查盈虧: ${roles[role_name].record_settings.advanced}\n管理員: ${roles[role_name].disallowed_commands.length == 0 ? '是' : '否'}`
 
                 await interaction.editReply('身份組 <@&' + dc_role.id + '> 的資料為\n' + response_string)
 
@@ -290,9 +290,7 @@ module.exports = {
             case '刪除':
                 roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
 
-                role_name = Object.keys(roles).find(key => roles[key].discord_id == dc_role.id)
-
-                delete roles[role_name]
+                delete roles[dc_role.id]
 
                 fs.writeFileSync(`${process.cwd()}/config/roles.json`, JSON.stringify(roles, null, 4));
 

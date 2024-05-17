@@ -24,18 +24,7 @@
             "link",
             "link_dc"
         ],
-        "description": "&7[&6%command_name% &7-> &b連結帳號&7]",
-        "sub_commands": {
-            "user": {
-                "display_name": "&6user&r",
-                "name": [
-                    "使用者",
-                    "user",
-                    "member"
-                ],
-                "description": "&7[&6%command_name% &7-> &b連結特定使用者帳號&7]"
-            }
-        }
+        "description": "&7[&6%command_name% &7-> &b連結帳號&7]"
     },
     "play": {
         "display_name": "&6play&r",

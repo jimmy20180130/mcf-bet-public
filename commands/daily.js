@@ -35,6 +35,8 @@ async function executeCommand(bot, playerid, args) {
         if (await canUseCommand(await get_player_uuid(playerid), args.split(' ')[0].toLowerCase())) {
             let daily_data = await getDailyData(await get_player_uuid(playerid))
 
+            console.log(daily_data)
+
             if (daily_data != 'Not Found' && moment.tz(daily_data['time'], 'Asia/Taipei').isSame(moment(new Date()), 'day')) {
                 await chat(bot, `/m ${playerid} ${await process_msg(bot, messages.commands.daily.already_signed, playerid)}`)
                 return;
@@ -45,6 +47,11 @@ async function executeCommand(bot, playerid, args) {
                 for (const role of player_role) {
                     if (roles[role] === undefined) continue;
                     total_money += roles[role].daily
+                }
+                
+                if (total_money == 0) {
+                    await chat(bot, `/m ${playerid} &c&l您目前無簽到金額可領取，如有疑問請詢問場地管理員`)
+                    return
                 }
 
                 await writeDailyData(await get_player_uuid(playerid), total_money);
@@ -59,7 +66,8 @@ async function executeCommand(bot, playerid, args) {
                 }
 
                 daily_data = await getDailyData(await get_player_uuid(playerid))
-                await chat(bot, `/m ${playerid} ${await process_msg(bot, messages.commands.daily.success.replaceAll('%count%', daily_data['count']).replaceAll('%amount%', total_money).replaceAll('%time%', moment(new Date()).tz('Asia/Taipei').format('YYYY-MM-DD HH:mm:ss')).replaceAll('%role%', player_role[0]), playerid)}`)
+                await chat(bot, `/m ${playerid} ${await process_msg(bot, messages.commands.daily.success.replaceAll('%count%', daily_data['count']).replaceAll('%amount%', total_money).replaceAll('%time%', moment(new Date()).tz('Asia/Taipei').format('YYYY-MM-DD HH:mm:ss')).replaceAll('%role%', roles[player_role[0]].name), playerid)}`)
+                await chat(bot, `&b&l${playerid} &6&l領取了 ${roles[player_role[0]].name} 的每日簽到 &a&l${total_money} &6&l元`)
             }
         } else {
             await mc_error_handler(bot, 'general', 'not_linked', playerid)

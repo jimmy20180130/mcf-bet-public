@@ -596,6 +596,26 @@ async function get_all_user() {
     })
 }
 
+async function remove_user_discord_id(discord_id) {
+    // set user's discord to 0
+
+    const updateSql = 'UPDATE user SET discord_id = 0 WHERE discord_id = ?';
+
+    try {
+        await new Promise((resolve, reject) => {
+            executeQuery('user_data', updateSql, [discord_id], (err) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve();
+                }
+            });
+        });
+    } catch (err) {
+        console.error(err);
+    }
+}
+
 module.exports = {
     getPlayerRole,
     getDailyData,
@@ -618,5 +638,6 @@ module.exports = {
     clear_player_wallet_dc,
     get_all_user_data,
     set_user_role,
-    delete_user_data
+    delete_user_data,
+    remove_user_discord_id
 };

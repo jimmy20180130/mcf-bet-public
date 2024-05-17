@@ -13,5 +13,48 @@
             "help",
             "wallet"
         ]
+    },
+    "id": {
+        "name": "",
+        "daily": 10,
+        "record_settings": {
+            "advanced": false,
+            "others": false,
+            "me": true
+        },
+        "reverse_blacklist": true,
+        "disallowed_commands": [
+            "link",
+            "help",
+            "wallet"
+        ]
+    },
+    "admin": {
+        "name": "管理員",
+        "daily": 50,
+        "record_settings": {
+            "advanced": true,
+            "others": true,
+            "me": true
+        },
+        "reverse_blacklist": false,
+        "disallowed_commands": [
+            "delete",
+            "modify"
+        ]
+    },
+    "user": {
+        "name": "用戶",
+        "daily": 300,
+        "record_settings": {
+            "advanced": false,
+            "others": true,
+            "me": true
+        },
+        "reverse_blacklist": true,
+        "disallowed_commands": [
+            "link",
+            "help"
+        ]
     }
 }

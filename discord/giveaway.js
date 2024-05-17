@@ -191,7 +191,7 @@ module.exports = {
                         .setNameLocalizations({
                             "en-US": "winners",
                             "zh-CN": "winners",
-                            "zh-TW": "贏家"
+                            "zh-TW": "得獎人"
                         })
                         .setDescription('The number of winners for the giveaway')
                 )
@@ -271,7 +271,8 @@ module.exports = {
                     require_role: interaction.options.getRole("include_role") || null,
                     excluded_role: interaction.options.getRole("excluded_role") || null,
                     description: interaction.options.getString("description") || null,
-                    entries: []
+                    entries: [],
+                    ended: false
                 }
 
                 interaction.editReply("Giveaway created successfully");
