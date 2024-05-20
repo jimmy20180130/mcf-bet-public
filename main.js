@@ -729,6 +729,8 @@ const init_dc = () => {
 
             fs.writeFileSync(`${process.cwd()}/config/roles.json`, JSON.stringify(roles, null, 4));
 
+            if (config.roles.link_role_dc == '' || !config.roles.link_role_dc) return
+
             let link_role_name = await client.guilds.cache.get(config.discord.guild_id).roles.cache.get(config.roles.link_role_dc).name
 
             if (link_role_name != config.roles.link_role) {

@@ -53,6 +53,7 @@
             "not_linked": "&c執行此指令需綁定您的帳號，如要綁定，請私訊我 link ，以進行綁定"
         },
         "bet": {
+            "no_money": "錯誤: 機器人沒錢了",
             "timeout": "錯誤: 下注超時",
             "no_permission": "錯誤: 沒有足夠的權限",
             "redstone_not_found": "錯誤: 找不到紅石粉",

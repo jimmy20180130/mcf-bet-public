@@ -26,6 +26,13 @@ async function executeCommand(bot, playerid, args) {
     
     if (await getPlayerRole(await get_player_uuid(playerid))) {
         if (await canUseCommand(await get_player_uuid(playerid), args.split(' ')[0])) {
+            let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
+            
+            if (config.roles.link_role_dc == '' || !config.roles.link_role_dc) {
+                await chat(bot, `/m ${playerid} &c&l目前綁定功能尚未開放，請聯絡管理員。`)
+                return
+            }
+
             const code = generateVerificationCode()
             await add_code(code, await get_player_uuid(playerid))
             await chat(bot, await process_msg(bot, messages.commands.link.start_link.replaceAll('%code%', code), playerid))
