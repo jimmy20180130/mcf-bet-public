@@ -758,6 +758,8 @@ const init_dc = () => {
             }
 
             if (client) {
+                if (config.discord.guild_id == '' || !config.discord.guild_id) return
+                
                 const guild = await client.guilds.cache.get(config.discord.guild_id);
                 //get members from a guild
                 const members = await guild.members.fetch().then(member => {
