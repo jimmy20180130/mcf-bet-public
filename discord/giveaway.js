@@ -253,12 +253,10 @@ module.exports = {
 
         let message_id = interaction.options.getString("message_id");
         let channel = interaction.channel;
-
         let message = await channel.messages.fetch(message_id);
 
         switch (subcommand) {
             case "start":
-                //create a giveaway
 
                 let giveaway = {
                     message_id: null,

@@ -580,8 +580,6 @@ async function delete_user_data(player_uuid) {
 }
 
 async function get_all_user() {
-    let players = []
-
     let rows = await new Promise(resolve => {
         executeQuery('pay_history', 'SELECT player_id FROM pay_history', [], (err, row) => {
             if (err) {
@@ -594,6 +592,8 @@ async function get_all_user() {
             }
         })
     })
+
+    return rows
 }
 
 async function remove_user_discord_id(discord_id) {
@@ -639,5 +639,6 @@ module.exports = {
     get_all_user_data,
     set_user_role,
     delete_user_data,
-    remove_user_discord_id
+    remove_user_discord_id,
+    get_all_user
 };

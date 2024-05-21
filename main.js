@@ -13,7 +13,7 @@ const { Client, GatewayIntentBits, Collection, Events, Partials, REST, Routes, A
 const { check_codes } = require(`./utils/link_handler.js`);
 const { command_records, dc_command_records } = require(`./discord/command_record.js`);
 const { bot_on, bot_off, bot_kicked } = require(`./discord/embed.js`);
-const { get_user_data_from_dc, remove_user_role, add_user_role, getPlayerRole, set_user_role, remove_user_discord_id, get_all_user_data } = require(`./utils/database.js`);
+const { get_user_data_from_dc, remove_user_role, add_user_role, getPlayerRole, set_user_role, remove_user_discord_id, get_all_user_data, get_all_user } = require(`./utils/database.js`);
 const { orderStrings, canUseCommand } = require(`./utils/permissions.js`);
 const { check_token } = require(`./auth/auth.js`);
 const moment = require('moment-timezone');
@@ -625,6 +625,48 @@ const init_dc = () => {
                 await message.edit({ components: [new ActionRowBuilder().addComponents(message.components[0].components[0]).addComponents(message.components[0].components[1])] })
             } else if (interaction.customId.startsWith('giveaway_total')) {}
         })
+
+        //auto complete
+        client.on(Events.InteractionCreate, async interaction => {
+            if (!interaction.isAutocomplete()) return
+
+            switch (interaction.commandName) {
+                case 'record':
+                    const players = await get_all_user()
+
+                    if (players == 'Not Found' || players == 'error' || players == undefined) {
+                        await interaction.reply({ content: '找不到玩家資料', ephemeral: true })
+                        return
+                    }
+
+                    let focused_value = interaction.options.getFocused()
+                    let result = players.filter(player => player.startsWith(focused_value))
+                    let results = result.map(player => {
+                        return {
+                            name: player,
+                            value: player
+                        }
+                    })
+
+                    interaction.respond(results.slice(0, 25)).catch(() => {})
+                    break
+
+                case '設定':
+                    const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
+
+                    focused_value = interaction.options.getFocused()
+                    result = config.advertisement.filter(ad => ad.text.startsWith(focused_value))
+                    results = result.map(ad => {
+                        return {
+                            name: ad.text.slice(0, 25),
+                            value: ad.text.slice(0, 25)
+                        }
+                    })
+
+                    interaction.respond(results.slice(0, 25)).catch(() => {})
+                    break
+            }
+        })  
 
         auto_ckeck_giveaway = setInterval(async () => {
             let giveaways = JSON.parse(fs.readFileSync(`${process.cwd()}/data/giveaways.json`, 'utf-8'));
