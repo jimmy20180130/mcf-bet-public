@@ -630,9 +630,9 @@ const init_dc = () => {
         client.on(Events.InteractionCreate, async interaction => {
             if (!interaction.isAutocomplete()) return
 
-            let focused_value
-            let result
-            let results
+            let focused_value = ''
+            let result = []
+            let results = []
 
             switch (interaction.commandName) {
                 case 'record':
