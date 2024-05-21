@@ -638,10 +638,10 @@ const init_dc = () => {
                 case 'record':
                     try {
                         const players = await get_all_user()
-                        console.log(players)
+                        let roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf8'));
 
                         if (players == 'Not Found' || players == 'error' || players == undefined) {
-                            await interaction.respond({ name: '找不到玩家資料', value: '找不到玩家資料' })
+                            await interaction.respond([{ name: '找不到玩家資料', value: '找不到玩家資料' }])
                             return
                         }
 
@@ -654,11 +654,19 @@ const init_dc = () => {
                             }
                         })
 
-                        interaction.respond(results.slice(0, 25)).catch(() => {})
+                        if (roles[(await get_user_data_from_dc(interaction.member.id))[0].roles.split(', ')[0]].record_settings.others == true) {
+                            results.push({
+                                name: '所有人',
+                                value: '所有人'
+                            })
+                        }
+
+                        interaction.respond(results.slice(0, 25)).catch((e) => {console.log(e)})
                     } catch (e) {
-                        interaction.respond({ name: '找不到玩家資料', value: '找不到玩家資料' }).catch(() => {})
+                        console.log(e)
+                        interaction.respond([{ name: '查詢玩家資料時發生錯誤', value: '查詢玩家資料時發生錯誤' }]).catch(() => {})
                     }
-                    
+
                     break
 
                 case '設定':
