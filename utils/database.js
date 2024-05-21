@@ -581,7 +581,7 @@ async function delete_user_data(player_uuid) {
 
 async function get_all_user() {
     let rows = await new Promise(resolve => {
-        executeQuery('pay_history', 'SELECT player_id FROM pay_history', [], (err, row) => {
+        executeQuery('user_data', 'SELECT player_id FROM user_data', [], (err, row) => {
             if (err) {
                 console.error(err);
                 resolve('error');
