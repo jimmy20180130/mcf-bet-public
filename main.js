@@ -645,6 +645,13 @@ const init_dc = () => {
                             return
                         }
 
+                        if (roles[(await get_user_data_from_dc(interaction.member.id))[0].roles.split(', ')[0]].record_settings.others == true) {
+                            results.push({
+                                name: '所有人',
+                                value: '所有人'
+                            })
+                        }
+
                         focused_value = interaction.options.getFocused()
                         result = players.filter(player => player.startsWith(focused_value))
                         results = result.map(player => {
@@ -653,13 +660,6 @@ const init_dc = () => {
                                 value: player
                             }
                         })
-
-                        if (roles[(await get_user_data_from_dc(interaction.member.id))[0].roles.split(', ')[0]].record_settings.others == true) {
-                            results.push({
-                                name: '所有人',
-                                value: '所有人'
-                            })
-                        }
 
                         interaction.respond(results.slice(0, 25)).catch((e) => {console.log(e)})
                     } catch (e) {
