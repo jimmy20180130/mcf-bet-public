@@ -636,23 +636,29 @@ const init_dc = () => {
 
             switch (interaction.commandName) {
                 case 'record':
-                    const players = await get_all_user()
+                    try {
+                        const players = await get_all_user()
+                        console.log(players)
 
-                    if (players == 'Not Found' || players == 'error' || players == undefined) {
-                        await interaction.reply({ content: '找不到玩家資料', ephemeral: true })
-                        return
-                    }
-
-                    focused_value = interaction.options.getFocused()
-                    result = players.filter(player => player.startsWith(focused_value))
-                    results = result.map(player => {
-                        return {
-                            name: player,
-                            value: player
+                        if (players == 'Not Found' || players == 'error' || players == undefined) {
+                            await interaction.respond({ name: '找不到玩家資料', value: '找不到玩家資料' })
+                            return
                         }
-                    })
 
-                    interaction.respond(results.slice(0, 25)).catch(() => {})
+                        focused_value = interaction.options.getFocused()
+                        result = players.filter(player => player.startsWith(focused_value))
+                        results = result.map(player => {
+                            return {
+                                name: player,
+                                value: player
+                            }
+                        })
+
+                        interaction.respond(results.slice(0, 25)).catch(() => {})
+                    } catch (e) {
+                        interaction.respond({ name: '找不到玩家資料', value: '找不到玩家資料' }).catch(() => {})
+                    }
+                    
                     break
 
                 case '設定':

@@ -580,8 +580,11 @@ async function delete_user_data(player_uuid) {
 }
 
 async function get_all_user() {
+    let players = []
+
     let rows = await new Promise(resolve => {
-        executeQuery('user_data', 'SELECT player_id FROM user_data', [], (err, row) => {
+        const selectSql = 'SELECT realname FROM user'
+        executeQuery('user_data', selectSql, [], (err, row) => {
             if (err) {
                 console.error(err);
                 resolve('error');
@@ -593,7 +596,11 @@ async function get_all_user() {
         })
     })
 
-    return rows
+    for (let player of rows) {
+        players.push(player.realname)
+    }
+
+    return players
 }
 
 async function remove_user_discord_id(discord_id) {
