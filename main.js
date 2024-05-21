@@ -630,6 +630,10 @@ const init_dc = () => {
         client.on(Events.InteractionCreate, async interaction => {
             if (!interaction.isAutocomplete()) return
 
+            let focused_value
+            let result
+            let results
+
             switch (interaction.commandName) {
                 case 'record':
                     const players = await get_all_user()
@@ -639,9 +643,9 @@ const init_dc = () => {
                         return
                     }
 
-                    let focused_value = interaction.options.getFocused()
-                    let result = players.filter(player => player.startsWith(focused_value))
-                    let results = result.map(player => {
+                    focused_value = interaction.options.getFocused()
+                    result = players.filter(player => player.startsWith(focused_value))
+                    results = result.map(player => {
                         return {
                             name: player,
                             value: player
