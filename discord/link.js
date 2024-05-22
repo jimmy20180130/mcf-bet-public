@@ -81,8 +81,10 @@ module.exports = {
 
 					if (config.link_role == 'default') return
 
-					const role = await interaction.guild.roles.fetch(roles[config.roles.link_role_dc].discord_id);
-					await interaction.member.roles.add(role);
+					try {
+						const role = await interaction.guild.roles.fetch(roles[config.roles.link_role_dc].discord_id);
+						await interaction.member.roles.add(role);
+					} catch (error) {}
 				} else if (verify_success == 'already_linked') {
 					await interaction.editReply('您的 Discord 帳號已經綁定過了');
 				} else {
