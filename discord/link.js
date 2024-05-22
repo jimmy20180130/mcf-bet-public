@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { get_pay_history, getPlayerRole, get_user_data, delete_user_data } = require(`${process.cwd()}/utils/database.js`);
+const { delete_user_data, get_user_data_from_dc } = require(`${process.cwd()}/utils/database.js`);
 const { validate_code } = require(`${process.cwd()}/utils/link_handler.js`);
-const { get_player_uuid, get_player_name } = require(`${process.cwd()}/utils/get_player_info.js`);
+const { get_player_name } = require(`${process.cwd()}/utils/get_player_info.js`);
 const { link_embed } = require(`${process.cwd()}/discord/embed.js`);
 const fs = require('fs')
 
@@ -114,9 +114,9 @@ module.exports = {
 
 				collector.on('collect', async (interaction) => {
 					if (interaction.customId === 'confirm') {
-						await interaction.update({ content: '已確認操作', components: [] });
+						await interaction.update({ content: '已確認操作', components: [], embeds: [] });
 
-						const player_uuid = await get_player_uuid(interaction.member.id);
+						const player_uuid = (await get_user_data_from_dc(interaction.member.id))[0].player_uuid
 						await delete_user_data(player_uuid);
 
 					} else {
