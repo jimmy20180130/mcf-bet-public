@@ -9,6 +9,7 @@ module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('綁定')
 		.setDescription('綁定您的 Minecraft 帳號')
+		.setDMPermission(false)
 		.addSubcommand(subcommand =>
 			subcommand
 				.setName('link')

@@ -6,6 +6,7 @@ module.exports = {
 	.setName('設定')
 	.setDescription('機器人設定')
 	.setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+	.setDMPermission(false)
 	.addSubcommand(subcommand =>
 		subcommand
 			.setName('對賭')
@@ -134,6 +135,14 @@ module.exports = {
 	),
 
 	async execute(interaction) {
+		let user_roles = interaction.member.roles.cache.filter(role => role.name !== '@everyone').map(role => role.id);
+		let roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf8'));
+
+		if (!user_roles.some(role => roles[role].reverse_blacklist == false || !roles[role].disallowed_commands == [])) {
+			await interaction.reply({ content: '你沒有權限使用這個指令', ephemeral: true });
+			return;
+		}
+
 		let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
 		
 		switch (interaction.options.getSubcommand()) {

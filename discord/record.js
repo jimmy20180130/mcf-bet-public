@@ -20,7 +20,7 @@ module.exports = {
 			"zh-CN": "目前不支援简体中文",
 			"zh-TW": "查詢資料"
 		})
-			
+		.setDMPermission(false)
 		.addStringOption(option =>
 			option.setName('playerid')
 				.setAutocomplete(true)

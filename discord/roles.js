@@ -8,6 +8,7 @@ module.exports = {
         .setName('身份組')
         .setDescription('身份組相關')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+        .setDMPermission(false)
         .addSubcommand(subcommand =>
             subcommand
                 .setName('照資料庫重新整理')
@@ -101,6 +102,15 @@ module.exports = {
 
     async execute(interaction) {
         await interaction.deferReply({ ephemeral: true });
+
+        let user_roles = interaction.member.roles.cache.filter(role => role.name !== '@everyone').map(role => role.id);
+		let roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf8'));
+
+		if (!user_roles.some(role => roles[role].reverse_blacklist == false || !roles[role].disallowed_commands == [])) {
+			await interaction.reply({ content: '你沒有權限使用這個指令', ephemeral: true });
+			return;
+		}
+
         let user = interaction.options.getUser('使用者');
         let rolesToAdd = [];
         let rolesToRemove = [];
@@ -113,7 +123,6 @@ module.exports = {
         let global_query = interaction.options.getBoolean('全域流水查詢');
         let win_loss_query = interaction.options.getBoolean('盈虧流水查詢');
         let is_admin = interaction.options.getBoolean('管理員');
-        let roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
 
         switch (interaction.options.getSubcommand()) {
             case '照資料庫重新整理':

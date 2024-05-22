@@ -1,13 +1,14 @@
 const { SlashCommandBuilder, PermissionFlagsBits, Component } = require("discord.js");
 const fs = require("fs");
-const { start } = require("repl");
 const { send_giveaway } = require(`${process.cwd()}/discord/giveaway_manager.js`);
+const { add_player_wallet_dc, get_player_wallet_discord } = require('./utils/database.js')
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("giveaway")
         .setDescription("Create a giveaway")
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+        .setDMPermission(false)
         .addSubcommand(subcommand =>
             subcommand
                 .setName("start")
@@ -249,6 +250,15 @@ module.exports = {
 
     async execute(interaction) {
         await interaction.deferReply({ ephemeral: true });
+
+        let user_roles = interaction.member.roles.cache.filter(role => role.name !== '@everyone').map(role => role.id);
+		let roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf8'));
+
+		if (!user_roles.some(role => roles[role].reverse_blacklist == false || !roles[role].disallowed_commands == [])) {
+			await interaction.reply({ content: '你沒有權限使用這個指令', ephemeral: true });
+			return;
+		}
+
         const subcommand = interaction.options.getSubcommand();
 
         let message_id = interaction.options.getString("message_id");
@@ -281,63 +291,69 @@ module.exports = {
 
             case "end":
                 //end a giveaway
-
                 if (!message) {
                     interaction.editReply("Message not found");
                     return;
                 } else {
-                    interaction.editReply("Giveaway ended successfully");
-
-                    await message.edit({ components: [] });
-
                     let giveaways = JSON.parse(fs.readFileSync(`${process.cwd()}/data/giveaways.json`, "utf8"));
 
-                    let giveaway_copy = giveaways[message_id];
-
-                    delete giveaways[message_id];
-                    fs.writeFileSync(`${process.cwd()}/data/giveaways.json`, JSON.stringify(giveaways, null, 4));
-
-                    let entries = giveaway_copy.entries
-                    let winner = entries[Math.floor(Math.random() * entries.length)]
-                    let channel = await client.channels.fetch(giveaway_copy.channel)
-                    let message = await channel.messages.fetch(giveaway_copy.message_id)
-                    let prize = giveaway_copy.prize
-                    let user = await client.users.fetch(winner)
-                    
-                    if (!winner) {
-                        await message.reply({ content: '抽獎已結束，無人中獎' })
-                    } else {
-                        await message.reply({ content: `抽獎已結束，獲獎者為 <@${winner}>，獎品已自動新增至您的錢包中，私訊 ${bot.username} 領錢 即可領取` })
-
-                        const { add_player_wallet_dc, get_player_wallet_discord } = require('./utils/database.js')
-
-                        await add_player_wallet_dc(winner, Number(prize))
-                        await new Promise(resolve => setTimeout(resolve, 1000))
-                        wallet = await get_player_wallet_discord(winner)
-
-                        switch (wallet) {
-                            case 'error':
-                                await channel.send('新增錢至錢包時發生錯誤')
-                                break
-                            case 'Not Found':
-                                await channel.send(`該玩家無綁定資料`)
-                                break
-                            default:
-                                await channel.send(`已成功新增玩家 <@${winner}> 的錢，如未收到，請聯絡管理員`)
-
-                                const dm = await user.createDM()
-
-                                try {
-                                    await dm.send(`管理員已新增 ${Number(prize)} 元至您的錢包中，您目前有 ${wallet} 元，在遊戲中私訊我 "領錢" 即可領取。`)
-                                } catch (error) { }
-                        }
+                    if (giveaways[message_id].ended) {
+                        interaction.editReply('該活動已結束')
+                        return
                     }
 
+                    try {
+                        let giveaway_copy = giveaways[message_id];
+                        giveaways[giveaway].ended == true
+                        fs.writeFileSync(`${process.cwd()}/data/giveaways.json`, JSON.stringify(giveaways, null, 4));
+
+                        let entries = giveaway_copy.entries
+                        let winner = entries[Math.floor(Math.random() * entries.length)]
+                        let channel = await client.channels.fetch(giveaway_copy.channel)
+                        let message = await channel.messages.fetch(giveaway_copy.message_id)
+                        let prize = giveaway_copy.prize
+                        let user = await client.users.fetch(winner)
+                        
+                        if (!winner) {
+                            await message.reply({ content: '抽獎已結束，無人中獎' })
+                        } else {
+                            await message.reply({ content: `抽獎已結束，獲獎者為 <@${winner}>，獎品已自動新增至您的錢包中，私訊 ${bot.username} 領錢 即可領取` })
+
+                            await add_player_wallet_dc(winner, Number(prize))
+                            await new Promise(resolve => setTimeout(resolve, 1000))
+                            wallet = await get_player_wallet_discord(winner)
+
+                            switch (wallet) {
+                                case 'error':
+                                    await channel.send('新增錢至錢包時發生錯誤')
+                                    break
+                                case 'Not Found':
+                                    await channel.send(`該玩家無綁定資料`)
+                                    break
+                                default:
+                                    await channel.send(`已成功新增玩家 <@${winner}> 的錢，如未收到，請聯絡管理員`)
+
+                                    const dm = await user.createDM()
+
+                                    try {
+                                        await dm.send(`管理員已新增 ${Number(prize)} 元至您的錢包中，您目前有 ${wallet} 元，在遊戲中私訊我 "領錢" 即可領取。`)
+                                    } catch (error) { }
+                            }
+                        }
+
+                        interaction.editReply("Giveaway ended successfully");
+                        await message.edit({ components: [] });
+
+                    } catch (e) {
+                        console.log(e)
+                        interaction.editReply('結束活動時發生錯誤，請查看後台錯誤訊息')
+                    }
                 }
 
                 break;
 
-            
+            default:
+                interaction.editReply('指令維護中')
         }
     }
 }
