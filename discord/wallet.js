@@ -4,6 +4,7 @@ const {
     add_player_wallet_dc,
     clear_player_wallet_dc
 } = require(`${process.cwd()}/utils/database.js`);
+const fs = require('fs')
 
 const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
 
