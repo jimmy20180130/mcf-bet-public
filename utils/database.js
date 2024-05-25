@@ -69,7 +69,6 @@ async function set_user_role(discord_id, role) {
 async function add_user_role(discord_id, role) {
     const selectSql = 'SELECT roles FROM user WHERE discord_id = ?';
     const updateSql = 'UPDATE user SET roles = ? WHERE discord_id = ?';
-    let new_roles
 
     try {
         let rows = await new Promise((resolve, reject) => {
@@ -97,7 +96,9 @@ async function add_user_role(discord_id, role) {
         } else {
             const existing_roles = rows[0].roles.split(', ');
             if (!existing_roles.includes(role)) {
-                new_roles = [...existing_roles, role].filter(r => r !== 'none').filter((r, i) => new_roles.indexOf(r) === i).sort().join(', ');
+                let new_roles = [...existing_roles, role].filter(r => r !== 'none')
+                new_roles = new_roles.filter((r, i) => new_roles.indexOf(r) === i).sort().join(', ');
+                console.log(new_roles)
                 
                 await new Promise((resolve, reject) => {
                     executeQuery('user_data', updateSql, [new_roles, discord_id], (err) => {

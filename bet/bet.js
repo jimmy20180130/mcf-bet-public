@@ -25,7 +25,8 @@ async function add_bet_task(bot, player_id, amount, type) {
     cache.bet.push({
         player_id: player_id,
         amount: amount,
-        type: type
+        type: type,
+        added: true
     })
     fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
 }

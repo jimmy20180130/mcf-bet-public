@@ -237,6 +237,13 @@ const init_bot = async () => {
     bot.once('spawn', async () => {
         console.log('[INFO] Minecraft 機器人已上線!');
         init_dc()
+
+        let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'));
+
+        for (let item of cache.bet) {
+            item.added = false
+        }
+
         let botSocket = bot._client.socket;
         let time = moment(new Date()).tz('Asia/Taipei').format('YYYY-MM-DD HH:mm:ss');
         await new Promise(resolve => setTimeout(resolve, 10000));
@@ -265,6 +272,8 @@ const init_bot = async () => {
                         let cache_bet = cache.bet
                 
                         for (const item of cache_bet) {
+                            if (item.added == true) continue
+                            
                             const playerid = item.player_id
                             const amount = item.amount
                             const type = item.type
