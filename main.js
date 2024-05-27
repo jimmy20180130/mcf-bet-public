@@ -51,7 +51,7 @@ const init_bot = async () => {
     console.log('[INFO] 正在讓 Minecraft 機器人上線...')
     const donate_list = [];
     bot = mineflayer.createBot(botArgs);
-
+    
     bot.on('message', async (jsonMsg) => {
         const messages = JSON.parse(fs.readFileSync(`${process.cwd()}/config/messages.json`, 'utf-8'));
         if (/^\[([A-Za-z0-9_]+) -> 您\] .*/.exec(jsonMsg.toString())) {

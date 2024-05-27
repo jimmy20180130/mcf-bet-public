@@ -218,7 +218,7 @@ module.exports = {
 					return
 					
 				} else {
-					config.advertisement.append({
+					config.advertisement.push({
 						"text":interaction.options.getString('文字或指令'),
 						"interval": interaction.options.getInteger('間隔時間')
 					})
