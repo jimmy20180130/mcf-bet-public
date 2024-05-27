@@ -686,6 +686,11 @@ const init_dc = () => {
 
                     focused_value = interaction.options.getFocused()
                     result = config.advertisement.filter(ad => ad.text.startsWith(focused_value))
+                    
+                    if (focused_value == '') {
+                        result = config.advertisement
+                    }
+
                     results = result.map(ad => {
                         return {
                             name: ad.text.slice(0, 25),
