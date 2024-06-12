@@ -114,6 +114,7 @@ async function check_token() {
                 }
             })
             .catch(async error => {
+                resolve(true)
                 console.log(`[ERROR] 發生錯誤: ${error.message}`)
                 if (error.response) {
                     const decryptedMessage = await decryptMessage(error.response.data);
