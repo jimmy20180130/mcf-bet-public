@@ -7,6 +7,7 @@ const { activateBlock } = require(`${process.cwd()}/utils/better-mineflayer.js`)
 const { write_pay_history, write_errors } = require(`${process.cwd()}/utils/database.js`)
 const { get_player_uuid } = require(`${process.cwd()}/utils/get_player_info.js`);
 const { bet_win, bet_lose, error_embed } = require(`${process.cwd()}/discord/embed.js`);
+const { generateUUID } = require(`${process.cwd()}/utils/uuid.js`)
 const Vec3 = require('vec3');
 const Decimal = require('decimal.js');
 
@@ -15,18 +16,26 @@ let client = undefined
 let bot = undefined
 
 async function add_bet_task(bot, player_id, amount, type) {
+    let create_time = Math.round(new Date() / 1000)
+    let pay_uuid = generateUUID()
+
     bet_task.push({
         bot: bot,
         player_id: player_id,
         amount: amount,
-        type: type
+        type: type,
+        create_time: create_time,
+        uuid: pay_uuid
     });
+
     let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'))
     cache.bet.push({
         player_id: player_id,
         amount: amount,
         type: type,
-        added: true
+        added: true,
+        create_time: create_time,
+        uuid: pay_uuid
     })
     fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
 }
@@ -63,11 +72,13 @@ async function process_bet_task() {
                     fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
                     resolve()
                 }
-                console.log(`[INFO] 開始處理下注任務: ${task.player_id} 下注 ${task.amount} 個 ${task.type}`)
+
+                console.log(`[INFO] 開始處理下注任務 (${task.uuid}): ${task.player_id} 下注 ${task.amount} 個 ${task.type}`)
                 await active_redstone(bot, task.player_id, task.amount, task.type);
                 let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'))
                 cache.bet.shift()
                 fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
+
             }
 
             resolve()
