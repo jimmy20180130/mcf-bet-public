@@ -482,6 +482,8 @@ async function write_errors(amount, win, odds, status, player_uuid, bet_type) {
                 console.log(err)
 
             }
+
+            resolve()
         })
     })
 }
