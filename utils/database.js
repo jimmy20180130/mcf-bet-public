@@ -1,9 +1,7 @@
 const sqlite3 = require('sqlite3').verbose();
 const { generateUUID } = require(`${process.cwd()}/utils/uuid.js`)
 const { get_player_name } = require(`${process.cwd()}/utils/get_player_info.js`)
-const { rejects } = require('assert');
 const fs = require('fs');
-const { resolve } = require('path');
 const { initDB, closeDB, executeQuery } = require(`${process.cwd()}/utils/db_write.js`);
 
 async function remove_user_role(discord_id, role) {
