@@ -163,9 +163,9 @@ async function active_redstone(bot, playerid, amount, type) {
                         await mc_error_handler(bot, 'bet', 'unexpected_err', playerid, error)
 
                         if (type == 'coin') {
-                            await write_errors(amount, amount, config.bet.codds, error, await get_player_uuid(playerid), type)
+                            await write_errors(amount, amount, config.bet.codds, e, await get_player_uuid(playerid), type)
                         } else if (type == 'emerald') {
-                            await write_errors(amount, amount, config.bet.eodds, error, await get_player_uuid(playerid), type)
+                            await write_errors(amount, amount, config.bet.eodds, e, await get_player_uuid(playerid), type)
                         }
 
                         const embed = await error_embed(e.msg)
