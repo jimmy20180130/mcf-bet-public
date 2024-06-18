@@ -411,11 +411,11 @@ async function clear_player_wallet_dc(discord_id) {
     })
 }
 
-async function write_pay_history(amount, win, odds, status, player_uuid, bet_type) {
+async function write_pay_history(amount, win, odds, status, player_uuid, bet_type, uuid) {
     const insertSql = 'INSERT INTO pay_history (amount, win, odds, time, status, player_uuid, pay_uuid, bet_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
 
     await new Promise(resolve => {
-        executeQuery('pay_history', insertSql, [amount, win, odds, Math.round(new Date() / 1000), status, player_uuid, generateUUID(), bet_type], (err, rows) => {
+        executeQuery('pay_history', insertSql, [amount, win, odds, Math.round(new Date() / 1000), status, player_uuid, uuid, bet_type], (err, rows) => {
             if (err) {
                 console.log(err)
 
