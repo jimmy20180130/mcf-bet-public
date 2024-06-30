@@ -16,7 +16,7 @@ async function decryptMessage(encryptedMessage) {
         "time": Math.round(new Date() / 1000)
     }
 
-    await axios.default.post('http://owo.freeserver.tw:20195/get_key', { data }, { headers }).then(async response => {
+    await axios.default.post('http://uwu.freeserver.tw:21097/get_key', { data }, { headers }).then(async response => {
         if (response.data.error != undefined) {
             console.log('[WARN] 請確認您的金鑰是否正確，如果您認為這是個錯誤，請聯絡管理員')
 
@@ -71,7 +71,7 @@ async function decryptMessage(encryptedMessage) {
 async function check_token() {
     return await new Promise(resolve => {
         const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf-8'));
-        const url = 'http://owo.freeserver.tw:20195/verify';
+        const url = 'http://uwu.freeserver.tw:21097/verify';
         const headers = {
             Authorization: `Bearer ${config.key}`,
             Accept: 'application/json',

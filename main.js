@@ -41,6 +41,33 @@ let bot;
 let client;
 let is_on = false;
 
+const filePath = 'config.json';
+const defaultContent = {
+    "bet": [],
+    "msg": [],
+    "link": []
+};
+
+fs.readFile(filePath, 'utf8', (err, data) => {
+    if (err) {
+        console.error('Error reading file:', err);
+        return;
+    }
+
+    try {
+        JSON.parse(data);
+    } catch (e) {
+        console.error('Invalid JSON format:', e.message);
+        fs.writeFile(filePath, JSON.stringify(defaultContent, null, 2), 'utf8', (writeErr) => {
+            if (writeErr) {
+                console.error('Error writing file:', writeErr);
+            } else {
+                console.log('The file content has been reset to default JSON format.');
+            }
+        });
+    }
+});
+
 for (const file of commandFiles) {
     const command = require(`./commands/${file}`);
     if (!command.name) continue;
@@ -222,7 +249,17 @@ const init_bot = async () => {
             if (config.claim_text && config.claim_text != "" && textMessage.includes(config.claim_text.replaceAll(/&[0-9a-f]/gi, ''))) return true
 
             if (!config.console.system) {
-                if (/^(?:\[系統\] (?:新玩家|吉日|凶日|.*凶日|.*吉日)|\>|\[系統\] .*提供了 小幫手提示|\[系統\] 您的訊息沒有玩家看見|┌─回覆自|.* (?:has made the advancement|has completed the challenge|has reached the goal)|players sleeping|目標生命 \: ❤❤❤❤❤❤❤❤❤❤ \/ ([\S]+)|^\[\?]|^\=\=|\[>\]|\[~\])/.test(textMessage)) return true
+                if (/^\[系統\] 新玩家|系統\] 吉日|系統\] 凶日|系統\] .*凶日|系統\] .*吉日/.test(textMessage)) return true;
+                if (/^ \> /.test(textMessage)) return true;
+                if (/^\[系統\] .*提供了 小幫手提示/.test(textMessage)) return true;
+                if (/^┌─回覆自/.test(textMessage)) return true;
+                if (/^.* (has made the advancement|has completed the challenge|has reached the goal)/.test(textMessage)) return true;
+                if (/players sleeping$/.test(textMessage)) return true;
+                if (/目標生命 \: ❤❤❤❤❤❤❤❤❤❤ \/ ([\S]+)/g.test(textMessage)) return true;
+                if (/^\[\?\]/.test(textMessage)) return true;
+                if (/^\=\=/.test(textMessage)) return true;
+                if (/^ >/.test(textMessage)) return true;
+                if (/\[~\]/.test(textMessage)) return true;
             }
 
             return false;
@@ -304,6 +341,7 @@ const init_bot = async () => {
                     intervals.push(setInterval(async () => {
                         try {
                             await chat(bot, item.text)
+                            console.log(`[INFO] 發送廣告: ${item.text}`)
                         } catch {}
                     }, item.interval))
                 }

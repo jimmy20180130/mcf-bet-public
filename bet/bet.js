@@ -86,7 +86,7 @@ async function process_bet_task() {
                 }
 
                 console.log(`[INFO] 開始處理下注任務 (${task.uuid}): ${task.player_id} 下注 ${task.amount} 個 ${task.type}`)
-                await active_redstone(bot, task.player_id, task.amount, task.type);
+                await active_redstone(bot, task.player_id, task.amount, task.type, task_uuid);
                 let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'))
                 cache.bet.shift()
                 fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
