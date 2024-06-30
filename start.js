@@ -16,59 +16,63 @@ rl.on('line', async function (line) {
     if (appProcess != undefined) appProcess.stdin.write(line + '\n');
 });
 
-const io = require('socket.io-client');
-const socket = io(`http://uwu.freeserver.tw:21097`);
+let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
 
-function hashPassword(password) {
-    const hashBuffer = crypto.createHash('sha256').update(password).digest();
-    return hashBuffer.toString('hex');
+if (config.auth_server.enabled) {
+  const io = require('socket.io-client');
+  const socket = io(`http://uwu.freeserver.tw:21097`);
+
+  function hashPassword(password) {
+      const hashBuffer = crypto.createHash('sha256').update(password).digest();
+      return hashBuffer.toString('hex');
+  }
+
+  async function connectToServer() {
+      const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
+      const token = config.auth_server.key;
+      const user = 'bot';
+      const username = config.auth_server.username;
+      const passwordHash = hashPassword(config.auth_server.password)
+
+      console.log('Connected to server');
+      socket.emit('join', { room: token, username: user, user: username, password: passwordHash });
+  }
+
+  socket.on('connect', connectToServer);
+
+  socket.on('join', (value) => {
+      console.log(`${value.username} joined`);
+  });
+
+  socket.on('leave', (value) => {
+      console.log(`${value.username} left`);
+  });
+
+  socket.on('disconnect', async () => {
+      console.log('Disconnected... trying to reconnect to the server');
+      await connectToServer();
+  });
+
+  socket.on('response', (data) => {
+      console.log(`Server response: ${data.data}`);
+  });
+
+  socket.on('message', (data) => {
+      if (data.username === 'bot') return;
+      console.log(`${data.username}: ${data.message}`);
+      try {
+          if (appProcess != undefined) appProcess.stdin.write(data.message + '\n');
+      } catch (error) {
+          console.log(error)
+      }
+  });
+
+  socket.on('status', (data) => {
+      console.log(`Server status: ${data.data}`);
+      if (data.data == 'stop') process.exit(135)
+      if (data.data == 'restart') process.exit(246)
+  });
 }
-
-async function connectToServer() {
-    const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
-    const token = config.auth_server.key;
-    const user = 'bot';
-    const username = config.auth_server.username;
-    const passwordHash = hashPassword(config.auth_server.password)
-
-    console.log('Connected to server');
-    socket.emit('join', { room: token, username: user, user: username, password: passwordHash });
-}
-
-socket.on('connect', connectToServer);
-
-socket.on('join', (value) => {
-    console.log(`${value.username} joined`);
-});
-
-socket.on('leave', (value) => {
-    console.log(`${value.username} left`);
-});
-
-socket.on('disconnect', async () => {
-    console.log('Disconnected... trying to reconnect to the server');
-    await connectToServer();
-});
-
-socket.on('response', (data) => {
-    console.log(`Server response: ${data.data}`);
-});
-
-socket.on('message', (data) => {
-    if (data.username === 'bot') return;
-    console.log(`${data.username}: ${data.message}`);
-    try {
-        if (appProcess != undefined) appProcess.stdin.write(data.message + '\n');
-    } catch (error) {
-        console.log(error)
-    }
-});
-
-socket.on('status', (data) => {
-    console.log(`Server status: ${data.data}`);
-    if (data.data == 'stop') process.exit(135)
-    if (data.data == 'restart') process.exit(246)
-});
 
 function startApp() {
     appProcess = spawn('node', ['main.js']);

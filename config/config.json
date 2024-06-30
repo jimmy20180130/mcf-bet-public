@@ -11,6 +11,12 @@
         "server": 61,
         "home": "play"
     },
+    "auth_server": {
+        "enabled": false,
+        "username": "",
+        "password": "",
+        "key": ""
+    },
     "discord": {
         "bot_token": "token",
         "bot_client_id": "id",
