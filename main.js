@@ -41,7 +41,7 @@ let bot;
 let client;
 let is_on = false;
 
-const filePath = 'config.json';
+const filePath = 'cache/cache.json';
 const defaultContent = {
     "bet": [],
     "msg": [],

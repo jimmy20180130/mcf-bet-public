@@ -18,15 +18,15 @@ rl.on('line', async function (line) {
 
 let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
 
+function hashPassword(password) {
+    const hashBuffer = crypto.createHash('sha256').update(password).digest();
+    return hashBuffer.toString('hex');
+}
+
+const io = require('socket.io-client');
+const socket = io(`http://uwu.freeserver.tw:21097`);
+
 if (config.auth_server.enabled) {
-  const io = require('socket.io-client');
-  const socket = io(`http://uwu.freeserver.tw:21097`);
-
-  function hashPassword(password) {
-      const hashBuffer = crypto.createHash('sha256').update(password).digest();
-      return hashBuffer.toString('hex');
-  }
-
   async function connectToServer() {
       const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
       const token = config.auth_server.key;
