@@ -37,7 +37,7 @@ const validate_code = async (code, discord_id) => {
         cache.link = cache.link.filter(code_item => code_item.code != code)
         fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 2), 'utf8');
         result = result[0]
-        await create_player_data(await get_player_name(result.player_uuid), result.player_uuid, discord_id, config.roles.link_role)
+        await create_player_data(await get_player_name(result.player_uuid), result.player_uuid, discord_id, config.roles.link_role_dc)
         return result.player_uuid
     } else {
         return false

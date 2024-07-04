@@ -82,7 +82,7 @@ module.exports = {
 					if (config.link_role == 'default') return
 
 					try {
-						const role = await interaction.guild.roles.fetch(roles[config.roles.link_role_dc].discord_id);
+						const role = await interaction.guild.roles.fetch(roles[config.roles.link_role].discord_id);
 						await interaction.member.roles.add(role);
 					} catch (error) {}
 				} else if (verify_success == 'already_linked') {

@@ -60,7 +60,7 @@ async function executeCommand(bot, playerid, args) {
 
                 if (result != 'success') {
                     let uuid = generateUUID()
-                    await mc_error_handler(bot, 'general', 'pay', playerid, messages.errors.pay[result], uuid)
+                    await mc_error_handler(bot, 'pay', 'no_money', playerid, '', uuid)
                     await chat(bot, `/m ${playerid} ${(await process_msg(bot, messages.commands.daily.failed, playerid)).replaceAll('%time%', moment(new Date()).tz('Asia/Taipei').format('YYYY-MM-DD HH:mm:ss')).replaceAll('%uuid%', uuid)}`)
                     return;
                 }
