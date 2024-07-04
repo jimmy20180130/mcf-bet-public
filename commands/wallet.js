@@ -1,20 +1,20 @@
 const fs = require('fs');
 const { now } = require('moment-timezone');
-const { get_player_uuid } = require(`${process.cwd()}/utils/get_player_info`);
-const { canUseCommand } = require(`${process.cwd()}/utils/permissions`);
-const { getPlayerRole } = require(`${process.cwd()}/utils/database.js`);
-const { process_msg } = require(`${process.cwd()}/utils/process_msg`);
-const { mc_error_handler } = require(`${process.cwd()}/error/mc_handler.js`)
-const { chat } = require(`${process.cwd()}/utils/chat.js`);
-const { pay_handler } = require(`${process.cwd()}/utils/pay_handler.js`);
-const commands = require(`${process.cwd()}/config/commands.json`);
+const { get_player_uuid } = require(`../utils/get_player_info`);
+const { canUseCommand } = require(`../utils/permissions`);
+const { getPlayerRole } = require(`../utils/database.js`);
+const { process_msg } = require(`../utils/process_msg`);
+const { mc_error_handler } = require(`../error/mc_handler.js`)
+const { chat } = require(`../utils/chat.js`);
+const { pay_handler } = require(`../utils/pay_handler.js`);
+const commands = JSON.parse(fs.readFileSync(`${process.cwd()}/config/commands.json`, 'utf8'));
 
 const {
     get_player_wallet,
     create_player_wallet,
     add_player_wallet,
     clear_player_wallet
-} = require(`${process.cwd()}/utils/database.js`);
+} = require(`../utils/database.js`);
 
 module.exports = {
     display_name: commands.wallet.display_name,

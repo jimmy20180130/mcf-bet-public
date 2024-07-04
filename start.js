@@ -2,6 +2,8 @@ const { spawn } = require('child_process');
 const readline = require('readline')
 const fs = require('fs')
 const crypto = require('crypto');
+const io = require('socket.io-client');
+const path = require('path');
 
 let appProcess = undefined;
 
@@ -23,7 +25,6 @@ function hashPassword(password) {
     return hashBuffer.toString('hex');
 }
 
-const io = require('socket.io-client');
 const socket = io(`http://uwu.freeserver.tw:21097`);
 
 if (config.auth_server.enabled) {
@@ -75,7 +76,7 @@ if (config.auth_server.enabled) {
 }
 
 function startApp() {
-    appProcess = spawn('node', ['main.js']);
+    appProcess = spawn('node', [path.join(__dirname, 'main.js')]);
 
     const sendMessage = (message) => {
         const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));

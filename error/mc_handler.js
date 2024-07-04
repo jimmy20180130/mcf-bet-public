@@ -1,6 +1,6 @@
 const fs = require('fs')
-const { chat } = require(`${process.cwd()}/utils/chat.js`);
-const { process_msg } = require(`${process.cwd()}/utils/process_msg.js`)
+const { chat } = require(`../utils/chat.js`);
+const { process_msg } = require(`../utils/process_msg.js`)
 
 async function mc_error_handler(bot, type, error_code, playerid, err_msg = '', uuid = '') {
     const messages = JSON.parse(fs.readFileSync(`${process.cwd()}/config/messages.json`, 'utf8'));

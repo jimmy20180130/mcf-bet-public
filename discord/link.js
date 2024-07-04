@@ -1,8 +1,8 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { delete_user_data, get_user_data_from_dc } = require(`${process.cwd()}/utils/database.js`);
-const { validate_code } = require(`${process.cwd()}/utils/link_handler.js`);
-const { get_player_name } = require(`${process.cwd()}/utils/get_player_info.js`);
-const { link_embed } = require(`${process.cwd()}/discord/embed.js`);
+const { delete_user_data, get_user_data_from_dc } = require(`../utils/database.js`);
+const { validate_code } = require(`../utils/link_handler.js`);
+const { get_player_name } = require(`../utils/get_player_info.js`);
+const { link_embed } = require(`../discord/embed.js`);
 const fs = require('fs')
 
 module.exports = {

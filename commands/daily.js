@@ -1,17 +1,17 @@
-const { get_player_uuid } = require(`${process.cwd()}/utils/get_player_info.js`);
-const { canUseCommand } = require(`${process.cwd()}/utils/permissions.js`);
-const { process_msg } = require(`${process.cwd()}/utils/process_msg.js`);
-const { mc_error_handler } = require(`${process.cwd()}/error/mc_handler.js`)
-const { chat } = require(`${process.cwd()}/utils/chat.js`);
-const { pay_handler } = require(`${process.cwd()}/utils/pay_handler.js`);
-const { generateUUID } = require(`${process.cwd()}/utils/uuid.js`);
+const { get_player_uuid } = require(`../utils/get_player_info.js`);
+const { canUseCommand } = require(`../utils/permissions.js`);
+const { process_msg } = require(`../utils/process_msg.js`);
+const { mc_error_handler } = require(`../error/mc_handler.js`)
+const { chat } = require(`../utils/chat.js`);
+const { pay_handler } = require(`../utils/pay_handler.js`);
+const { generateUUID } = require(`../utils/uuid.js`);
 const moment = require('moment-timezone');
 
 const {
     getPlayerRole,
     getDailyData,
     writeDailyData
-} = require(`${process.cwd()}/utils/database.js`);
+} = require(`../utils/database.js`);
 
 const fs = require('fs');
 const commands = JSON.parse(fs.readFileSync(`${process.cwd()}/config/commands.json`, 'utf8'));

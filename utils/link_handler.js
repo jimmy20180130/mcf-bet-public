@@ -1,5 +1,5 @@
-const { create_player_data, get_pay_history, getPlayerRole, get_user_data } = require(`${process.cwd()}/utils/database.js`);
-const { get_player_uuid, get_player_name } = require(`${process.cwd()}/utils/get_player_info.js`);
+const { create_player_data, get_pay_history, getPlayerRole, get_user_data } = require(`../utils/database.js`);
+const { get_player_uuid, get_player_name } = require(`../utils/get_player_info.js`);
 const fs = require('fs');
 const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
 const sqlite3 = require('sqlite3').verbose();

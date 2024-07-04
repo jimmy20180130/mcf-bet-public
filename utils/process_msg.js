@@ -1,6 +1,6 @@
 const moment = require('moment-timezone');
-const { get_player_uuid } = require(`${process.cwd()}/utils/get_player_info`);
-const { get_player_wallet } = require(`${process.cwd()}/utils/database.js`);
+const { get_player_uuid } = require(`../utils/get_player_info`);
+const { get_player_wallet } = require(`../utils/database.js`);
 
 async function process_msg(bot, message, playerid) {
     let placeholders = {

@@ -18,7 +18,6 @@ const { orderStrings, canUseCommand } = require(`./utils/permissions.js`);
 const { check_token } = require(`./auth/auth.js`);
 const moment = require('moment-timezone');
 const { initDB, closeDB } = require(`./utils/db_write.js`);
-const path = require('path');
 
 initDB()
 
@@ -31,7 +30,7 @@ const botArgs = {
     checkTimeoutInterval:360000
 };
 
-const commandFiles = fs.readdirSync(path.join(__dirname, 'commands')).filter(file => file.endsWith('.js'));
+const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 const commands = {}
 let is_on_timeout;
 let auto_update_role;
@@ -440,9 +439,9 @@ const init_dc = () => {
         client.commands = new Collection();
 
         const dc_commands = []
-        const commandFiles = fs.readdirSync(path.join(__dirname, 'discord')).filter(file => file.endsWith('.js'));
+        const commandFiles = fs.readdirSync(process.cwd() + '/discord').filter(file => file.endsWith('.js'));
         for (const file of commandFiles) {
-            const command = require(path.join(__dirname, `discord/${file}`));
+            const command = require(`./discord/${file}`);
             
             if ('data' in command && 'execute' in command) {
                 client.commands.set(command.data.name, command);

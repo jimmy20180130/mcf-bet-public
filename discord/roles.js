@@ -1,7 +1,7 @@
 const fs = require('fs');
 const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
-const { add_user_role, get_user_data_from_dc, remove_user_role,  } = require(`${process.cwd()}/utils/database.js`); 
-const { orderStrings } = require(`${process.cwd()}/utils/permissions.js`);
+const { add_user_role, get_user_data_from_dc, remove_user_role,  } = require(`../utils/database.js`); 
+const { orderStrings } = require(`../utils/permissions.js`);
 
 module.exports = {
     data: new SlashCommandBuilder()

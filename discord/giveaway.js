@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits, Component } = require("discord.js");
 const fs = require("fs");
-const { send_giveaway } = require(`${process.cwd()}/discord/giveaway_manager.js`);
-const { add_player_wallet_dc, get_player_wallet_discord } = require(`${process.cwd()}/utils/database.js`)
+const { send_giveaway } = require(`../discord/giveaway_manager.js`);
+const { add_player_wallet_dc, get_player_wallet_discord } = require(`../utils/database.js`)
 
 module.exports = {
     data: new SlashCommandBuilder()

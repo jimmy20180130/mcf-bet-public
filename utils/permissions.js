@@ -1,5 +1,5 @@
 const fs = require('fs');
-const { getPlayerRole } = require(`${process.cwd()}/utils/database.js`);
+const { getPlayerRole } = require(`../utils/database.js`);
 
 function orderStrings(strings, data) {
     const order = Object.keys(data);

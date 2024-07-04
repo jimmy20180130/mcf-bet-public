@@ -226,6 +226,8 @@ module.exports = {
 				break;
 
 			case '新增':
+				config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
+				
 				if (!interaction.options.getString('文字或指令') || !interaction.options.getInteger('間隔時間')) {
 					await interaction.reply({ content: '請輸入文字', ephemeral: true })
 					return
@@ -242,6 +244,8 @@ module.exports = {
 				break;
 
 			case '刪除':
+				config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
+
 				if (!interaction.options.getString('文字或指令')) {
 					await interaction.reply({ content: '請輸入文字', ephemeral: true })
 					return
@@ -263,7 +267,7 @@ module.exports = {
 					return;
 				}
 
-				let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
+				config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
 
 				config.roles.link_role = interaction.options.getRole('身份組').name;
 				config.roles.link_role_dc = interaction.options.getRole('身份組').id;

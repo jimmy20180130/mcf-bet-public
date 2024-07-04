@@ -1,8 +1,8 @@
 const sqlite3 = require('sqlite3').verbose();
-const { generateUUID } = require(`${process.cwd()}/utils/uuid.js`)
-const { get_player_name } = require(`${process.cwd()}/utils/get_player_info.js`)
+const { generateUUID } = require(`../utils/uuid.js`)
+const { get_player_name } = require(`../utils/get_player_info.js`)
 const fs = require('fs');
-const { initDB, closeDB, executeQuery } = require(`${process.cwd()}/utils/db_write.js`);
+const { initDB, closeDB, executeQuery } = require(`../utils/db_write.js`);
 
 async function remove_user_role(discord_id, role) {
     const selectSql = 'SELECT roles FROM user WHERE discord_id = ?';

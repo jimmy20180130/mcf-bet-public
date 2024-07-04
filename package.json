@@ -1,10 +1,8 @@
 {
-    "name": "mcf-bet-bot",
-    "bin": {
-        "mcf-bet": "./start.js"
-    },
+    "name": "mcf-bet-public",
+    "bin": "start.js",
     "dependencies": {
-        "axios": "^1.6.8",
+        "axios": "^0.27.2",
         "bignumber.js": "^4.0.4",
         "crypto-js": "^4.2.0",
         "decimal.js": "10.4.3",
@@ -14,11 +12,58 @@
         "mineflayer": "^4.17.0",
         "moment-timezone": "^0.5.44",
         "prismarine-entity": "^2.3.1",
-        "puppeteer": "^22.7.1",
         "readline": "^1.3.0",
         "readline-sync": "^1.4.10",
         "silly-datetime": "^0.1.2",
-        "sqlite3": "5.1.7",
-        "socket.io-client": "4.7.5"
+        "socket.io-client": "^4.7.5",
+        "sqlite3": "5.1.7"
+    },
+    "version": "2.0.0",
+    "description": "A minecraft gambling bot (Only can use in mcfallout.net)",
+    "main": "start.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "build": "pkg start.js -t node18-win-x64 -c package.json --assets main.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/jimmy20180130/mcf-bet-public.git"
+    },
+    "keywords": [
+        "mcfallout",
+        "mineflayer",
+        "minecraft",
+        "gambling",
+        "bet",
+        "bot"
+    ],
+    "author": "jimmy20180130",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/jimmy20180130/mcf-bet-public/issues"
+    },
+    "homepage": "https://github.com/jimmy20180130/mcf-bet-public#readme",
+    "pkg": {
+        "assets": [
+            "node_modules/**/*",
+            "main.js",
+            "auth/auth.js",
+            "commands/*.js",
+            "bet/*.js",
+            "discord/*.js",
+            "error/*.js",
+            "utils/*.js",
+            "main.txt"
+        ],
+        "scripts": [
+            "auth/auth.js",
+            "commands/*.js",
+            "bet/*.js",
+            "discord/*.js",
+            "error/*.js",
+            "utils/*.js",
+            "main.js",
+            "start.js"
+        ]
     }
 }

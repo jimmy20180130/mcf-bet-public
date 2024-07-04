@@ -1,8 +1,8 @@
-const { get_player_uuid } = require(`${process.cwd()}/utils/get_player_info.js`);
-const { canUseCommand } = require(`${process.cwd()}/utils/permissions.js`);
-const { getPlayerRole } = require(`${process.cwd()}/utils/database.js`);
-const { mc_error_handler } = require(`${process.cwd()}/error/mc_handler.js`)
-const { chat } = require(`${process.cwd()}/utils/chat.js`);
+const { get_player_uuid } = require(`../utils/get_player_info.js`);
+const { canUseCommand } = require(`../utils/permissions.js`);
+const { getPlayerRole } = require(`../utils/database.js`);
+const { mc_error_handler } = require(`../error/mc_handler.js`)
+const { chat } = require(`../utils/chat.js`);
 const fs = require('fs');
 const commands = JSON.parse(fs.readFileSync(`${process.cwd()}/config/commands.json`, 'utf8'));
 

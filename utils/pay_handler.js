@@ -1,7 +1,7 @@
-const { chat } = require(`${process.cwd()}/utils/chat.js`);
-const { mc_error_handler } = require(`${process.cwd()}/error/mc_handler.js`)
-const { write_errors } = require(`${process.cwd()}/utils/database.js`)
-const { get_player_uuid } = require(`${process.cwd()}/utils/get_player_info.js`)
+const { chat } = require(`../utils/chat.js`);
+const { mc_error_handler } = require(`../error/mc_handler.js`)
+const { write_errors } = require(`../utils/database.js`)
+const { get_player_uuid } = require(`../utils/get_player_info.js`)
 const fs = require('fs');
 
 async function pay_handler(bot, player_id, amount, type, is_bet) {

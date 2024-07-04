@@ -1,8 +1,8 @@
 const { SlashCommandBuilder, EmbedBuilder, escapeEscape } = require('discord.js');
-const { get_pay_history, getPlayerRole, get_user_data, get_user_data_from_dc, get_all_pay_history, get_all_user_data } = require(`${process.cwd()}/utils/database.js`);
-const { get_player_uuid, get_player_name } = require(`${process.cwd()}/utils/get_player_info.js`);
-const { orderStrings } = require(`${process.cwd()}/utils/permissions.js`);
-const { bet_record } = require(`${process.cwd()}/discord/embed.js`);
+const { get_pay_history, getPlayerRole, get_user_data, get_user_data_from_dc, get_all_pay_history, get_all_user_data } = require(`../utils/database.js`);
+const { get_player_uuid, get_player_name } = require(`../utils/get_player_info.js`);
+const { orderStrings } = require(`../utils/permissions.js`);
+const { bet_record } = require(`../discord/embed.js`);
 const fetch = require("node-fetch");
 const fs = require('fs')
 

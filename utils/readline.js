@@ -1,5 +1,5 @@
 const readline = require('readline')
-const { chat } = require(`${process.cwd()}/utils/chat.js`);
+const { chat } = require(`../utils/chat.js`);
 let bot_is_on = false;
 
 let rl = readline.createInterface({
