@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { delete_user_data, get_user_data_from_dc } = require(`../utils/database.js`);
+const { delete_user_data, get_user_data_from_dc, set_user_role } = require(`../utils/database.js`);
 const { validate_code } = require(`../utils/link_handler.js`);
 const { get_player_name } = require(`../utils/get_player_info.js`);
 const { link_embed } = require(`../discord/embed.js`);
@@ -84,6 +84,8 @@ module.exports = {
 					try {
 						const role = await interaction.guild.roles.fetch(roles[config.roles.link_role].discord_id);
 						await interaction.member.roles.add(role);
+
+						await set_user_role(interaction.member.id, config.roles.link_role_dc)
 					} catch (error) {}
 				} else if (verify_success == 'already_linked') {
 					await interaction.editReply('您的 Discord 帳號已經綁定過了');
