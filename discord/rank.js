@@ -41,6 +41,26 @@ module.exports = {
                 .setRequired(true)
         )
         .addStringOption(option =>
+            option.setName('result_type')
+                .setNameLocalizations({
+                    "en-US": "result_type",
+                    "zh-CN": "vxbgv简体中文",
+                    "zh-TW": "結果種類"
+                })
+                .setDescription('The result type you want to query')
+                .setDescriptionLocalizations({
+                    "en-US": "The result type you want to query",
+                    'zh-CN': '目前不支援简体中文',
+                    "zh-TW": "您欲查詢的結果種類"
+                })
+                .addChoices(
+                    { name: '黑羊毛', value: 'black_wool' },
+                    { name: '白羊毛', value: 'white_wool' },
+                    { name: '無指定', value: 'all' }
+                )
+                .setRequired(true)
+        )
+        .addStringOption(option =>
             option.setName('type')
                 .setNameLocalizations({
                     "en-US": "type",
@@ -79,6 +99,20 @@ module.exports = {
                     { name: '由小到大', value: 'asc' }
                 )
                 .setRequired(true)
+        )
+        .addNumberOption(option =>
+            option.setName('odds')
+                .setNameLocalizations({
+                    "en-US": "odds",
+                    "zh-CN": "dregwv简体中文",
+                    "zh-TW": "賠率"
+                })
+                .setDescription('The odds you want to query')
+                .setDescriptionLocalizations({
+                    "en-US": "The odds you want to query",
+                    'zh-CN': '目前不支援简体中文',
+                    "zh-TW": "您欲查詢的賠率"
+                })
         )
         .addStringOption(option =>
             option.setName('late')
@@ -223,19 +257,24 @@ module.exports = {
         const amount_bigger_than = interaction.options.getInteger('amount-bigger-than');
         const amount_smaller_than = interaction.options.getInteger('amount-smaller-than');
         const amount_equal = interaction.options.getInteger('amount-equal');
+        const result_type = interaction.options.getString('result_type');
 
         // 计算每个玩家的排名数据
         const rankings = all_user_data.map(user => {
             const userHistory = all_pay_history.filter(record =>
                 record.player_uuid === user.player_uuid &&
                 record.bet_type === coin_type &&
+                (result_type === 'all' ||
+                    (result_type === 'black_wool' && record.odds <= 0) ||
+                    (result_type === 'white_wool' && record.odds > 0)) &&
                 (time_type === 'none' ||
                     (time_type === 'late' && record.time >= time_unix) ||
                     (time_type === 'early' && record.time <= time_unix) ||
                     (time_type === 'duration' && record.time >= time_unix && record.time <= time_unix_2)) &&
                 (!amount_bigger_than || record.amount > amount_bigger_than) &&
                 (!amount_smaller_than || record.amount < amount_smaller_than) &&
-                (!amount_equal || record.amount === amount_equal)
+                (!amount_equal || record.amount === amount_equal) &&
+                (record.odds === interaction.options.getInteger('odds') || !interaction.options.getInteger('odds'))
             );
 
             let value = 0;
