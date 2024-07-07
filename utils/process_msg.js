@@ -19,6 +19,11 @@ async function process_msg(bot, message, playerid) {
     return message;
 }
 
+async function add_comma_to_number(number) {
+    return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
 module.exports = {
-    process_msg
+    process_msg,
+    add_comma_to_number
 }

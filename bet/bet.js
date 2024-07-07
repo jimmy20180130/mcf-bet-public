@@ -1,7 +1,7 @@
 const fs = require('fs');
 const { chat } = require(`../utils/chat.js`);
 const { mc_error_handler } = require(`../error/mc_handler.js`)
-const { process_msg } = require(`../utils/process_msg.js`)
+const { process_msg, add_comma_to_number } = require(`../utils/process_msg.js`)
 const { pay_handler } = require(`../utils/pay_handler.js`)
 const { activateBlock } = require(`../utils/better-mineflayer.js`)
 const { write_pay_history, write_errors } = require(`../utils/database.js`)
