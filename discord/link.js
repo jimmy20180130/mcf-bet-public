@@ -79,13 +79,17 @@ module.exports = {
 					const channel = await interaction.client.channels.fetch(config.discord_channels.link)
 					await channel.send({ embeds: [embed] });
 
-					if (config.link_role == 'default') return
+					if (config.roles.link_role == 'default') return
 
 					try {
-						const role = await interaction.guild.roles.fetch(roles[config.roles.link_role].discord_id);
-						await interaction.member.roles.add(role);
+						if (config.roles.auto_give) {
+							const role = await interaction.guild.roles.fetch(roles[config.roles.link_role_dc].discord_id);
+							await interaction.member.roles.add(role);
 
-						await set_user_role(interaction.member.id, config.roles.link_role_dc)
+							await set_user_role(interaction.member.id, config.roles.link_role_dc)
+						}
+
+						console.log(await get_user_data_from_dc(interaction.member.id))
 					} catch (error) {}
 				} else if (verify_success == 'already_linked') {
 					await interaction.editReply('您的 Discord 帳號已經綁定過了');

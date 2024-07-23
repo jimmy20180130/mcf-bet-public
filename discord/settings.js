@@ -151,8 +151,8 @@ module.exports = {
 		let roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf8'));
 
 		if (!user_roles.some(role => roles[role] && (roles[role].reverse_blacklist == false || !roles[role].disallowed_commands == []))) {
-			await interaction.editReply({ content: '你沒有權限使用這個指令', ephemeral: true });
 			await interaction.deferReply({ ephemeral: true });
+			await interaction.editReply({ content: '你沒有權限使用這個指令', ephemeral: true });
 			return;
 		}
 
@@ -253,7 +253,7 @@ module.exports = {
 				} else {
 					let index = config.advertisement.findIndex(x => x.text === interaction.options.getString('文字或指令'));
 					if (index !== -1) {
-						config.advertisement.splice(index, 1);
+						config.advertisement = config.advertisement.splice(index, 1);
 					}
 				}
 				

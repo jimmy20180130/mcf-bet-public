@@ -179,8 +179,10 @@ async function create_player_data(playerid, player_uuid, discord_id, role) {
                 })
             })
 
-            await add_user_role(discord_id, role)
-            await remove_user_role(discord_id, 'none')
+            if (role !== 'none') {
+                await add_user_role(discord_id, role)
+                await remove_user_role(discord_id, 'none')
+            }
         
         } else {
             let rows = await new Promise((resolve, reject) => {

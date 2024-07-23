@@ -1,4 +1,4 @@
-const { create_player_data, get_pay_history, getPlayerRole, get_user_data } = require(`../utils/database.js`);
+const { create_player_data, get_pay_history, getPlayerRole, get_user_data, set_user_role } = require(`../utils/database.js`);
 const { get_player_uuid, get_player_name } = require(`../utils/get_player_info.js`);
 const fs = require('fs');
 const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
@@ -37,7 +37,11 @@ const validate_code = async (code, discord_id) => {
         cache.link = cache.link.filter(code_item => code_item.code != code)
         fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 2), 'utf8');
         result = result[0]
-        await create_player_data(await get_player_name(result.player_uuid), result.player_uuid, discord_id, config.roles.link_role_dc)
+        await create_player_data(await get_player_name(result.player_uuid), result.player_uuid, discord_id, 'default')
+        if (config.roles.auto_give) {
+            await set_user_role(discord_id, config.roles.link_role_dc)
+        }
+        console.log(await get_user_data(result.player_uuid))
         return result.player_uuid
     } else {
         return false

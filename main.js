@@ -26,8 +26,8 @@ const botArgs = {
     host: config.bot_args.host,
     port: config.bot_args.port,
     username: config.bot_args.username,
-    auth: config.bot_args.auth,
-    version: config.bot_args.version,
+    auth: 'microsoft',
+    version: '1.20.1',
     checkTimeoutInterval:360000
 };
 
@@ -111,7 +111,7 @@ const init_bot = async () => {
                                 } else {
                                     const msg = string;
                                     const e_regex = /\[系統\] 您收到了\s+(\w+)\s+轉帳的 (\d{1,3}(,\d{3})*)( 綠寶石 \(目前擁有 (\d{1,3}(,\d{3})*)) 綠寶石\)/;
-                                    const c_regex = /\[系統\] 您收到了 (\S+) 送來的 (\d{1,3}(,\d{3})*) 村民錠\. \(目前擁有 (\d{1,3}(,\d{3})*) 村民錠\)/
+                                    const c_regex = /\[系統\] 您收到了 (\S+) 送來的 (\d{1,3}(,\d{3})*|\d+) 村民錠\. \(目前擁有 (\d{1,3}(,\d{3})*|\d+) 村民錠\)/
                                     const ematch = e_regex.exec(msg);
                                     const cmatch = c_regex.exec(msg);
 
@@ -183,7 +183,7 @@ const init_bot = async () => {
         } else if (jsonMsg.toString().startsWith(`[系統] 您收到了 `)) {
             const msg = jsonMsg.toString();
             const e_regex = /\[系統\] 您收到了\s+(\w+)\s+轉帳的 (\d{1,3}(,\d{3})*)( 綠寶石 \(目前擁有 (\d{1,3}(,\d{3})*)) 綠寶石\)/;
-            const c_regex = /\[系統\] 您收到了 (\S+) 送來的 (\d{1,3}(,\d{3})*) 村民錠\. \(目前擁有 (\d{1,3}(,\d{3})*) 村民錠\)/
+            const c_regex = /\[系統\] 您收到了 (\S+) 送來的 (\d{1,3}(,\d{3})*|\d+) 村民錠\. \(目前擁有 (\d{1,3}(,\d{3})*|\d+) 村民錠\)/
             const ematch = e_regex.exec(msg);
             const cmatch = c_regex.exec(msg);
 
@@ -367,6 +367,11 @@ const init_bot = async () => {
 
     bot.once('error', async (err) => {
         console.log(err.message)
+
+        for (let item of intervals) {
+            clearInterval(item)
+        }
+
         if (err.message == 'read ECONNRESET') {
             bot.end()
         } else {
@@ -398,6 +403,11 @@ const init_bot = async () => {
         clearTimeout(is_on_timeout)
         stop_rl()
         stop_msg()
+
+        for (let item of intervals) {
+            clearInterval(item)
+        }
+
         console.log('[WARN] Minecraft 機器人下線了!');
         let time = moment(new Date()).tz('Asia/Taipei').format('YYYY-MM-DD HH:mm:ss');
         const string = `【下線時間】${time}`
@@ -869,8 +879,6 @@ const init_dc = () => {
                     await remove_user_discord_id(player.discord_id)
                     continue
                 }
-
-                if (player.roles == 'none') await remove_user_discord_id(player.discord_id)
             }
 
             if (client) {
@@ -904,6 +912,8 @@ const init_dc = () => {
 
                     if (discord_user_roles.length == 0) {
                         discord_user_roles.push('none')
+                    } else {
+                        discord_user_roles.push('default')
                     }
 
                     set_user_role(member[1].user.id, discord_user_roles.join(', '))

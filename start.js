@@ -18,6 +18,8 @@ rl.on('line', async function (line) {
     if (appProcess != undefined) appProcess.stdin.write(line + '\n');
 });
 
+spawn('node', [path.join(__dirname, 'check_config.js')]);
+
 let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
 
 function hashPassword(password) {
