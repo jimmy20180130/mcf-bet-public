@@ -47,6 +47,7 @@
         "assets": [
             "node_modules/**/*",
             "main.js",
+            "check_config.js",
             "auth/auth.js",
             "commands/*.js",
             "bet/*.js",
@@ -63,6 +64,7 @@
             "error/*.js",
             "utils/*.js",
             "main.js",
+            "check_config.js",
             "start.js"
         ]
     }

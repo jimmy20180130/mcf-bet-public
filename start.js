@@ -18,8 +18,6 @@ rl.on('line', async function (line) {
     if (appProcess != undefined) appProcess.stdin.write(line + '\n');
 });
 
-spawn('node', [path.join(__dirname, 'check_config.js')]);
-
 let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
 
 function hashPassword(password) {
@@ -78,37 +76,49 @@ if (config.auth_server.enabled) {
 }
 
 function startApp() {
-    appProcess = spawn('node', [path.join(__dirname, 'main.js')]);
+    checkProcess = spawn('node', [path.join(__dirname, 'check_config.js')]);
 
-    const sendMessage = (message) => {
-        const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
-        const token = config.auth_server.key;
-        const user = 'bot';
-        const username = config.auth_server.username;
-        const passwordHash = hashPassword(config.auth_server.password)
-        socket.emit('message', { data: message, username: user, room: token, user: username, password: passwordHash });
-    };
+    checkProcess.on('close', (code) => {
+        appProcess = spawn('node', [path.join(__dirname, 'main.js')]);
 
-    appProcess.stdout.on('data', (data) => {
-        console.log(`${String(data).replace(/\n$/, '')}`);
-        sendMessage(String(data).replace(/\n$/, ''));
+        const sendMessage = (message) => {
+            const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
+            const token = config.auth_server.key;
+            const user = 'bot';
+            const username = config.auth_server.username;
+            const passwordHash = hashPassword(config.auth_server.password)
+            socket.emit('message', { data: message, username: user, room: token, user: username, password: passwordHash });
+        };
+
+        appProcess.stdout.on('data', (data) => {
+            console.log(`${String(data).replace(/\n$/, '')}`);
+            sendMessage(String(data).replace(/\n$/, ''));
+        });
+    
+        appProcess.stderr.on('data', (data) => {
+            console.log(`[ERROR] 發現以下錯誤 ${data}`);
+        });
+    
+        appProcess.on('close', (code) => {
+            if (code == 135) {
+                console.log(`[INFO] 機器人已關閉`)
+                process.kill()
+            } else if (code == 246) {
+                console.log(`[INFO] 機器人正在重新啟動中...`)
+            } else {
+                console.log(`[ERROR] 程式回傳錯誤碼 ${code} ，正在重新啟動中...`);
+            }
+            appProcess = undefined
+            startApp();
+        });
     });
 
-    appProcess.stderr.on('data', (data) => {
-        console.log(`[ERROR] 發現以下錯誤 ${data}`);
-    });
-
-    appProcess.on('close', (code) => {
-        if (code == 135) {
-            console.log(`[INFO] 機器人已關閉`)
-            process.kill()
-        } else if (code == 246) {
-            console.log(`[INFO] 機器人正在重新啟動中...`)
-        } else {
-            console.log(`[ERROR] 程式回傳錯誤碼 ${code} ，正在重新啟動中...`);
-        }
-        appProcess = undefined
-        startApp();
+    checkProcess.stdout.on('data', (data) => {
+        console.log(`配置檢查輸出: ${data}`);
+      });
+      
+    checkProcess.stderr.on('data', (data) => {
+        console.error(`配置檢查錯誤: ${data}`);
     });
 }
 
