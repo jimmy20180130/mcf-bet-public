@@ -4,7 +4,7 @@ const { mc_error_handler } = require(`../error/mc_handler.js`)
 const { process_msg, add_comma_to_number } = require(`../utils/process_msg.js`)
 const { pay_handler } = require(`../utils/pay_handler.js`)
 const { activateBlock } = require(`../utils/better-mineflayer.js`)
-const { write_pay_history, write_errors } = require(`../utils/database.js`)
+const { write_bet_record } = require(`../utils/database.js`)
 const { get_player_uuid } = require(`../utils/get_player_info.js`);
 const { bet_win, bet_lose, error_embed } = require(`../discord/embed.js`);
 const { generateUUID } = require(`../utils/uuid.js`)
@@ -57,8 +57,7 @@ async function process_bet_task() {
             const coin = bot.tablist.header.toString().match(coinRegex)[1].replaceAll(',', '');
             if (task.type == 'emerald' && emerald < task.amount*config.bet.eodds) {
                 await mc_error_handler(bot, 'bet', 'no_money', task.player_id)
-                await write_errors(0, task.amount, config.bet.eodds, 'bot_no_money', await get_player_uuid(task.player_id), task.type)
-                await pay_handler(bot, task.player_id, task.amount, task.type, true)
+                await pay_handler(bot, task.player_id, task.amount, task.type, client)
                 let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'))
                 cache.bet.shift()
                 fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
@@ -68,8 +67,7 @@ async function process_bet_task() {
                 resolve()
             } else if (task.type == 'coin' && coin < task.amount*config.bet.codds) {
                 await mc_error_handler(bot, 'bet', 'no_money', task.player_id)
-                await write_errors(0, task.amount, config.bet.codds, 'bot_no_money', await get_player_uuid(task.player_id), task.type)
-                await pay_handler(bot, task.player_id, task.amount, task.type, true)
+                await pay_handler(bot, task.player_id, task.amount, task.type, client)
                 let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'))
                 cache.bet.shift()
                 fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
@@ -140,9 +138,9 @@ async function active_redstone(bot, playerid, amount, type, task_uuid) {
     const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
 
     try {
-        const position = config.bet.bet_position
+        let position = config.bet.bet_position
 
-        if (position == undefined || position.length != 3) {
+        if (position == undefined || position.length != 3 || bot.blockAt(position).neme != "redstone_wire") {
             position = undefined
         }
 
@@ -183,15 +181,7 @@ async function active_redstone(bot, playerid, amount, type, task_uuid) {
 
                         await mc_error_handler(bot, 'bet', 'unexpected_err', playerid, error)
 
-                        if (type == 'coin') {
-                            await write_errors(amount, amount, config.bet.codds, e, await get_player_uuid(playerid), type)
-                        } else if (type == 'emerald') {
-                            await write_errors(amount, amount, config.bet.eodds, e, await get_player_uuid(playerid), type)
-                        }
-
-                        const embed = await error_embed(e.msg)
-                        const channel = await client.channels.fetch(config.discord_channels.errors);
-                        await channel.send({ embeds: [embed] });
+                        await error_embed(client, task_uuid, e.message, playerid, amount, type)
                         resolve('error');
                     }
                 });
@@ -203,26 +193,28 @@ async function active_redstone(bot, playerid, amount, type, task_uuid) {
                 }, 10000);
             });
 
+            const bet_type = type == 'emerald' || 'e' ? 'e' : 'coin'
+
             await Promise.race([no_permission_Promise, bet_result, timeout_Promise]).then(async (value) => {
                 if (value.startsWith('[領地]')) {
                     await mc_error_handler(bot, 'bet', 'no_permission', playerid,)
-                    switch (await pay_handler(bot, playerid, amount, type, true)) {
-                        case 'success':
-                            break
-                        case 'no_money':
-                            break
-                    }
-                    const embed = await error_embed(`您沒有足夠的權限 (${task_uuid})`)
-                    const channel = await client.channels.fetch(config.discord_channels.errors);
-                    await channel.send({ embeds: [embed] });
+                    await pay_handler(bot, playerid, amount, type, client)
+
+                    await error_embed(client, task_uuid, 'Bot 沒有領地的建造權限，請於遊戲內輸入 /tt bot_id 以給予 bot 建造權限', playerid, amount, type)
+
+                    await write_bet_record(task_uuid, await get_player_uuid(playerid), amount, config.bet[`${bet_type}odds`], amount, type, 'no_permission', Math.floor((new Date()).getTime() / 1000))
+
                 } else if (value == 'timeout') {
                     await mc_error_handler(bot, 'bet', 'timeout', playerid)
-                    await pay_handler(bot, playerid, amount, type, true)
-                    const embed = await error_embed(`操作超時 (${task_uuid})`)
-                    const channel = await client.channels.fetch(config.discord_channels.errors);
-                    await channel.send({ embeds: [embed] });
+                    await pay_handler(bot, playerid, amount, type, client)
+                    
+                    await error_embed(client, task_uuid, '等待羊毛超時', playerid, amount, type)
+                    await write_bet_record(task_uuid, await get_player_uuid(playerid), amount, config.bet[`${bet_type}odds`], amount, type, 'timeout', Math.floor((new Date()).getTime() / 1000))
+
                 } else if (value == 'error') {
-                    await pay_handler(bot, playerid, amount, type, true)
+                    await pay_handler(bot, playerid, amount, type, client)
+                    await write_bet_record(task_uuid, await get_player_uuid(playerid), amount, config.bet[`${bet_type}odds`], amount, type, 'error', Math.floor((new Date()).getTime() / 1000))
+                
                 } else {
                     await process_bet_result(bot, await bet_result, amount, playerid, type, task_uuid);
                 }
@@ -236,23 +228,17 @@ async function active_redstone(bot, playerid, amount, type, task_uuid) {
             });
         } else {
             await mc_error_handler(bot, 'bet', 'redstone_not_found', playerid)
-            await pay_handler(bot, playerid, amount, type, true)
-            const embed = await error_embed(`找不到紅石粉 (${task_uuid})`)
-            const channel = await client.channels.fetch(config.discord_channels.errors);
-            await channel.send({ embeds: [embed] });
+            await pay_handler(bot, playerid, amount, type, client)
+            
+            await error_embed(client, task_uuid, 'Bot 找不到附近的紅石粉', playerid, amount, type)
+            await write_bet_record(task_uuid, await get_player_uuid(playerid), amount, config.bet[`${bet_type}odds`], amount, type, 'redstone_not_found', Math.floor((new Date()).getTime() / 1000))
         }
     } catch (error) {
         await mc_error_handler(bot, 'bet', 'unexpected_err', playerid, error)
-        
-        if (type == 'coin') {
-            await write_errors(amount, amount, config.bet.codds, error.message, await get_player_uuid(playerid), type)
-        } else if (type == 'emerald') {
-            await write_errors(amount, amount, config.bet.eodds, error.message, await get_player_uuid(playerid), type)
-        }
 
-        const embed = await error_embed(`${error.message} (${task_uuid})`)
-        const channel = await client.channels.fetch(config.discord_channels.errors);
-        await channel.send({ embeds: [embed] });
+        await error_embed(client, task_uuid, error.message, playerid, amount, type)
+
+        await write_bet_record(task_uuid, await get_player_uuid(playerid), amount, config.bet[`${bet_type}odds`], amount, type, 'unexpected_err', Math.floor((new Date()).getTime() / 1000))
     }
 }
 
@@ -262,50 +248,67 @@ async function process_bet_result(bot, wool, amount, player_id, type, task_uuid)
 
     if (wool == 'yes') {
         if (type == 'emerald') {
-            const pay_result = await pay_handler(bot, player_id, Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber()), 'e')
+            const pay_result = await pay_handler(bot, player_id, Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber()), 'e', client)
             console.log(pay_result)
             await chat(bot, `${await process_msg(bot, messages.bet.ewin.replaceAll('%multiply%', config.bet.eodds).replaceAll('%amount%', amount).replaceAll('%after_amount%', Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber())), player_id)}`)
-            await write_pay_history(amount, Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber()), config.bet.eodds, pay_result, await get_player_uuid(player_id), type)
-            const channel = await client.channels.fetch(config.discord_channels.bet_record);
-            const embed = await bet_win(player_id, `${amount} -> ${Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber())} 個綠寶石 💵 (賠率為 ${config.bet.eodds})`)
-            await channel.send({ embeds: [embed] });
+            //await write_pay_history(amount, Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber()), config.bet.eodds, pay_result, await get_player_uuid(player_id), type)
+            await write_bet_record(task_uuid, await get_player_uuid(player_id), amount, config.bet.eodds, Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber()), type, 'success', Math.floor((new Date()).getTime() / 1000))
+            
+            if (config.discord.enabled) {
+                const channel = await client.channels.fetch(config.discord_channels.bet_record);
+                const embed = await bet_win(player_id, `${amount} -> ${Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber())} 個綠寶石 💵 (賠率為 ${config.bet.eodds})`)
+                await channel.send({ embeds: [embed] });
+            }
             console.log(`[INFO] 下注任務 (${task_uuid}) 完成，支付玩家 ${player_id} ${Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber())} 個綠寶石，賠率為 ${config.bet.eodds} ，支付狀態為 ${pay_result}`)
         } else if (type == 'coin') {
-            const pay_result = await pay_handler(bot, player_id, Math.floor(new Decimal(amount).mul(new Decimal(config.bet.codds)).toNumber()), 'c')
+            const pay_result = await pay_handler(bot, player_id, Math.floor(new Decimal(amount).mul(new Decimal(config.bet.codds)).toNumber()), 'c', client)
             await chat(bot, `${await process_msg(bot, messages.bet.cwin.replaceAll('%multiply%', config.bet.codds).replaceAll('%amount%', amount).replaceAll('%after_amount%', Math.floor(new Decimal(amount).mul(new Decimal(config.bet.codds)).toNumber())), player_id)}`)
-            await write_pay_history(amount, Math.floor(new Decimal(amount).mul(new Decimal(config.bet.codds)).toNumber()), config.bet.codds, 'success', await get_player_uuid(player_id), type)
-            const channel = await client.channels.fetch(config.discord_channels.bet_record);
-            const embed = await bet_win(player_id, `${amount} -> ${Math.floor(new Decimal(amount).mul(new Decimal(config.bet.codds)).toNumber())} 個村民錠 🪙 (賠率為 ${config.bet.codds})`)
-            await channel.send({ embeds: [embed] });
+            //await write_pay_history(amount, Math.floor(new Decimal(amount).mul(new Decimal(config.bet.codds)).toNumber()), config.bet.codds, 'success', await get_player_uuid(player_id), type)
+            await write_bet_record(task_uuid, await get_player_uuid(player_id), amount, config.bet.codds, Math.floor(new Decimal(amount).mul(new Decimal(config.bet.codds)).toNumber()), type, 'success', Math.floor((new Date()).getTime() / 1000))
+
+            if (config.discord.enabled) {
+                const channel = await client.channels.fetch(config.discord_channels.bet_record);
+                const embed = await bet_win(player_id, `${amount} -> ${Math.floor(new Decimal(amount).mul(new Decimal(config.bet.codds)).toNumber())} 個村民錠 🪙 (賠率為 ${config.bet.codds})`)
+                await channel.send({ embeds: [embed] });
+            }
             console.log(`[INFO] 下注任務 (${task_uuid}) 完成，支付玩家 ${player_id} ${Math.floor(new Decimal(amount).mul(new Decimal(config.bet.codds)).toNumber())} 個村民錠，賠率為 ${config.bet.eodds} ，支付狀態為 ${pay_result}`)
         }
 
     } else if (wool == 'no') {
         if (type == 'emerald') {
             await chat(bot, `${await process_msg(bot, messages.bet.elose.replaceAll('%amount%', amount), player_id)}`)
-            await write_pay_history(amount, 0, config.bet.eodds, 'success', await get_player_uuid(player_id), type)
-            const channel = await client.channels.fetch(config.discord_channels.bet_record);
-            const embed = await bet_lose(player_id, `下注 ${amount} 個綠寶石 💵，未中獎 (賠率為 ${config.bet.eodds})`)
-            await channel.send({ embeds: [embed] });
+            //await write_pay_history(amount, 0, config.bet.eodds, 'success', await get_player_uuid(player_id), type)
+            await write_bet_record(task_uuid, await get_player_uuid(player_id), amount, config.bet.eodds, 0, type, 'success', Math.floor((new Date()).getTime() / 1000))
+
+            if (config.discord.enabled) {
+                const channel = await client.channels.fetch(config.discord_channels.bet_record);
+                const embed = await bet_lose(player_id, `下注 ${amount} 個綠寶石 💵，未中獎 (賠率為 ${config.bet.eodds})`)
+                await channel.send({ embeds: [embed] });
+            }
             console.log(`[INFO] 下注任務 (${task_uuid}) 完成，支付玩家 ${player_id} 0 個綠寶石，賠率為 ${config.bet.eodds}`)
 
         } else if (type == 'coin') {
             await chat(bot, `${await process_msg(bot, messages.bet.close.replaceAll('%amount%', amount), player_id)}`)
-            await write_pay_history(amount, 0, config.bet.codds, 'success', await get_player_uuid(player_id), type)
-            const channel = await client.channels.fetch(config.discord_channels.bet_record);
-            const embed = await bet_lose(player_id, `下注 ${amount} 個村民錠 🪙，未中獎 (賠率為 ${config.bet.codds})`)
-            await channel.send({ embeds: [embed] });
+            //await write_pay_history(amount, 0, config.bet.codds, 'success', await get_player_uuid(player_id), type)
+            await write_bet_record(task_uuid, await get_player_uuid(player_id), amount, config.bet.codds, 0, type, 'success', Math.floor((new Date()).getTime() / 1000))
+            
+            if (config.discord.enabled) {
+                const channel = await client.channels.fetch(config.discord_channels.bet_record);
+                const embed = await bet_lose(player_id, `下注 ${amount} 個村民錠 🪙，未中獎 (賠率為 ${config.bet.codds})`)
+                await channel.send({ embeds: [embed] });
+            }
             console.log(`[INFO] 下注任務 (${task_uuid}) 完成，支付玩家 ${player_id} 0 個村民錠，賠率為 ${config.bet.eodds}`)
 
         }
         
     } else if (wool == 'error') {
         if (type == 'emerald') {
-            await pay_handler(bot, player_id, amount, 'e')
+            await pay_handler(bot, player_id, amount, 'e', client)
+            await write_bet_record(task_uuid, await get_player_uuid(player_id), amount, config.bet.eodds, amount, type, 'error', Math.floor((new Date()).getTime() / 1000))
             console.log(`[INFO] 下注任務 (${task_uuid}) 失敗，退還玩家 ${player_id} ${amount} 個綠寶石，賠率為 ${config.bet.eodds} ，支付狀態為 ${pay_result}`)
         } else if (type == 'coin') {
-            await chat(bot, `/cointrans ${player_id} ${amount}`)
-            await chat(bot, player_id)
+            await pay_handler(bot, player_id, amount, 'c', client)
+            await write_bet_record(task_uuid, await get_player_uuid(player_id), amount, config.bet.codds, amount, type, 'error', Math.floor((new Date()).getTime() / 1000))
             console.log(`[INFO] 下注任務 (${task_uuid}) 失敗，退還玩家 ${player_id} ${amount} 個村民錠，賠率為 ${config.bet.eodds} ，支付狀態為 ${pay_result}`)
         }
     }

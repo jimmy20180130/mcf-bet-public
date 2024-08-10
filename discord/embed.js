@@ -1,5 +1,6 @@
 const { EmbedBuilder } = require('discord.js');
 const moment = require('moment-timezone');
+const fs = require('fs');
 
 async function bet_record(field0, field1, field2, field3, field4, field5, field6, field7, image_url) {
     const embed = new EmbedBuilder()
@@ -157,16 +158,29 @@ async function link_embed(playerid, player_uuid, dc_tag, dc_id, player_id) {
     return embed
 }
 
-async function error_embed(field0) {
+async function error_embed(client, bet_uuid, error_msg, player_id, amount, type) {
     const embed = new EmbedBuilder()
-        .setTitle("❌ | 發生錯誤")
-        .addFields(
-            {
-                name: "原因",
-                value: field0,
-                inline: false
-            }
-        )
+        .setTitle(`❌ 下注錯誤 (\`${bet_uuid}\`)`)
+        .setDescription(`**錯誤原因** | \`${error_msg}\`\n**詳細資訊** | \`PlayerID: ${player_id}, Amount: ${amount}, Type: ${type}\``)
+        .setColor("#f50000")
+        .setFooter({
+            text: "Jimmy Bot",
+            iconURL: "https://cdn.discordapp.com/icons/1173075041030787233/bbf79773eab98fb335edc9282241f9fe.webp?size=1024&format=webp&width=0&height=256",
+        })
+        .setTimestamp();
+    
+    const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
+
+    if (config.discord.enabled) {
+        const channel = await client.channels.fetch(config.discord_channels.errors);
+        await channel.send({ embeds: [embed] });
+    }
+}
+
+async function pay_error(client, pay_uuid, player_id, amount, type, reason) {
+    const embed = new EmbedBuilder()
+        .setTitle(`❌ 轉帳錯誤 (\`${pay_uuid}\`)`)
+        .setDescription(`**處理方式** | \`${reason != 'timeout' ? `新增 ${amount} 元至玩家 ${player_id} 的錢包` : `管理員手動補發`}\`\n**詳細資訊** | \`PlayerID: ${player_id}, Amount: ${amount}, Type: ${type}, Reason: ${reason}\``)
         .setColor("#f50000")
         .setFooter({
             text: "Jimmy Bot",
@@ -174,7 +188,12 @@ async function error_embed(field0) {
         })
         .setTimestamp();
 
-    return embed;
+    const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
+    
+    if (config.discord.enabled) {
+        const channel = await client.channels.fetch(config.discord_channels.errors);
+        await channel.send({ embeds: [embed] });
+    }
 }
 
 module.exports = {
@@ -187,5 +206,6 @@ module.exports = {
     bot_off,
     bot_kicked,
     link_embed,
-    error_embed
+    error_embed,
+    pay_error
 }

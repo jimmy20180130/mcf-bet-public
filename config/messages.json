@@ -7,10 +7,12 @@
             "default": "&6我目前有 &3&l%emerald% &6個綠寶石和 &3&l%coin% &6個村民錠"
         },
         "epay": {
-            "default": "&6成功支付 &3&l%emerald% &6個綠寶石給 &c&l%playerid%"
+            "default": "&6成功支付 &3&l%emerald% &6個綠寶石給 &c&l%playerid%",
+            "error": "&c支付失敗，原因: %error_msg%"
         },
         "cpay": {
-            "default": "&6成功支付 &3&l%coin% &6個村民錠給 &c&l%playerid%"
+            "default": "&6成功支付 &3&l%coin% &6個村民錠給 &c&l%playerid%",
+            "error": "&c支付失敗，原因: %error_msg%"
         },
         "wallet": {
             "amount": "/m %playerid% &6您錢包中的錢有 &c&l%wallet_amount% &6個綠寶石",
@@ -21,9 +23,10 @@
             "no_respond": "此指令為開啟 GUI 或無回應"
         },
         "daily": {
-            "already_signed": "您今天已經簽到過了！",
-            "success": "%time% 您已成功領取身分組 %role% (僅列出第一項) 的每日簽到獎勵 %amount% 個綠寶石，您至今共簽到了 %count% 次",
-            "failed": "[%time%] &c&l簽到失敗，請截圖此訊息並聯絡管理員 (%uuid%)"
+            "already_signed": "[%time%] &c&l簽到失敗: 重複簽到",
+            "success": "[%time%] 簽到成功: 已成功領取身分組 %role% (僅列出第一項) 的每日簽到獎勵 %amount% 個綠寶石",
+            "failed": "[%time%] &c&l簽到失敗: 請截圖此訊息並聯絡管理員 (%err%)",
+            "disabled": "[%time%] &c&l簽到失敗: 簽到功能已被關閉"
         },
         "donate": {
             "start_donate": "現在您可以轉帳給我了，20 秒後將會失效",
@@ -34,7 +37,8 @@
             "donate_timeout": "捐款超時，請再次輸入指令以完成捐款"
         },
         "link": {
-            "start_link": "/m %playerid% 您的驗證碼為 %code%，請至 Discord 伺服器中使用 /綁定 %code% 來完成綁定，此代碼將在十分鐘後失效"
+            "start_link": "/m %playerid% 您的驗證碼為 %code%，請至 Discord 伺服器中使用 /綁定 %code% 來完成綁定，此代碼將在十分鐘後失效",
+            "discord_disabled": "/m %playerid% 管理員已將綁定功能已關閉，無法綁定"
         },
         "play": {
             "arrived": "/m %playerid% 我已到達位置，現在您可以付錢給我以開始遊玩"
@@ -62,12 +66,13 @@
             "c_over_limit": "金額不在範圍內 ( %cmin% ~ %cmax% )"
         },
         "pay": {
-            "no_money": "付款時發生了錯誤: 機器人沒錢了",
-            "not_same_place": "付款時發生了錯誤: 我和你不同分流",
-            "busy": "付款時發生了錯誤: 忙碌中",
-            "negative": "付款時發生了錯誤: 金額不為正",
-            "timeout": "付款時發生了錯誤: 付款超時",
-            "can't send msg": "付款時發生了錯誤: 無法傳送訊息"
+            "no_money": "&c&l付款時發生了錯誤: 機器人沒錢了 &7| &6已自動將錢新增至您的錢包內，私訊我 領錢 即可領取",
+            "not_same_place": "&c&l付款時發生了錯誤: 我和你不同分流 &7| &6已自動將錢新增至您的錢包內，私訊我 領錢 即可領取",
+            "busy": "&c&l付款時發生了錯誤: 忙碌中 &7| &6已自動將錢新增至您的錢包內，私訊我 領錢 即可領取",
+            "negative": "&c&l付款時發生了錯誤: 金額不為正 &7| &6已自動將錢新增至您的錢包內，私訊我 領錢 即可領取",
+            "timeout": "&c&l付款時發生了錯誤: 付款超時 &7| &6如未收到款項，請完整截圖轉帳紀錄及此訊息，並聯絡賭場負責人/管理員，感謝您的配合 &b(UUID: %uuid%)",
+            "can't send msg": "&c&l付款時發生了錯誤: 無法傳送訊息 &7| &6已自動將錢新增至您的錢包內，私訊我 領錢 即可領取",
+            "not_same_player": "&c&l付款時發生了錯誤: 玩家輸入錯誤 &7| &6已自動將錢新增至您的錢包內，私訊我 領錢 即可領取"
         }
     },
     "bet": {

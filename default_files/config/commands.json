@@ -1,127 +1,127 @@
 {
-    "help": {
-        "display_name": "&6help&r",
-        "name": [
-            "幫助",
-            "help"
-        ],
-        "description": "&7[&6%command_name% &7-> &b幫助&7]",
-        "usage": "help [指令名稱]"
-    },
-    "hi": {
-        "display_name": "&6hi&r",
-        "name": [
-            "問好",
-            "hi"
-        ],
-        "description": "&7[&6%command_name% &7-> &b問好&7]",
-        "usage": "hi"
-    },
-    "link": {
-        "display_name": "&6link&r",
-        "name": [
-            "連結帳號",
-            "link",
-            "link_dc"
-        ],
-        "description": "&7[&6%command_name% &7-> &b連結帳號&7]"
-    },
-    "play": {
-        "display_name": "&6play&r",
-        "name": [
-            "就定位",
-            "play",
-            "遊玩"
-        ],
-        "description": "&7[&6%command_name% &7-> &b開始遊玩&7]"
-    },
-    "stop": {
-        "display_name": "&6stop&r",
-        "name": [
-            "停止",
-            "stop"
-        ],
-        "description": "&7[&6%command_name% &7-> &b停止機器人&7]"
-    },
-    "reload": {
-        "display_name": "&6reload&r",
-        "name": [
-            "重新啟動",
-            "reload",
-            "restart"
-        ],
-        "description": "&7[&6%command_name% &7-> &b重新啟動機器人&7]"
-    },
-    "daily": {
-        "display_name": "&6daily&r",
-        "name": [
-            "簽到",
-            "daily",
-            "每日獎勵"
-        ],
-        "description": "&7[&6%command_name% &7-> &b簽到&7]"
-    },
-    "wallet": {
-        "display_name": "&6wallet&r",
-        "name": [
-            "領錢",
-            "withdraw"
-        ],
-        "description": "&7[&6%command_name% &7-> &b錢包&7]",
-        "usage": "wallet [withdraw / amount / add]"
-    },
-    "donate": {
-        "display_name": "&6donate&r",
-        "name": [
-            "捐錢",
-            "donate"
-        ],
-        "description": "&7[&6%command_name% &7-> &b捐錢&7]"
-    },
-    "cmd": {
-        "display_name": "&6cmd&r",
-        "name": [
-            "指令",
-            "command",
-            "cmd"
-        ],
-        "description": "&7[&6%command_name% &7-> &b使用指令&7]"
-    },
-    "epay": {
-        "display_name": "&6epay&r",
-        "name": [
-            "轉綠寶",
-            "epay"
-        ],
-        "description": "&7[&6%command_name% &7-> &b轉綠寶&7]",
-        "usage": "epay <玩家id> <金額>"
-    },
-    "cpay": {
-        "display_name": "&6cpay&r",
-        "name": [
-            "轉村民錠",
-            "cpay"
-        ],
-        "description": "&7[&6%command_name% &7-> &b轉村民錠&7]",
-        "usage": "cpay <玩家id> <金額>"
-    },
-    "say": {
-        "display_name": "&6say&r",
-        "name": [
-            "重複",
-            "say",
-            "repeat",
-            "說話"
-        ],
-        "description": "&7[&6%command_name% &7-> &b說話&7]"
-    },
-    "money": {
-        "display_name": "&6money&r",
-        "name": [
-            "money",
-            "錢"
-        ],
-        "description": "&7[&6%command_name% &7-> &b機器人的錢&7]",
-        "usage": "money"
-    }
+  "help": {
+    "display_name": "&6help&r",
+    "name": [
+      "幫助",
+      "help"
+    ],
+    "description": "&7[&6%command_name% &7-> &b幫助&7]",
+    "usage": "help [指令名稱]"
+  },
+  "hi": {
+    "display_name": "&6hi&r",
+    "name": [
+      "問好",
+      "hi"
+    ],
+    "description": "&7[&6%command_name% &7-> &b問好&7]",
+    "usage": "hi"
+  },
+  "link": {
+    "display_name": "&6link&r",
+    "name": [
+      "連結帳號",
+      "link",
+      "link_dc"
+    ],
+    "description": "&7[&6%command_name% &7-> &b連結帳號&7]"
+  },
+  "play": {
+    "display_name": "&6play&r",
+    "name": [
+      "就定位",
+      "play",
+      "遊玩"
+    ],
+    "description": "&7[&6%command_name% &7-> &b開始遊玩&7]"
+  },
+  "stop": {
+    "display_name": "&6stop&r",
+    "name": [
+      "停止",
+      "stop"
+    ],
+    "description": "&7[&6%command_name% &7-> &b停止機器人&7]"
+  },
+  "reload": {
+    "display_name": "&6reload&r",
+    "name": [
+      "重新啟動",
+      "reload",
+      "restart"
+    ],
+    "description": "&7[&6%command_name% &7-> &b重新啟動機器人&7]"
+  },
+  "daily": {
+    "display_name": "&6daily&r",
+    "name": [
+      "簽到",
+      "daily",
+      "每日獎勵"
+    ],
+    "description": "&7[&6%command_name% &7-> &b簽到&7]"
+  },
+  "wallet": {
+    "display_name": "&6wallet&r",
+    "name": [
+      "領錢",
+      "withdraw"
+    ],
+    "description": "&7[&6%command_name% &7-> &b錢包&7]",
+    "usage": "wallet [withdraw / amount / add]"
+  },
+  "donate": {
+    "display_name": "&6donate&r",
+    "name": [
+      "捐錢",
+      "donate"
+    ],
+    "description": "&7[&6%command_name% &7-> &b捐錢&7]"
+  },
+  "cmd": {
+    "display_name": "&6cmd&r",
+    "name": [
+      "指令",
+      "command",
+      "cmd"
+    ],
+    "description": "&7[&6%command_name% &7-> &b使用指令&7]"
+  },
+  "epay": {
+    "display_name": "&6epay&r",
+    "name": [
+      "轉綠寶",
+      "epay"
+    ],
+    "description": "&7[&6%command_name% &7-> &b轉綠寶&7]",
+    "usage": "epay <玩家id> <金額>"
+  },
+  "cpay": {
+    "display_name": "&6cpay&r",
+    "name": [
+      "轉村民錠",
+      "cpay"
+    ],
+    "description": "&7[&6%command_name% &7-> &b轉村民錠&7]",
+    "usage": "cpay <玩家id> <金額>"
+  },
+  "say": {
+    "display_name": "&6say&r",
+    "name": [
+      "重複",
+      "say",
+      "repeat",
+      "說話"
+    ],
+    "description": "&7[&6%command_name% &7-> &b說話&7]"
+  },
+  "money": {
+    "display_name": "&6money&r",
+    "name": [
+      "money",
+      "錢"
+    ],
+    "description": "&7[&6%command_name% &7-> &b機器人的錢&7]",
+    "usage": "money"
+  }
 }

@@ -1,8 +1,8 @@
 const {
-    get_player_wallet_discord,
+    get_player_wallet,
     create_player_wallet,
-    add_player_wallet_dc,
-    clear_player_wallet_dc
+    set_player_wallet,
+    get_user_data
 } = require(`../utils/database.js`);
 const fs = require('fs')
 
@@ -41,6 +41,16 @@ module.exports = {
                         .setRequired(true)
                         .setMinValue(1)
                 )
+                .addStringOption(option => 
+                    option
+                        .setName('貨幣類型')
+                        .setDescription('貨幣的種類')
+                        .setRequired(true)
+                        .addChoices(
+                            { name: '綠寶石', value: 'emerald' },
+                            { name: '村民錠', value: 'coin' }
+                        )
+                )
         )
         .addSubcommand(subcommand =>
             subcommand
@@ -59,6 +69,16 @@ module.exports = {
                         .setRequired(true)
                         .setMinValue(1)
                 )
+                .addStringOption(option => 
+                    option
+                        .setName('貨幣類型')
+                        .setDescription('貨幣的種類')
+                        .setRequired(true)
+                        .addChoices(
+                            { name: '綠寶石', value: 'emerald' },
+                            { name: '村民錠', value: 'coin' }
+                        )
+                )
         )
         .addSubcommand(subcommand =>
             subcommand
@@ -69,6 +89,16 @@ module.exports = {
                         .setName('使用者')
                         .setDescription('欲清空餘額的使用者')
                         .setRequired(true)
+                )
+                .addStringOption(option => 
+                    option
+                        .setName('貨幣類型')
+                        .setDescription('貨幣的種類')
+                        .setRequired(true)
+                        .addChoices(
+                            { name: '綠寶石', value: 'emerald' },
+                            { name: '村民錠', value: 'coin' }
+                        )
                 )
         ),
 
@@ -84,13 +114,20 @@ module.exports = {
 		}
 
         const user = interaction.options.getUser('使用者')
-        let wallet;
+        const player_uuid = (await get_user_data(undefined, user.id)).discord_id
+        let player_wallet = await get_player_wallet(player_uuid, 'emerald')
+
+        if (player_wallet === 'Not Found') {
+            await create_player_wallet(player_uuid)
+            player_wallet = await get_player_wallet(player_uuid, 'emerald')
+        }
+
+        let player_wallet_e = await get_player_wallet(player_uuid, 'emerald')
+        let player_wallet_c = await get_player_wallet(player_uuid, 'coin')
 
         switch (interaction.options.getSubcommand()) {
             case '查詢餘額':
-                wallet = await get_player_wallet_discord(user.id)
-
-                switch (wallet) {
+                switch (player_wallet) {
                     case 'error':
                         await interaction.editReply('發生錯誤，請稍後再試')
                         break
@@ -98,66 +135,123 @@ module.exports = {
                         await interaction.editReply(`查無玩家資料`)
                         break
                     default:
-                        await interaction.editReply(`玩家 <@${user.id}> 的錢包餘額為 ${wallet} 元`)
+                        await interaction.editReply(`玩家 <@${user.id}> 的綠寶石餘額為 ${player_wallet_e} 元，村民錠餘額為 ${player_wallet_c} 元 `)
                 }
 
                 break
 
             case '新增餘額':
-                await add_player_wallet_dc(user.id, interaction.options.getInteger('數量'))
-                await new Promise(resolve => setTimeout(resolve, 1000))
-                wallet = await get_player_wallet_discord(user.id)
+                if (interaction.options.getString('貨幣類型') == 'emerald') {
+                    await set_player_wallet(player_uuid, Number(player_wallet_e) - interaction.options.getInteger('數量'), 'emerald')
+                    player_wallet_e = await get_player_wallet(player_uuid, 'emerald')
 
-                switch (wallet) {
-                    case 'error':
-                        await interaction.editReply('發生錯誤，請稍後再試')
-                        break
-                    case 'Not Found':
-                        await interaction.editReply(`查無玩家資料`)
-                        break
-                    default:
-                        await interaction.editReply(`已成功新增玩家 <@${user.id}> 的錢，他目前有 ${wallet} 元`)
+                    switch (player_wallet_e) {
+                        case 'error':
+                            await interaction.editReply('發生錯誤，請稍後再試')
+                            break
+                        case 'Not Found':
+                            await interaction.editReply(`查無玩家資料`)
+                            break
+                        default:
+                            await interaction.editReply(`已成功新增玩家 <@${user.id}> 的錢，他的錢包目前有 ${player_wallet_e} 個綠寶石`)
+    
+                            const dm = await user.createDM()
+    
+                            try {
+                                await dm.send(`管理員已新增 ${interaction.options.getInteger('數量')} 個綠寶石至您的錢包中\n您的錢包目前有 ${player_wallet_e} 個綠寶石\n如要領取，請在遊戲中私訊我 "領錢" ，感謝您的配合`)
+                            } catch (error) { }
+                    }
 
-                        const dm = await user.createDM()
+                } else {
+                    await set_player_wallet(player_uuid, Number(player_wallet_c) - interaction.options.getInteger('數量'), 'coin')
+                    player_wallet_c = await get_player_wallet(player_uuid, 'coin')
 
-                        try {
-                            await dm.send(`管理員已新增 ${interaction.options.getInteger('數量')} 元至您的錢包中，您目前有 ${wallet} 元，在遊戲中私訊我 "領錢" 即可領取。`)
-                        } catch (error) { }
+                    switch (player_wallet_c) {
+                        case 'error':
+                            await interaction.editReply('發生錯誤，請稍後再試')
+                            break
+                        case 'Not Found':
+                            await interaction.editReply(`查無玩家資料`)
+                            break
+                        default:
+                            await interaction.editReply(`已成功新增玩家 <@${user.id}> 的錢，他的錢包目前有 ${player_wallet_c} 個綠寶石`)
+    
+                            const dm = await user.createDM()
+    
+                            try {
+                                await dm.send(`管理員已新增 ${interaction.options.getInteger('數量')} 個綠寶石至您的錢包中\n您的錢包目前有 ${player_wallet_c} 個綠寶石\n如要領取，請在遊戲中私訊我 "領錢" ，感謝您的配合`)
+                            } catch (error) { }
+                    }
                 }
 
                 break
 
             case '減少餘額':
-                await add_player_wallet_dc(user.id, -interaction.options.getInteger('數量'))
-                await new Promise(resolve => setTimeout(resolve, 1000))
-                wallet = await get_player_wallet_discord(user.id)
+                if (interaction.options.getString('貨幣類型') == 'emerald') {
+                    await set_player_wallet(player_uuid, Number(player_wallet_e) - interaction.options.getInteger('數量'), 'emerald')
+                    player_wallet_e = await get_player_wallet(player_uuid, 'emerald')
 
-                switch (wallet) {
-                    case 'error':
-                        await interaction.editReply('發生錯誤，請稍後再試')
-                        break
-                    case 'Not Found':
-                        await interaction.editReply(`查無玩家資料`)
-                        break
-                    default:
-                        await interaction.editReply(`已成功減少玩家 <@${user.id}> 的錢，他目前有 ${wallet} 元`)
+                    switch (player_wallet_e) {
+                        case 'error':
+                            await interaction.editReply('發生錯誤，請稍後再試')
+                            break
+                        case 'Not Found':
+                            await interaction.editReply(`查無玩家資料`)
+                            break
+                        default:
+                            await interaction.editReply(`已成功減少玩家 <@${user.id}> 的錢，他的錢包目前有 ${player_wallet_e} 個綠寶石`)
+                    }
+                } else {
+                    await set_player_wallet(player_uuid, Number(player_wallet_c) - interaction.options.getInteger('數量'), 'coin')
+                    player_wallet_c = await get_player_wallet(player_uuid, 'coin')
+
+                    switch (player_wallet_c) {
+                        case 'error':
+                            await interaction.editReply('發生錯誤，請稍後再試')
+                            break
+                        case 'Not Found':
+                            await interaction.editReply(`查無玩家資料`)
+                            break
+                        default:
+                            await interaction.editReply(`已成功減少玩家 <@${user.id}> 的錢，他的錢包目前有 ${player_wallet_c} 個村民錠`)
+                    }
                 }
+
+                
 
                 break
 
             case '清空餘額':
-                wallet = await clear_player_wallet_dc(user.id)
-                await new Promise(resolve => setTimeout(resolve, 1000))
+                if (interaction.options.getString('貨幣類型') == 'emerald') {
+                    await set_player_wallet(player_uuid, 0, 'emerald')
+                    player_wallet_e = await get_player_wallet(player_uuid, 'emerald')
 
-                switch (wallet) {
-                    case 'error':
-                        await interaction.editReply('發生錯誤，請稍後再試')
-                        break
-                    case 'Not Found':
-                        await interaction.editReply(`查無玩家資料`)
-                        break
-                    default:
-                        await interaction.editReply(`已清空玩家 <@${user.id}> 的錢包`)
+                    switch (player_wallet_e) {
+                        case 'error':
+                            await interaction.editReply('發生錯誤，請稍後再試')
+                            break
+                        case 'Not Found':
+                            await interaction.editReply(`查無玩家資料`)
+                            break
+                        default:
+                            await interaction.editReply(`已清空玩家 <@${user.id}> 的錢包`)
+                    }
+
+                } else {
+                    await set_player_wallet(player_uuid, 0, 'coin')
+                    player_wallet_c = await get_player_wallet(player_uuid, 'coin')
+
+                    switch (player_wallet_c) {
+                        case 'error':
+                            await interaction.editReply('發生錯誤，請稍後再試')
+                            break
+                        case 'Not Found':
+                            await interaction.editReply(`查無玩家資料`)
+                            break
+                        default:
+                            await interaction.editReply(`已清空玩家 <@${user.id}> 的錢包`)
+                    }
+
                 }
 
                 break

@@ -1,9 +1,10 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { delete_user_data, get_user_data_from_dc, set_user_role } = require(`../utils/database.js`);
+const { get_user_data, remove_user_data } = require(`../utils/database.js`);
 const { validate_code } = require(`../utils/link_handler.js`);
 const { get_player_name } = require(`../utils/get_player_info.js`);
 const { link_embed } = require(`../discord/embed.js`);
 const fs = require('fs')
+const Logger = require('../utils/logger.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -66,6 +67,7 @@ module.exports = {
 		const verification_code = interaction.options.getString('驗證碼')
 
 		if (!interaction.member) {
+			Logger.debug(`[綁定] ${interaction.user.id} 並未在伺服器中使用此指令`);
 			await interaction.editReply('請在伺服器中使用此指令');
 			return;
 		}
@@ -74,30 +76,23 @@ module.exports = {
 			case 'link':
 				const verify_success = await validate_code(verification_code, interaction.member.id)
 				if (verify_success && verify_success != 'already_linked') {
+					Logger.debug(`[綁定] ${interaction.member.id} 綁定成功，綁定的 UUID 為 ${verify_success}`);
 					await interaction.editReply(`成功綁定您的 Minecraft 帳號 (${(await get_player_name(verify_success)).replace(/(_)/g, "\\$1")}) 至您的 Discord 帳號 (<@${interaction.member.id}>)`);
 					const embed = await link_embed((await get_player_name(verify_success)).replace(/(_)/g, "\\$1"), verify_success.replace(/(_)/g, "\\$1"), interaction.member.user.tag.replace(/(_)/g, "\\$1"), interaction.member.user.id, await get_player_name(verify_success))
 					const channel = await interaction.client.channels.fetch(config.discord_channels.link)
 					await channel.send({ embeds: [embed] });
 
-					if (config.roles.link_role == 'default') return
-
-					try {
-						if (config.roles.auto_give) {
-							const role = await interaction.guild.roles.fetch(roles[config.roles.link_role_dc].discord_id);
-							await interaction.member.roles.add(role);
-
-							await set_user_role(interaction.member.id, config.roles.link_role_dc)
-						}
-
-						console.log(await get_user_data_from_dc(interaction.member.id))
-					} catch (error) {}
 				} else if (verify_success == 'already_linked') {
+					Logger.debug(`[綁定] ${interaction.member.id} 已經綁定過了`);
 					await interaction.editReply('您的 Discord 帳號已經綁定過了');
+
 				} else {
+					Logger.debug(`[綁定] ${interaction.member.id} 驗證碼錯誤`);
 					await interaction.editReply('驗證碼錯誤');
 				}
 
 				break;
+
 			case 'unlink':
 				const embed = new EmbedBuilder()
 					.setTitle('確認操作')
@@ -122,18 +117,19 @@ module.exports = {
 
 				collector.on('collect', async (interaction) => {
 					if (interaction.customId === 'confirm') {
-						await interaction.update({ content: '已確認操作', components: [], embeds: [] });
+						await interaction.update({ content: '已成功解除綁定', components: [], embeds: [] });
 
-						const player_uuid = (await get_user_data_from_dc(interaction.member.id))[0].player_uuid
-						await delete_user_data(player_uuid);
+						const player_uuid = await get_user_data(undefined, interaction.user.id).then(data => data.player_uuid);
+						await remove_user_data(player_uuid);
 
 					} else {
-						await interaction.update({ content: '已取消操作', components: [] });
+						Logger.debug(`[綁定] ${interaction.user.id} 取消解除綁定`);
+						await interaction.update({ content: '已取消解除綁定', components: [] });
 					}
 				});
 
 				collector.on('end', (collected) => {
-					console.log(`Collected ${collected.size} interactions`);
+					Logger.debug(`[綁定] 解除綁定操作介面已結束`);
 				});
 
 				break;

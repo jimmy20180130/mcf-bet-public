@@ -1,60 +1,31 @@
 const sqlite3 = require('sqlite3').verbose();
+const Logger = require('./logger.js');
 
-let user_data = null;
-let pay_history = null;
-let errors = null;
+let data = null;
 
 function initDB() {
-    user_data = new sqlite3.Database(`${process.cwd()}/data/user_data.db`);
-    pay_history = new sqlite3.Database(`${process.cwd()}/data/pay_history.db`);
-    errors = new sqlite3.Database(`${process.cwd()}/data/errors.db`);
+    data = new sqlite3.Database(`${process.cwd()}/data/data.db`);
+    Logger.debug(`[資料庫] 已連接至資料庫 ${process.cwd()}/data/data.db`);
 }
 
 function closeDB() {
-    if (user_data) {
-        user_data.close((err) => {
+    if (data) {
+        data.close((err) => {
             if (err) {
-                console.error(err.message);
-            }
-        });
-    }
-
-    if (pay_history) {
-        pay_history.close((err) => {
-            if (err) {
-                console.error(err.message);
-            }
-        });
-    }
-
-    if (errors) {
-        errors.close((err) => {
-            if (err) {
-                console.error(err.message);
+                Logger.error(`[資料庫] 關閉資料庫時發生錯誤：${err.message}`);
+            } else {
+                Logger.debug(`[資料庫] 已關閉資料庫`);
             }
         });
     }
 }
 
-function executeQuery(type, query, params, callback) {
-    let db = null;
-
-    switch (type) {
-        case 'user_data':
-            db = user_data;
-            break;
-        case 'pay_history':
-            db = pay_history;
-            break;
-        case 'errors':
-            db = errors;
-            break;
-        default:
-            throw new Error('Invalid database type');
-    }
+function executeQuery(query, params, callback) {
+    let db = data
 
     db.serialize(() => {
         db.all(query, params, (err, rows) => {
+            Logger.debug(`[資料庫] 已執行查詢："${query}" ，參數為 "${params}"`);
             callback(err, rows);
         });
     });

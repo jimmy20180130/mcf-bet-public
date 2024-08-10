@@ -4,10 +4,11 @@ const fs = require('fs')
 const crypto = require('crypto');
 const io = require('socket.io-client');
 const path = require('path');
+const Logger = require('./utils/logger.js');
 
 let appProcess = undefined;
 
-console.log('[INFO] 正在開始執行由 Jimmy 開發的 [廢土對賭機器人]');
+Logger.log('正在開始執行由 Jimmy 開發的 [廢土對賭機器人]');
 
 let rl = readline.createInterface({
     input: process.stdin,
@@ -35,41 +36,41 @@ if (config.auth_server.enabled) {
       const username = config.auth_server.username;
       const passwordHash = hashPassword(config.auth_server.password)
 
-      console.log('Connected to server');
+      Logger.log('Connected to server');
       socket.emit('join', { room: token, username: user, user: username, password: passwordHash });
   }
 
   socket.on('connect', connectToServer);
 
   socket.on('join', (value) => {
-      console.log(`${value.username} joined`);
+      Logger.log(`${value.username} joined`);
   });
 
   socket.on('leave', (value) => {
-      console.log(`${value.username} left`);
+      Logger.log(`${value.username} left`);
   });
 
   socket.on('disconnect', async () => {
-      console.log('Disconnected... trying to reconnect to the server');
+      Logger.log('Disconnected... trying to reconnect to the server');
       await connectToServer();
   });
 
   socket.on('response', (data) => {
-      console.log(`Server response: ${data.data}`);
+      Logger.log(`Server response: ${data.data}`);
   });
 
   socket.on('message', (data) => {
       if (data.username === 'bot') return;
-      console.log(`${data.username}: ${data.message}`);
+      Logger.log(`${data.username}: ${data.message}`);
       try {
           if (appProcess != undefined) appProcess.stdin.write(data.message + '\n');
       } catch (error) {
-          console.log(error)
+          Logger.error(error)
       }
   });
 
   socket.on('status', (data) => {
-      console.log(`Server status: ${data.data}`);
+      Logger.log(`Server status: ${data.data}`);
       if (data.data == 'stop') process.exit(135)
       if (data.data == 'restart') process.exit(246)
   });
@@ -96,17 +97,17 @@ function startApp() {
         });
     
         appProcess.stderr.on('data', (data) => {
-            console.log(`[ERROR] 發現以下錯誤 ${data}`);
+            Logger.error(`發現以下錯誤 ${data}`);
         });
     
         appProcess.on('close', (code) => {
             if (code == 135) {
-                console.log(`[INFO] 機器人已關閉`)
+                Logger.log(`機器人已關閉`)
                 process.kill()
             } else if (code == 246) {
-                console.log(`[INFO] 機器人正在重新啟動中...`)
+                Logger.log(`機器人正在重新啟動中...`)
             } else {
-                console.log(`[ERROR] 程式回傳錯誤碼 ${code} ，正在重新啟動中...`);
+                Logger.error(`程式回傳錯誤碼 ${code} ，正在重新啟動中...`);
             }
             appProcess = undefined
             startApp();
@@ -114,11 +115,11 @@ function startApp() {
     });
 
     checkProcess.stdout.on('data', (data) => {
-        console.log(`配置檢查輸出: ${data}`);
+        Logger.log(`配置檢查輸出: ${data}`);
       });
       
     checkProcess.stderr.on('data', (data) => {
-        console.error(`配置檢查錯誤: ${data}`);
+        Logger.error(`配置檢查錯誤: ${data}`);
     });
 }
 

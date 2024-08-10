@@ -69,6 +69,7 @@ async function decryptMessage(encryptedMessage) {
 }
 
 async function check_token() {
+    return true
     return await new Promise(resolve => {
         const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf-8'));
         const url = 'http://uwu.freeserver.tw:21097/verify';

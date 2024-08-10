@@ -13,12 +13,13 @@ const { Client, GatewayIntentBits, Collection, Events, Partials, REST, Routes, A
 const { check_codes } = require(`./utils/link_handler.js`);
 const { command_records, dc_command_records } = require(`./discord/command_record.js`);
 const { bot_on, bot_off, bot_kicked } = require(`./discord/embed.js`);
-const { get_user_data_from_dc, remove_user_role, add_user_role, getPlayerRole, set_user_role, remove_user_discord_id, get_all_user_data, get_all_user } = require(`./utils/database.js`);
-const { orderStrings, canUseCommand } = require(`./utils/permissions.js`);
+const { get_all_users } = require(`./utils/database.js`);
+const { canUseCommand } = require(`./utils/permissions.js`);
 const { check_token } = require(`./auth/auth.js`);
 const moment = require('moment-timezone');
 const { initDB, closeDB } = require(`./utils/db_write.js`);
 const path = require('path');
+const Logger = require(`./utils/logger.js`);
 
 initDB()
 
@@ -34,7 +35,6 @@ const botArgs = {
 const commandFiles = fs.readdirSync(path.join(__dirname, 'commands')).filter(file => file.endsWith('.js'));
 const commands = {}
 let is_on_timeout;
-let auto_update_role;
 let intervals = [];
 let auto_ckeck_giveaway;
 
@@ -51,19 +51,19 @@ const defaultContent = {
 
 fs.readFile(filePath, 'utf8', (err, data) => {
     if (err) {
-        console.error('Error reading file:', err);
+        Logger.error('Error reading file:', err);
         return;
     }
 
     try {
         JSON.parse(data);
     } catch (e) {
-        console.error('Invalid JSON format:', e.message);
+        Logger.error('Invalid JSON format:', e.message);
         fs.writeFile(filePath, JSON.stringify(defaultContent, null, 2), 'utf8', (writeErr) => {
             if (writeErr) {
-                console.error('Error writing file:', writeErr);
+                Logger.error('Error writing file:', writeErr);
             } else {
-                console.log('The file content has been reset to default JSON format.');
+                Logger.log('The file content has been reset to default JSON format.');
             }
         });
     }
@@ -76,7 +76,7 @@ for (const file of commandFiles) {
 }
 
 const init_bot = async () => {
-    console.log('[INFO] 正在讓 Minecraft 機器人上線...')
+    Logger.log('正在讓 Minecraft 機器人上線...')
     const donate_list = [];
     bot = mineflayer.createBot(botArgs);
     
@@ -146,35 +146,30 @@ const init_bot = async () => {
                             await command_records(client, playerid, args)
                             donate_list.shift()
                             await chat(bot, `/m ${playerid} ${messages.commands.donate.donate_cancel}`)
+
                         } else if (require(`./commands/stop.js`).name == commandName || require(`./commands/stop.js`).aliases.includes(commandName)) {
-                            if (await getPlayerRole(await get_player_uuid(playerid))) {
-                                if (await canUseCommand(await get_player_uuid(playerid), args.split(' ')[0])) {
-                                    await chat(bot, `/m ${playerid} ${await process_msg(bot, messages.commands.stop['default'], playerid)}`)
-                                    await new Promise(r => setTimeout(r, 5000))
-                                    process.exit(135)
-                                } else {
-                                    await mc_error_handler(bot, 'general', 'no_permission', playerid)
-                                }
+                            await command_records(client, playerid, args)
+                            if (await canUseCommand(await get_player_uuid(playerid), args.split(' ')[0])) {
+                                await chat(bot, `/m ${playerid} ${await process_msg(bot, messages.commands.stop['default'], playerid)}`)
+                                await new Promise(r => setTimeout(r, 5000))
+                                process.exit(135)
                             } else {
                                 await mc_error_handler(bot, 'general', 'no_permission', playerid)
                             }
 
                         } else if (require(`./commands/reload.js`).name == commandName || require(`./commands/reload.js`).aliases.includes(commandName)) {
-                            if (await getPlayerRole(await get_player_uuid(playerid))) {
-                                if (await canUseCommand(await get_player_uuid(playerid), args.split(' ')[0])) {
-                                    await chat(bot, `/m ${playerid} ${await process_msg(bot, messages.commands.reload['default'], playerid)}`)
-                                    await new Promise(r => setTimeout(r, 5000))
-                                    process.exit(246)
-                                } else {
-                                    await mc_error_handler(bot, 'general', 'no_permission', playerid)
-                                }
+                            await command_records(client, playerid, args)
+                            if (await canUseCommand(await get_player_uuid(playerid), args.split(' ')[0])) {
+                                await chat(bot, `/m ${playerid} ${await process_msg(bot, messages.commands.reload['default'], playerid)}`)
+                                await new Promise(r => setTimeout(r, 5000))
+                                process.exit(246)
                             } else {
                                 await mc_error_handler(bot, 'general', 'no_permission', playerid)
                             }
 
                         } else {
                             await command_records(client, playerid, args)
-                            require(`./commands/${item}.js`).execute(bot, playerid, args);
+                            require(`./commands/${item}.js`).execute(bot, playerid, args, client);
                         }
                         return
                     }
@@ -225,7 +220,7 @@ const init_bot = async () => {
             let playerid = msg[1]
             //判斷玩家是否在白名單內，是的話就說 /tok ，否的話 /tno
             
-            if (config.roles.tpa.includes(playerid) || config .roles.tpa.includes(playerid.toLowerCase())) {
+            if (config.whitelist.includes(playerid) || config.whitelist.includes(playerid.toLowerCase())) {
                 await chat(bot, '/tok')
             } else {
                 await chat(bot, '/tno')
@@ -268,13 +263,19 @@ const init_bot = async () => {
 
         if (shouldSkipMessage(textMessage)) return
         
-        console.log(jsonMsg.toAnsi())
+        Logger.log(jsonMsg.toAnsi())
         add_msg(jsonMsg.json)
     });
 
     bot.once('spawn', async () => {
-        console.log('[INFO] Minecraft 機器人已上線!');
-        init_dc()
+        Logger.log('Minecraft 機器人已上線!');
+
+        if (config.discord.enabled) {
+            Logger.debug('Discord 機器人已啟用')
+            init_dc()
+        } else {
+            Logger.debug('Discord 機器人未啟用')
+        }
 
         let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'));
 
@@ -342,7 +343,7 @@ const init_bot = async () => {
                     intervals.push(setInterval(async () => {
                         try {
                             await chat(bot, item.text)
-                            console.log(`[INFO] 發送廣告: ${item.text}`)
+                            Logger.debug(`發送廣告: ${item.text}`)
                         } catch {}
                     }, item.interval))
                 }
@@ -361,12 +362,12 @@ const init_bot = async () => {
     bot.once('login', async () => {
         start_rl(bot)
         check_codes()
-        console.log('[INFO] Minecraft 機器人已成功登入伺服器');
+        Logger.log('Minecraft 機器人已成功登入伺服器');
         await start_msg(bot)
     });
 
     bot.once('error', async (err) => {
-        console.log(err.message)
+        Logger.error(err.message)
 
         for (let item of intervals) {
             clearInterval(item)
@@ -375,7 +376,7 @@ const init_bot = async () => {
         if (err.message == 'read ECONNRESET') {
             bot.end()
         } else {
-            console.log(`[ERROR] Minecraft 機器人發生錯誤，原因如下: ${err.message}`)
+            Logger.error(`Minecraft 機器人發生錯誤，原因如下: ${err.message}`)
             is_on = false;
             closeDB()
             process.exit(1000)
@@ -386,8 +387,8 @@ const init_bot = async () => {
         clearTimeout(is_on_timeout)
         stop_rl()
         stop_msg()
-        console.log('[WARN] Minecraft 機器人被伺服器踢出了!');
-        console.log(`[WARN] 原因如下: ${reason}`);
+        Logger.warn('Minecraft 機器人被伺服器踢出了!');
+        Logger.warn(`原因如下: ${reason}`);
         let time = moment(new Date()).tz('Asia/Taipei').format('YYYY-MM-DD HH:mm:ss');
         if (is_on == true) {
             const string = `【踢出時間】${time}\n【踢出原因】${reason}`
@@ -408,7 +409,7 @@ const init_bot = async () => {
             clearInterval(item)
         }
 
-        console.log('[WARN] Minecraft 機器人下線了!');
+        Logger.warn('Minecraft 機器人下線了!');
         let time = moment(new Date()).tz('Asia/Taipei').format('YYYY-MM-DD HH:mm:ss');
         const string = `【下線時間】${time}`
         if (is_on == true) {
@@ -466,7 +467,7 @@ const init_dc = () => {
         // and deploy your commands!
         (async () => {
             try {
-                console.log(`[INFO] Discord 機器人正在載入 ${dc_commands.length} 個斜線指令`);
+                Logger.log(`Discord 機器人正在載入 ${dc_commands.length} 個斜線指令`);
 
                 // The put method is used to fully refresh all commands in the guild with the current set
                 const data = await rest.put(
@@ -474,14 +475,14 @@ const init_dc = () => {
                     { body: dc_commands },
                 );
 
-                console.log(`[INFO] Discord 機器人成功載入 ${data.length} 個斜線指令`);
+                Logger.log(`Discord 機器人成功載入 ${data.length} 個斜線指令`);
             } catch (error) {
-                console.log(error);
+                Logger.error(error);
             }
         })();
 
         client.once(Events.ClientReady, async c => {
-            console.log(`[INFO] Discord 機器人成功以 ${c.user.tag} 的名稱登入`)
+            Logger.log(`Discord 機器人成功以 ${c.user.tag} 的名稱登入`)
             const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
             if (config.console.mode == 1) {
                 discord_console(client)
@@ -529,15 +530,14 @@ const init_dc = () => {
             await dc_command_records(client, `<@${interaction.user.id}>`, logMessage)
         
             if (!command) {
-                console.log(`[ERROR] Discord 機器人的指令 ${interaction.commandName} 並不存在`);
+                Logger.warn(`Discord 機器人的指令 ${interaction.commandName} 並不存在`);
                 return;
             }
         
             try {
                 await command.execute(interaction);
             } catch (error) {
-                console.log(error)
-                console.log(`[ERROR] Discord 機器人發生錯誤，錯誤如下: ${error.message}`);
+                Logger.error(`Discord 機器人發生錯誤，錯誤如下: ${error.message}`);
                 if (interaction.replied || interaction.deferred) {
                     await interaction.followUp({ content: `執行指令時發生了錯誤，錯誤原因為: ${error.message} ，請將此截圖並回報給管理員`, ephemeral: true });
                 } else {
@@ -546,143 +546,89 @@ const init_dc = () => {
             }
         });
 
-        client.on('guildMemberUpdate', async (oldMember, newMember) => {
-            try {
-                const old_player_roles = oldMember.roles.cache.filter(role => role.name !== '@everyone').map(role => role.id);
-                const new_player_roles = newMember.roles.cache.filter(role => role.name !== '@everyone').map(role => role.id);
+        // client.on(Events.InteractionCreate, async interaction => {
+        //     if (!interaction.isButton()) return;
+        //     if (interaction.customId != 'giveaway_join' && interaction.customId != 'giveaway_total' && !interaction.customId.startsWith('giveaway_leave')) return;
 
-                if (old_player_roles.length < new_player_roles.length) {
-                    const role = newMember.roles.cache.filter(role => role.name !== '@everyone').map(role => role.id).filter(role => !old_player_roles.includes(role));
-                    const roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
-                    const player_data = (await get_user_data_from_dc(newMember.id))[0]
-                    if (player_data == undefined || player_data == 'Not Found' || player_data == 'error' || player_data.roles == undefined) return
-                    const player_role = orderStrings(player_data.roles, roles)
-                    if (!player_data.discord_id && player_role.includes('none')) return
-                    for (const config_role of Object.keys(roles)) {
-                        for (const user_role of role) {
-                            if (roles[config_role] && roles[config_role].discord_id == user_role) {
-                                if (player_data.roles.includes(config_role)) return
-                                await add_user_role(newMember.id, config_role)
-                            }
-                        }
-                    }
+        //     if (interaction.customId === 'giveaway_join') {
+        //         let giveaways = JSON.parse(fs.readFileSync(`${process.cwd()}/data/giveaways.json`, 'utf-8'));
+        //         let giveaway = giveaways[Object.keys(giveaways).filter(giveaway => giveaways[giveaway].message_id == interaction.message.id)[0]]
 
-                } else if (old_player_roles.length > new_player_roles.length) {
-                    const role = oldMember.roles.cache.filter(role => role.name !== '@everyone').map(role => role.id).filter(role => !new_player_roles.includes(role));
-                    const roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
-                    const player_data = (await get_user_data_from_dc(newMember.id))[0]
-                    if (player_data == undefined || player_data == 'Not Found' || player_data == 'error' || player_data.roles == undefined) return
-                    const player_role = orderStrings(player_data.roles, roles)
-                    if (!player_data.discord_id && player_role.includes('none')) return
-                    for (const config_role of Object.keys(roles)) {
-                        for (const user_role of role) {
-                            if (roles[config_role] && roles[config_role].discord_id == user_role) {
-                                await remove_user_role(newMember.id, config_role)
-                            }
-                        }
-                    }
+        //         if (!giveaway || giveaway.length == 0) {
+        //             await interaction.reply({ content: '此抽獎活動不存在!', ephemeral: true });
+        //             return;
+        //         }
 
-                    if ((await get_user_data_from_dc(newMember.id))[0].roles == '' || (await get_user_data_from_dc(newMember.id))[0].roles == undefined) {
-                        await add_user_role(newMember.id, 'none')
-                    }
-                }
-            } catch (e) {
-                console.log(e)
-            }
-        });
+        //         const leave = new ButtonBuilder()
+        //             .setCustomId('giveaway_leave' + giveaway.message_id)
+        //             .setLabel('離開抽獎')
+        //             .setStyle(ButtonStyle.Danger)
+        //             .setDisabled(false)
 
-        //member leave event
-        client.on(Events.GuildMemberRemove, async member => {
-            try {
-                await remove_user_discord_id(member.id)
-            } catch (e) {
-                console.log(e)
-            }
-        });
+        //         const leave_actionRow = new ActionRowBuilder()
+        //             .addComponents(leave)
 
-        client.on(Events.InteractionCreate, async interaction => {
-            if (!interaction.isButton()) return;
-            if (interaction.customId != 'giveaway_join' && interaction.customId != 'giveaway_total' && !interaction.customId.startsWith('giveaway_leave')) return;
+        //         if (giveaway.entries.includes(interaction.user.id)) {
+        //             await interaction.reply({ content: '您已在參與抽獎人員的名單中!', ephemeral: true, components: [leave_actionRow] });
+        //             return;
+        //         }
 
-            if (interaction.customId === 'giveaway_join') {
-                let giveaways = JSON.parse(fs.readFileSync(`${process.cwd()}/data/giveaways.json`, 'utf-8'));
-                let giveaway = giveaways[Object.keys(giveaways).filter(giveaway => giveaways[giveaway].message_id == interaction.message.id)[0]]
+        //         if (giveaway.excluded_role && interaction.member.roles.cache.has(giveaway.excluded_role) || giveaway.include_role && !interaction.member.roles.cache.has(giveaway.include_role)) {
+        //             await interaction.reply({ content: '您無參與此次抽獎的權限!', ephemeral: true });
+        //             return;
+        //         }
 
-                if (!giveaway || giveaway.length == 0) {
-                    await interaction.reply({ content: '此抽獎活動不存在!', ephemeral: true });
-                    return;
-                }
+        //         giveaway.entries.push(interaction.user.id);
 
-                const leave = new ButtonBuilder()
-                    .setCustomId('giveaway_leave' + giveaway.message_id)
-                    .setLabel('離開抽獎')
-                    .setStyle(ButtonStyle.Danger)
-                    .setDisabled(false)
+        //         fs.writeFileSync(`${process.cwd()}/data/giveaways.json`, JSON.stringify(giveaways, null, 4));
 
-                const leave_actionRow = new ActionRowBuilder()
-                    .addComponents(leave)
+        //         interaction.message.components[0].components[1].data.label = `參加人數 ${giveaway.entries.length}`
 
-                if (giveaway.entries.includes(interaction.user.id)) {
-                    await interaction.reply({ content: '您已在參與抽獎人員的名單中!', ephemeral: true, components: [leave_actionRow] });
-                    return;
-                }
+        //         await interaction.update({ components: [new ActionRowBuilder().addComponents(interaction.message.components[0].components[0]).addComponents(interaction.message.components[0].components[1])] })
 
-                if (giveaway.excluded_role && interaction.member.roles.cache.has(giveaway.excluded_role) || giveaway.include_role && !interaction.member.roles.cache.has(giveaway.include_role)) {
-                    await interaction.reply({ content: '您無參與此次抽獎的權限!', ephemeral: true });
-                    return;
-                }
+        //         await interaction.followUp({ content: `您已成功參與抽獎`, ephemeral: true, components: [leave_actionRow] });
 
-                giveaway.entries.push(interaction.user.id);
+        //     } else if (interaction.customId.startsWith('giveaway_leave')) {
+        //         let message_id = interaction.customId.replace('giveaway_leave', '')
+        //         let giveaways = JSON.parse(fs.readFileSync(`${process.cwd()}/data/giveaways.json`, 'utf-8'));
+        //         let giveaway = giveaways[Object.keys(giveaways).filter(giveaway => giveaways[giveaway].message_id == message_id)[0]]
 
-                fs.writeFileSync(`${process.cwd()}/data/giveaways.json`, JSON.stringify(giveaways, null, 4));
+        //         interaction.message.components[0].components[0].data.disabled = true
+        //         await interaction.update({ components: [new ActionRowBuilder().addComponents(interaction.message.components[0].components[0])] });
 
-                interaction.message.components[0].components[1].data.label = `參加人數 ${giveaway.entries.length}`
+        //         if (!giveaway || giveaway.length == 0) {
+        //             await interaction.reply({ content: '此抽獎活動不存在!', ephemeral: true });
+        //             return;
+        //         }
 
-                await interaction.update({ components: [new ActionRowBuilder().addComponents(interaction.message.components[0].components[0]).addComponents(interaction.message.components[0].components[1])] })
+        //         if (!giveaway.entries.includes(interaction.user.id)) {
+        //             if (interaction.replied) {
+        //                 await interaction.followUp({ content: '您並未在參與抽獎人員的名單中!', ephemeral: true, components: [] });
+        //             } else {
+        //                 await interaction.reply({ content: '您並未在參與抽獎人員的名單中!', ephemeral: true, components: [] });
+        //             }
+        //             return;
+        //         }
 
-                await interaction.followUp({ content: `您已成功參與抽獎`, ephemeral: true, components: [leave_actionRow] });
+        //         giveaway.entries = giveaway.entries.filter(entry => entry != interaction.user.id);
 
-            } else if (interaction.customId.startsWith('giveaway_leave')) {
-                let message_id = interaction.customId.replace('giveaway_leave', '')
-                let giveaways = JSON.parse(fs.readFileSync(`${process.cwd()}/data/giveaways.json`, 'utf-8'));
-                let giveaway = giveaways[Object.keys(giveaways).filter(giveaway => giveaways[giveaway].message_id == message_id)[0]]
+        //         fs.writeFileSync(`${process.cwd()}/data/giveaways.json`, JSON.stringify(giveaways, null, 4));
 
-                interaction.message.components[0].components[0].data.disabled = true
-                await interaction.update({ components: [new ActionRowBuilder().addComponents(interaction.message.components[0].components[0])] });
+        //         if (interaction.replied) {
+        //             await interaction.followUp({ content: `您已成功離開抽獎`, ephemeral: true, components: [] });
+        //         } else {
+        //             await interaction.reply({ content: `您已成功離開抽獎`, ephemeral: true, components: [] });
+        //         }
 
-                if (!giveaway || giveaway.length == 0) {
-                    await interaction.reply({ content: '此抽獎活動不存在!', ephemeral: true });
-                    return;
-                }
+        //         // challel
+        //         let channel = await client.channels.cache.get(giveaway.channel)
+        //         let message = await channel.messages.fetch(giveaway.message_id)
 
-                if (!giveaway.entries.includes(interaction.user.id)) {
-                    if (interaction.replied) {
-                        await interaction.followUp({ content: '您並未在參與抽獎人員的名單中!', ephemeral: true, components: [] });
-                    } else {
-                        await interaction.reply({ content: '您並未在參與抽獎人員的名單中!', ephemeral: true, components: [] });
-                    }
-                    return;
-                }
+        //         message.components[0].components[1].data.label = `參加人數 ${giveaway.entries.length}`
 
-                giveaway.entries = giveaway.entries.filter(entry => entry != interaction.user.id);
-
-                fs.writeFileSync(`${process.cwd()}/data/giveaways.json`, JSON.stringify(giveaways, null, 4));
-
-                if (interaction.replied) {
-                    await interaction.followUp({ content: `您已成功離開抽獎`, ephemeral: true, components: [] });
-                } else {
-                    await interaction.reply({ content: `您已成功離開抽獎`, ephemeral: true, components: [] });
-                }
-
-                // challel
-                let channel = await client.channels.cache.get(giveaway.channel)
-                let message = await channel.messages.fetch(giveaway.message_id)
-
-                message.components[0].components[1].data.label = `參加人數 ${giveaway.entries.length}`
-
-                await message.edit({ components: [new ActionRowBuilder().addComponents(message.components[0].components[0]).addComponents(message.components[0].components[1])] })
-            } else if (interaction.customId.startsWith('giveaway_total')) {}
-        })
+        //         await message.edit({ components: [new ActionRowBuilder().addComponents(message.components[0].components[0]).addComponents(message.components[0].components[1])] })
+        //     } else if (interaction.customId.startsWith('giveaway_total')) {}
+        // })
 
         //auto complete
         client.on(Events.InteractionCreate, async interaction => {
@@ -695,22 +641,23 @@ const init_dc = () => {
             switch (interaction.commandName) {
                 case 'record':
                     try {
-                        const players = await get_all_user()
+                        const players = await get_all_users()
                         let roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf8'));
 
-                        if (players == 'Not Found' || players == 'error' || players == undefined) {
+                        if (players == 'Not Found' || players == 'Unexpected Error' || players == undefined) {
                             await interaction.respond([{ name: '找不到玩家資料', value: '找不到玩家資料' }])
                             return
                         }
 
-                        if (roles[(await get_user_data_from_dc(interaction.member.id))[0].roles.split(', ')[0]].record_settings.others) {
+                        if (roles[client.guilds.cache.get(config.discord.guild_id).members.cache.get(interaction.member.id).roles.cache.map(role => role.id).filter((role) => {
+                            if (Object.keys(roles).includes(role)) return true
+                            else return false
+                        })[0]].record_settings.others) {
                             results.push({
                                 name: '所有人',
                                 value: '所有人'
                             })
                         }
-
-                        console.log(roles[(await get_user_data_from_dc(interaction.member.id))[0].roles.split(', ')[0]])
 
                         focused_value = interaction.options.getFocused().toLowerCase()
                         result = players.filter(player => player.toLowerCase().startsWith(focused_value))
@@ -722,9 +669,9 @@ const init_dc = () => {
                             }   
                         }))
 
-                        interaction.respond(results.slice(0, 25)).catch((e) => {console.log(e)})
+                        interaction.respond(results.slice(0, 25)).catch((e) => {Logger.error(e)})
                     } catch (e) {
-                        console.log(e)
+                        Logger.error(e)
                         interaction.respond([{ name: '查詢玩家資料時發生錯誤', value: '查詢玩家資料時發生錯誤' }]).catch(() => {})
                     }
 
@@ -752,184 +699,78 @@ const init_dc = () => {
             }
         })  
 
-        auto_ckeck_giveaway = setInterval(async () => {
-            let giveaways = JSON.parse(fs.readFileSync(`${process.cwd()}/data/giveaways.json`, 'utf-8'));
+        // auto_ckeck_giveaway = setInterval(async () => {
+        //     let giveaways = JSON.parse(fs.readFileSync(`${process.cwd()}/data/giveaways.json`, 'utf-8'));
             
-            for (const giveaway of Object.keys(giveaways)) {
-                if (new Date() / 1000 > giveaways[giveaway].duration + giveaways[giveaway].start_time && !giveaways[giveaway].ended) {
-                    let giveaway_copy = giveaways[giveaway] 
-                    giveaways[giveaway].ended == true
-                    fs.writeFileSync(`${process.cwd()}/data/giveaways.json`, JSON.stringify(giveaways, null, 4));
+        //     for (const giveaway of Object.keys(giveaways)) {
+        //         if (new Date() / 1000 > giveaways[giveaway].duration + giveaways[giveaway].start_time && !giveaways[giveaway].ended) {
+        //             let giveaway_copy = giveaways[giveaway] 
+        //             giveaways[giveaway].ended == true
+        //             fs.writeFileSync(`${process.cwd()}/data/giveaways.json`, JSON.stringify(giveaways, null, 4));
 
-                    let entries = giveaway_copy.entries
-                    let winners = []
+        //             let entries = giveaway_copy.entries
+        //             let winners = []
 
-                    for (let i=0; i<giveaway_copy.winners; i++) {
-                        winners.push(entries[Math.floor(Math.random() * entries.length)])
-                    }
+        //             for (let i=0; i<giveaway_copy.winners; i++) {
+        //                 winners.push(entries[Math.floor(Math.random() * entries.length)])
+        //             }
                     
-                    let channel = await client.channels.fetch(giveaway_copy.channel)
-                    let message = await channel.messages.fetch(giveaway_copy.message_id)
-                    let prize = giveaway_copy.prize
-                    let user = await client.users.fetch(winner)
+        //             let channel = await client.channels.fetch(giveaway_copy.channel)
+        //             let message = await channel.messages.fetch(giveaway_copy.message_id)
+        //             let prize = giveaway_copy.prize
+        //             let user = await client.users.fetch(winner)
 
-                    message.components[0].components[0].data.disabled = true
+        //             message.components[0].components[0].data.disabled = true
 
-                    await message.edit({ components: [new ActionRowBuilder().addComponents(message.components[0].components[0]).addComponents(message.components[0].components[1])] })
+        //             await message.edit({ components: [new ActionRowBuilder().addComponents(message.components[0].components[0]).addComponents(message.components[0].components[1])] })
                     
-                    if (winners.length == 0) {
-                        await message.reply({ content: '抽獎已結束，無人中獎' })
-                    } else {
-                        winners = winners.map(winner => `- <@${winner}> \n`)
+        //             if (winners.length == 0) {
+        //                 await message.reply({ content: '抽獎已結束，無人中獎' })
+        //             } else {
+        //                 winners = winners.map(winner => `- <@${winner}> \n`)
 
-                        await message.reply({ content: `抽獎已結束，獲獎者為 \n${winners.join(', ')} 獎品已自動新增至您的錢包中，私訊 ${bot.username} 領錢 即可領取` })
+        //                 await message.reply({ content: `抽獎已結束，獲獎者為 \n${winners.join(', ')} 獎品已自動新增至您的錢包中，私訊 ${bot.username} 領錢 即可領取` })
 
-                        const { add_player_wallet_dc, get_player_wallet_discord } = require('./utils/database.js')
+        //                 const { add_player_wallet_dc, get_player_wallet_discord } = require('./utils/database.js')
 
-                        for (let winner of winners) {
-                            await add_player_wallet_dc(winner, Number(prize))
-                            await new Promise(resolve => setTimeout(resolve, 1000))
-                            wallet = await get_player_wallet_discord(winner)
+        //                 for (let winner of winners) {
+        //                     await add_player_wallet_dc(winner, Number(prize))
+        //                     await new Promise(resolve => setTimeout(resolve, 1000))
+        //                     wallet = await get_player_wallet_discord(winner)
 
-                            switch (wallet) {
-                                case 'error':
-                                    await channel.send('新增錢至錢包時發生錯誤')
-                                    break
-                                case 'Not Found':
-                                    await channel.send(`該玩家無綁定資料`)
-                                    break
-                                default:
-                                    const dm = await user.createDM()
+        //                     switch (wallet) {
+        //                         case 'error':
+        //                             await channel.send('新增錢至錢包時發生錯誤')
+        //                             break
+        //                         case 'Not Found':
+        //                             await channel.send(`該玩家無綁定資料`)
+        //                             break
+        //                         default:
+        //                             const dm = await user.createDM()
     
-                                    try {
-                                        await channel.send(`已成功新增玩家 <@${winner}> 的錢，如未收到，請聯絡管理員`)
+        //                             try {
+        //                                 await channel.send(`已成功新增玩家 <@${winner}> 的錢，如未收到，請聯絡管理員`)
 
-                                        await dm.send(`管理員已新增 ${Number(prize)} 元至您的錢包中，您目前有 ${wallet} 元，在遊戲中私訊我 "領錢" 即可領取。`)
+        //                                 await dm.send(`管理員已新增 ${Number(prize)} 元至您的錢包中，您目前有 ${wallet} 元，在遊戲中私訊我 "領錢" 即可領取。`)
 
-                                    } catch (error) {
-                                        await channel.send(`管理員已新增 ${Number(prize)} 元至 <@${winner}> 的錢包中，在遊戲中私訊我 "領錢" 即可領取。`)
-                                    }
-                            }
-                        }
-                    }
-                }
-            }
-        }, 700)
-
-        auto_update_role = setInterval(async () => {
-            let roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
-            let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
-
-            let permissions = {}
-            let no_permissions = {}
-            let final
-
-            for (const role of Object.keys(roles)) {
-                if (roles[role].reverse_blacklist == false) {
-                    permissions[role] = roles[role]
-
-                } else {
-                    no_permissions[role] = roles[role]
-                }
-            }
-
-            let permissions_sorted = Object.fromEntries(Object.entries(permissions).sort((a, b) => b[1].daily - a[1].daily))
-            let no_permissions_sorted = Object.fromEntries(Object.entries(no_permissions).sort((a, b) => b[1].daily - a[1].daily))
-                
-            final = Object.assign(permissions_sorted, no_permissions_sorted)
-
-            fs.writeFileSync(`${process.cwd()}/config/roles.json`, JSON.stringify(final, null, 4));
-            roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
-
-            for (const role of Object.keys(roles)) {
-                const guild = await client.guilds.cache.get(config.discord.guild_id);
-
-                if (roles[role].discord_id == '' || !roles[role].discord_id) continue
-
-                const role_name = guild.roles.cache.get(roles[role].discord_id).name
-
-                if (roles[role].name != role_name) {
-                    roles[role].name = role_name
-                }
-            }
-
-            fs.writeFileSync(`${process.cwd()}/config/roles.json`, JSON.stringify(roles, null, 4));
-
-            if (config.roles.link_role_dc == '' || !config.roles.link_role_dc) return
-
-            let link_role_name = await client.guilds.cache.get(config.discord.guild_id).roles.cache.get(config.roles.link_role_dc).name
-
-            if (link_role_name != config.roles.link_role) {
-                config.roles.link_role = link_role_name
-                fs.writeFileSync(`${process.cwd()}/config/config.json`, JSON.stringify(config, null, 4));
-            }
-
-            let user_data = await get_all_user_data()
-
-            for (const player of user_data) {
-                //get user via discord_id
-                const member = await client.guilds.cache.get(config.discord.guild_id).members.fetch(player.discord_id).then(member => {
-                    return member
-                }).catch(err => {
-                    return 'Not Found'
-                });
-
-                if (member == 'Not Found') {
-                    await set_user_role(player.discord_id, 'none')
-                    await remove_user_discord_id(player.discord_id)
-                    continue
-                }
-            }
-
-            if (client) {
-                if (config.discord.guild_id == '' || !config.discord.guild_id) return
-                
-                const guild = await client.guilds.cache.get(config.discord.guild_id);
-                //get members from a guild
-                const members = await guild.members.fetch().then(member => {
-                    return member
-                }).catch(err => {
-                    console.log(err)
-                    return []
-                });
-
-                const roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
-
-                for (const member of members) {
-                    const player_data = (await get_user_data_from_dc(member[1].user.id))[0]
-                    if (player_data == undefined || player_data == 'Not Found' || player_data == 'error' || player_data.roles == undefined) continue
-                    const player_role = orderStrings(player_data.roles, roles)
-                    
-                    if (!player_data.discord_id || player_role.includes('none') || player_role == '') continue
-
-                    let discord_user_roles = []
-
-                    for (const config_role of Object.keys(roles)) {
-                        if (guild.members.cache.get(member[1].user.id).roles.cache.map(role => role.id).includes(roles[config_role].discord_id)) {
-                            discord_user_roles.push(config_role)
-                        }
-                    }
-
-                    if (discord_user_roles.length == 0) {
-                        discord_user_roles.push('none')
-                    } else {
-                        discord_user_roles.push('default')
-                    }
-
-                    set_user_role(member[1].user.id, discord_user_roles.join(', '))
-                }
-            }
-        }, 30000)
+        //                             } catch (error) {
+        //                                 await channel.send(`管理員已新增 ${Number(prize)} 元至 <@${winner}> 的錢包中，在遊戲中私訊我 "領錢" 即可領取。`)
+        //                             }
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }, 700)
 
         client.on('error', async (error) => {
-            console.log(error.stack)
+            Logger.error(error.stack)
         })
 
         client.login(config.discord.bot_token)
 
     } catch (e) {
-        console.log(e.stack)
-        console.log(`[ERROR] Discord 機器人發生錯誤，錯誤如下 ${e.message}`)
+        Logger.error(`Discord 機器人發生錯誤，錯誤如下 ${e.message}`)
         is_on = false;
         closeDB()
         process.exit(1)
@@ -937,35 +778,35 @@ const init_dc = () => {
 }
 
 process.on("unhandledRejection", async (error) => {
-    console.log(error)
+    Logger.error(error)
     is_on = false;
     closeDB()
     process.exit(1)
 });
 
 process.on("uncaughtException", async (error) => {
-    console.log(error)
+    Logger.error(error)
     is_on = false;
     closeDB()
     process.exit(1)
 });
 
 process.on("uncaughtExceptionMonitor", async (error) => {
-    console.log(error)
+    Logger.error(error)
     is_on = false;
     closeDB()
     process.exit(1)
 });
 
 async function start_bot() {
-    console.log('[INFO] 正在開始驗證您的金鑰')
+    Logger.log('正在開始驗證您的金鑰')
     if (await check_token() == true) {
-        console.log('[INFO] 金鑰驗證成功，正在啟動機器人...')
+        Logger.log('金鑰驗證成功，正在啟動機器人...')
         init_bot()
 
         let check_bot_token = setInterval(async () => {
             if (!await check_token()) {
-                console.log('[WARN] 無法連線至驗證伺服器，機器人將於 10 秒後下線')
+                Logger.error('無法連線至驗證伺服器，機器人將於 10 秒後下線')
                 await new Promise(resolve => setTimeout(resolve, 10000));
                 clearInterval(check_bot_token)
                 process.exit(1)
@@ -973,7 +814,7 @@ async function start_bot() {
         }, 600000);
 
     } else {
-        console.log('[ERROR] 驗證失敗，機器人將於 30 秒後重新連線至驗證伺服器')
+        Logger.warn('驗證失敗，機器人將於 30 秒後重新連線至驗證伺服器')
         await new Promise(resolve => setTimeout(resolve, 30000));
         start_bot()
     }

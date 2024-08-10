@@ -9,7 +9,8 @@ async function process_msg(bot, message, playerid) {
         "%botuuid%": bot.uuid,
         "%time%": moment(new Date()).tz('Asia/Taipei').format('YYYY-MM-DD HH:mm:ss'),
         "%simple_time%": moment(new Date()).tz('Asia/Taipei').format('HH:mm:ss'),
-        "%wallet_amount%": await get_player_wallet(await get_player_uuid(playerid))
+        "%wallet_e_amount%": await get_player_wallet(await get_player_uuid(playerid), 'emerald'),
+        "%wallet_c_amount%": await get_player_wallet(await get_player_uuid(playerid), 'coin')
     }
     
     for (placeholder of Object.keys(placeholders)) {

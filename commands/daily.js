@@ -4,13 +4,14 @@ const { process_msg } = require(`../utils/process_msg.js`);
 const { mc_error_handler } = require(`../error/mc_handler.js`)
 const { chat } = require(`../utils/chat.js`);
 const { pay_handler } = require(`../utils/pay_handler.js`);
-const { generateUUID } = require(`../utils/uuid.js`);
 const moment = require('moment-timezone');
+const Logger = require('../utils/logger.js')
 
 const {
-    getPlayerRole,
-    getDailyData,
-    writeDailyData
+    create_daily_data,
+    get_daily_data,
+    write_daily_data,
+    get_user_data
 } = require(`../utils/database.js`);
 
 const fs = require('fs');
@@ -22,54 +23,77 @@ module.exports = {
     description: commands.daily.description,
     aliases: commands.daily.name,
     usage: commands.daily.usage,
-    async execute(bot, playerid, args) {
-        await executeCommand(bot, playerid, args);
+    async execute(bot, playerid, args, client) {
+        await executeCommand(bot, playerid, args, client);
     }
 }
 
-async function executeCommand(bot, playerid, args) {
+async function executeCommand(bot, playerid, args, client) {
     const messages = JSON.parse(fs.readFileSync(`${process.cwd()}/config/messages.json`, 'utf8'));
     const roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf8'));
+    const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
+    const player_data = await get_user_data(await get_player_uuid(playerid))
+    console.log(player_data)
 
-    if (await getPlayerRole(await get_player_uuid(playerid))) {
-        if (await canUseCommand(await get_player_uuid(playerid), args.split(' ')[0].toLowerCase())) {
-            let daily_data = await getDailyData(await get_player_uuid(playerid))
+    if (await canUseCommand(await get_player_uuid(playerid), args.split(' ')[0].toLowerCase())) {
+        if (!config.discord.enabled) {
+            await chat(bot, `/m ${playerid} &c&l${await process_msg(bot, messages.commands.daily.disabled, playerid)}`)
+            return;
+        }
 
-            console.log(daily_data)
+        let daily_data = await get_daily_data(await get_player_uuid(playerid))
 
-            if (daily_data != 'Not Found' && moment.tz(daily_data['time'], 'Asia/Taipei').isSame(moment(new Date()), 'day')) {
-                await chat(bot, `/m ${playerid} ${await process_msg(bot, messages.commands.daily.already_signed, playerid)}`)
-                return;
-            } else {
-                const player_role = (await getPlayerRole(await get_player_uuid(playerid))).split(', ')
-                
-                let total_money = 0
-                for (const role of player_role) {
-                    if (roles[role] === undefined) continue;
-                    total_money += roles[role].daily
-                }
-                
-                if (total_money == 0) {
-                    await chat(bot, `/m ${playerid} &c&l您目前無簽到金額可領取，如有疑問請詢問場地管理員`)
-                    return
-                }
+        if (daily_data == 'Not Found') {
+            await create_daily_data(await get_player_uuid(playerid))
+            daily_data = await get_daily_data(await get_player_uuid(playerid))
+        }
 
-                await writeDailyData(await get_player_uuid(playerid), total_money);
-                
-                const result = await pay_handler(bot, playerid, total_money, 'emerald', false)
-
-                if (result != 'success') {
-                    let uuid = generateUUID()
-                    await chat(bot, `/m ${playerid} ${(await process_msg(bot, messages.commands.daily.failed, playerid)).replaceAll('%time%', moment(new Date()).tz('Asia/Taipei').format('YYYY-MM-DD HH:mm:ss')).replaceAll('%uuid%', uuid)}`)
+        // if daily_data is string
+        if (typeof daily_data === 'string') {
+            switch (daily_data) {
+                case 'Unexpected Error':
+                    Logger.error(`[每日簽到] 玩家 ${playerid} 簽到時發生錯誤: ${daily_data}`)
+                    await chat(bot, `/m ${playerid} &c&l${await process_msg(bot, messages.commands.daily.failed.replaceAll('%err%', 'Unexpected Error'), playerid)}`)
                     return;
-                }
-
-                daily_data = await getDailyData(await get_player_uuid(playerid))
-                await chat(bot, `/m ${playerid} ${await process_msg(bot, messages.commands.daily.success.replaceAll('%count%', daily_data['count']).replaceAll('%amount%', total_money).replaceAll('%time%', moment(new Date()).tz('Asia/Taipei').format('YYYY-MM-DD HH:mm:ss')).replaceAll('%role%', roles[player_role[0]].name), playerid)}`)
-                await chat(bot, `&b&l${playerid} &6&l領取了 ${roles[player_role[0]].name} 的每日簽到 &a&l${total_money} &6&l元`)
+                case 'Already Signed':
+                    Logger.debug(`[每日簽到] 玩家 ${playerid} 已經簽到過了`)
+                    await chat(bot, `/m ${playerid} &c&l${await process_msg(bot, messages.commands.daily.already_signed, playerid)}`)
+                    return;
+                default:
+                    break;
             }
+
+            return;
         } else {
-            await mc_error_handler(bot, 'general', 'not_linked', playerid)
+            // player_uuid roles amount
+            const player_roles = await client.guilds.cache.get(config.discord.guild_id).members.fetch(player_data.discord_id).then(async (member) => {
+                return member.roles.cache.map(role => role.id).filter((role) => {
+                    if (Object.keys(roles).includes(role) && roles[role].daily > 0) return true
+                    else return false
+                })
+            })
+            
+            if (!player_roles || player_roles.length == 0) {
+                Logger.debug(`[每日簽到] 玩家 ${playerid} 無簽到身份組`)
+                await chat(bot, `/m ${playerid} &c&l您目前無簽到金額可領取，如有疑問請詢問場地管理員`)
+                return
+            }
+
+            const first_role = client.guild.roles.cache.get(player_roles[0]).name
+
+            let amount = 0
+
+            for (let role of player_roles) {
+                amount += roles[role].daily
+            }
+
+            await write_daily_data(await get_player_uuid(playerid), first_role, amount)
+
+            await pay_handler(bot, playerid, amount, 'emerald', false)
+
+            await chat(bot, `/m ${playerid} ${await process_msg(bot, messages.commands.daily.success.replaceAll('%amount%', amount).replaceAll('%time%', moment(new Date()).tz('Asia/Taipei').format('YYYY-MM-DD HH:mm:ss')).replaceAll('%role%', first_role), playerid)}`)
+            await chat(bot, `&b&l${playerid} &6&l領取了身份組 ${first_role} 的每日簽到 &a&l${amount} &6&l元`)
+            Logger.debug(`[每日簽到] 玩家 ${playerid} 領取了身份組 ${first_role} 的每日簽到 ${amount} 元`)
         }
     } else {
         await mc_error_handler(bot, 'general', 'not_linked', playerid)

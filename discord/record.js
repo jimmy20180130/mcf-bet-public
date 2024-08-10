@@ -1,7 +1,6 @@
-const { SlashCommandBuilder, EmbedBuilder, escapeEscape } = require('discord.js');
-const { get_pay_history, getPlayerRole, get_user_data, get_user_data_from_dc, get_all_pay_history, get_all_user_data } = require(`../utils/database.js`);
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { get_user_data, get_all_bet_record, get_all_user_data, get_bet_record } = require(`../utils/database.js`);
 const { get_player_uuid, get_player_name } = require(`../utils/get_player_info.js`);
-const { orderStrings } = require(`../utils/permissions.js`);
 const { bet_record } = require(`../discord/embed.js`);
 const fetch = require("node-fetch");
 const fs = require('fs')
@@ -11,13 +10,11 @@ module.exports = {
 		.setName('record')
 		.setNameLocalizations({
 			"en-US": "record",
-			"zh-CN": "gvf简体中文",
 			"zh-TW": "查詢資料"
 		})
 		.setDescription('check bet record')
 		.setDescriptionLocalizations({
 			"en-US": "check bet record",
-			"zh-CN": "目前不支援简体中文",
 			"zh-TW": "查詢資料"
 		})
 		.setDMPermission(false)
@@ -27,13 +24,11 @@ module.exports = {
 				.setRequired(true)
 				.setNameLocalizations({
 					"en-US": "playerid",
-					"zh-CN": "vfdz简体中文",
 					"zh-TW": "玩家名稱"
 				})
 				.setDescription('The player ID you want to query'))
 				.setDescriptionLocalizations({
 					"en-US": "The player ID you want to query",
-					'zh-CN': '目前不支援简体中文',
 					"zh-TW": "您欲查詢的玩家 ID"
 				})
 				
@@ -47,85 +42,72 @@ module.exports = {
 				.setDescription('time must late than'))
 				.setDescriptionLocalizations({
 					"en-US": "time must late than",
-					'zh-CN': '目前不支援简体中文',
 					"zh-TW": "時間需晚於"
 				})
 		.addStringOption(option =>
 			option.setName('early')
 				.setNameLocalizations({
 					"en-US": "early",
-					"zh-CN": "sdcv简体中文",
 					"zh-TW": "早於"
 				})
 				.setDescription('time must early than'))
 				.setDescriptionLocalizations({
 					"en-US": "time must early than",
-					'zh-CN': '目前不支援简体中文',
 					"zh-TW": "時間需早於"
 				})
 		.addStringOption(option =>
 			option.setName('duration')
 				.setNameLocalizations({
 					"en-US": "duration",
-					"zh-CN": "dcdcv简体中文",
 					"zh-TW": "期間"
 				})
 				.setDescription('time must in the'))
 				.setDescriptionLocalizations({
 					"en-US": "time must early than",
-					'zh-CN': '目前不支援简体中文',
 					"zh-TW": "時間需在期間內"
 				})
 		.addIntegerOption(option =>
 			option.setName('amount-bigger-than')
 				.setNameLocalizations({
 					"en-US": "amount-bigger-than",
-					"zh-CN": "dcrrv简体中文",
 					"zh-TW": "大於"
 				})
 				.setDescription('amount must bigger than'))
 				.setDescriptionLocalizations({
 					"en-US": "amount must bigger than",
-					'zh-CN': '目前不支援简体中文',
 					"zh-TW": "金額需大於"
 				})
 		.addIntegerOption(option =>
 			option.setName('amount-smaller-than')
 				.setNameLocalizations({
 					"en-US": "amount-smaller-than",
-					"zh-CN": "erfrrv简体中文",
 					"zh-TW": "小於"
 				})
 				.setDescription('amount must smaller than'))
 				.setDescriptionLocalizations({
 					"en-US": "amount must smaller than",
-					'zh-CN': '目前不支援简体中文',
 					"zh-TW": "金額需小於"
 				})
 		.addIntegerOption(option =>
 			option.setName('amount-equal')
 				.setNameLocalizations({
 					"en-US": "amount-equal",
-					"zh-CN": "qwrv简体中文",
 					"zh-TW": "等於"
 				})
 				.setDescription('amount must equal to'))
 				.setDescriptionLocalizations({
 					"en-US": "amount must equal to",
-					'zh-CN': '目前不支援简体中文',
 					"zh-TW": "金額需等於"
 				})
 		.addBooleanOption(option =>
 			option.setName('public')
 				.setNameLocalizations({
 					"en-US": "public",
-					"zh-CN": "sdc简体中文",
 					"zh-TW": "公開"
 				})
 				.setDescription('public or not'))
 				.setDescriptionLocalizations({
 					"en-US": "public or not",
-					'zh-CN': '目前不支援简体中文',
 					"zh-TW": "是否讓您的結果公開"
 				}),
 
@@ -143,22 +125,22 @@ module.exports = {
 			player_uuid = '所有人'
 		}
 
-		if (interaction.options.getString('playerid') != '所有人' && player_uuid == 'Not Found' || String(player_uuid).startsWith('error')) {
+		if (interaction.options.getString('playerid') != '所有人' && player_uuid == 'Not Found' || String(player_uuid).startsWith('Unexpected Error')) {
 			await interaction.editReply('找不到玩家');
 			return;
 		} else {
 			let pay_history
 			if (interaction.options.getString('playerid') != '所有人') {
-				pay_history = await get_pay_history(player_uuid);
+				pay_history = await get_bet_record(player_uuid);
 			} else {
-				pay_history = await get_all_pay_history();
+				pay_history = await get_all_bet_record();
 			}
-			const player_data = (await get_user_data(player_uuid))[0];
+			const player_data = await get_user_data(player_uuid)
 
 			if (pay_history.length == 0) {
 				await interaction.editReply('找不到紀錄');
 				return;
-			} else if (player_data == 'Not Found' || String(player_data).startsWith('error')) {
+			} else if (player_data == 'Not Found' || String(player_data).startsWith('Unexpected Error')) {
 				await interaction.editReply('找不到玩家');
 				return;
 			}
@@ -202,12 +184,16 @@ module.exports = {
 			}
 
 			const client = interaction.client;
-			const user_data = (await get_user_data_from_dc(String(interaction.member.id)))[0]
+			const user_data = await get_user_data(undefined, String(interaction.member.id))
+			const user_role = await client.guilds.cache.get(config.discord.guild_id).members.fetch(player_data.discord_id).then(async (member) => {
+                return member.roles.cache.map(role => role.id).filter((role) => {
+                    if (Object.keys(roles).includes(role) && roles[role].daily > 0) return true
+                    else return false
+                })
+            })
+
 			let user_uuid = undefined
 			if (user_data.player_uuid) user_uuid = user_data.player_uuid
-
-			const player_role = orderStrings(await getPlayerRole(player_uuid), roles)
-			const user_role = orderStrings(await getPlayerRole(user_uuid), roles)
 
 			let total_win = 0
 			let total_coin_win = 0
@@ -347,21 +333,18 @@ module.exports = {
 			
 				await interaction.editReply({ embeds: [embed] });
 			} else {
-				let player_uuid = (await get_user_data_from_dc(String(interaction.member.id)))[0].player_uuid
+				let player_uuid = (await get_user_data(undefined, String(interaction.member.id))).player_uuid
 				if (interaction.options.getString('playerid') == '所有人') {
 					await interaction.editReply('找不到玩家');
 					return;
 				}
 				
-				if (player_data == 'Not Found' || String(player_data).startsWith('error')) {
+				if (player_data == 'Not Found' || String(player_data).startsWith('Unexpected Error')) {
 					await interaction.editReply('找不到玩家');
 					return;
-				} else if (player_uuid == 'Not Found' || String(player_uuid).startsWith('error') || player_uuid == undefined) {
+				} else if (player_uuid == 'Not Found' || String(player_uuid).startsWith('Unexpected Error') || player_uuid == undefined) {
 					await interaction.editReply('請先綁定您的帳號');
 					return;
-				} else if (user_data && roles[await getPlayerRole(user_uuid)] && roles[await getPlayerRole(user_uuid)].record_settings.me == false && player_uuid == user_uuid) {
-					interaction.editReply('no permission')
-					return
 				} else if (await get_player_uuid(player_id) != player_uuid) {
 					interaction.editReply('您無權限查詢其他玩家的紀錄')
 					return

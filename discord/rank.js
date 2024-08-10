@@ -1,9 +1,6 @@
-const { SlashCommandBuilder, EmbedBuilder, escapeEscape } = require('discord.js');
-const { get_pay_history, getPlayerRole, get_user_data, get_user_data_from_dc, get_all_pay_history, get_all_user_data } = require(`../utils/database.js`);
-const { get_player_uuid, get_player_name } = require(`../utils/get_player_info.js`);
-const { orderStrings } = require(`../utils/permissions.js`);
-const { bet_record } = require(`../discord/embed.js`);
-const fetch = require("node-fetch");
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { get_user_data, get_all_user_data, get_all_bet_record } = require(`../utils/database.js`);
+const { get_player_name } = require(`../utils/get_player_info.js`);
 const fs = require('fs')
 
 module.exports = {
@@ -219,7 +216,7 @@ module.exports = {
         }
 
         const roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf8'));
-        const user_data = (await get_user_data_from_dc(String(interaction.member.id)))[0];
+        const user_data = await get_user_data(undefined, String(interaction.member.id))
         let user_uuid = user_data?.player_uuid;
 
         if (!user_uuid) {
@@ -227,10 +224,13 @@ module.exports = {
             return;
         }
 
-        const user_role = orderStrings(await getPlayerRole(user_uuid), roles);
+        const player_roles = client.guilds.cache.get(config.discord.guild_id).members.cache.get(player_data.discord_id).roles.cache.map(role => role.id).filter((role) => {
+            console.log(role)
+            if (Object.keys(roles).includes(role) && roles[role].daily > 0) return true
+            else return false
+        })
 
-        // 检查用户是否有权限查看他人记录或全局记录
-        if (!roles[user_role[0]] || (!roles[user_role[0]].record_settings.others && !roles[user_role[0]].record_settings.advanced)) {
+        if (!roles[player_roles[0]] || (!roles[player_roles[0]].record_settings.others && !roles[player_roles[0]].record_settings.advanced)) {
             await interaction.editReply('您沒有權限使用此指令');
             return;
         }
@@ -240,9 +240,8 @@ module.exports = {
         const order = interaction.options.getString('order');
 
         let all_user_data = await get_all_user_data();
-        let all_pay_history = await get_all_pay_history();
+        let all_pay_history = await get_all_bet_record();
 
-        // 处理时间范围
         const time_type = ['late', 'early', 'duration'].find(type => interaction.options.getString(type)) || 'none';
         let time_unix, time_unix_2;
         if (time_type !== 'none') {
@@ -253,13 +252,11 @@ module.exports = {
             }
         }
 
-        // 处理金额范围
         const amount_bigger_than = interaction.options.getInteger('amount-bigger-than');
         const amount_smaller_than = interaction.options.getInteger('amount-smaller-than');
         const amount_equal = interaction.options.getInteger('amount-equal');
         const result_type = interaction.options.getString('result_type');
 
-        // 计算每个玩家的排名数据
         const rankings = all_user_data.map(user => {
             const userHistory = all_pay_history.filter(record =>
                 record.player_uuid === user.player_uuid &&

@@ -1,3 +1,5 @@
+const Logger = require('./logger');
+
 function generateUUID() {
     // 產生 UUID 的算法可以參考 RFC4122（https://www.ietf.org/rfc/rfc4122.txt）
     var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -5,6 +7,8 @@ function generateUUID() {
             v = c === 'x' ? r : (r & 0x3 | 0x8);
         return v.toString(16);
     });
+
+    Logger.debug(`[UUID] 產生了新的 UUID：${uuid}`);
 
     return uuid;
 }

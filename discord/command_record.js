@@ -1,7 +1,3 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { get_pay_history, getPlayerRole, get_user_data } = require(`../utils/database.js`);
-const { validate_code } = require(`../utils/link_handler.js`);
-const { get_player_uuid, get_player_name } = require(`../utils/get_player_info.js`);
 const { command_record, dc_command_record } = require(`../discord/embed.js`);
 const fs = require('fs')
 

@@ -1,5 +1,6 @@
 {
     "key": "",
+    "debug": false,
     "bot_args": {
         "host": "sg.mcfallout.net",
         "port": "25565",
@@ -16,17 +17,18 @@
         "key": ""
     },
     "discord": {
-        "bot_token": "token",
-        "bot_client_id": "id",
-        "guild_id": "id"
+        "enabled": true,
+        "bot_token": "",
+        "bot_client_id": "",
+        "guild_id": ""
     },
     "discord_channels": {
-        "console": "id",
-        "command_record": "id",
-        "bet_record": "id",
-        "status": "id",
-        "link": "id",
-        "errors": "id"
+        "console": "",
+        "command_record": "",
+        "bet_record": "",
+        "status": "",
+        "link": "",
+        "errors": ""
     },
     "bet": {
         "emax": 5000000,
@@ -35,10 +37,10 @@
         "cmin": 1,
         "eodds": 2,
         "codds": 1.85,
-        "bet_position": [3069, 112, 5134]
+        "bet_position": []
     },
     "console": {
-        "mode": 1,
+        "mode": 2,
         "public": false,
         "chat": false,
         "region": true,
@@ -49,27 +51,7 @@
         "claim": true
     },
     "advertisement": [
-        {
-            "text": "trade_text",
-            "interval": 605000
-        },
-        {
-            "text": "lottery_text",
-            "interval": 605000
-        },
-        {
-            "text": "facility_text",
-            "interval": 1805000
-        },
-        {
-            "text": "claim_text",
-            "interval": 120000
-        }
+        
     ],
-    "roles": {
-        "auto_give": false,
-        "link_role": "member",
-        "link_role_dc": "",
-        "tpa": []
-    }
+    "whitelist": ["XiaoXi_YT"]
 }

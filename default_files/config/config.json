@@ -1,75 +1,79 @@
 {
-    "key": "",
-    "bot_args": {
-        "host": "sg.mcfallout.net",
-        "port": "25565",
-        "username": "example@example.com"
+  "key": "",
+  "bot_args": {
+    "host": "sg.mcfallout.net",
+    "port": "25565",
+    "username": "example@example.com"
+  },
+  "bot": {
+    "server": 61,
+    "home": "play"
+  },
+  "auth_server": {
+    "enabled": false,
+    "username": "",
+    "password": "",
+    "key": ""
+  },
+  "discord": {
+    "bot_token": "token",
+    "bot_client_id": "id",
+    "guild_id": "id"
+  },
+  "discord_channels": {
+    "console": "id",
+    "command_record": "id",
+    "bet_record": "id",
+    "status": "id",
+    "link": "id",
+    "errors": "id"
+  },
+  "bet": {
+    "emax": 5000000,
+    "emin": 1,
+    "cmax": 10,
+    "cmin": 1,
+    "eodds": 2,
+    "codds": 1.85,
+    "bet_position": [
+      3069,
+      112,
+      5134
+    ]
+  },
+  "console": {
+    "mode": 1,
+    "public": false,
+    "chat": false,
+    "region": true,
+    "lottery": false,
+    "facility": false,
+    "trade": false,
+    "system": false,
+    "claim": true
+  },
+  "advertisement": [
+    {
+      "text": "trade_text",
+      "interval": 605000
     },
-    "bot": {
-        "server": 61,
-        "home": "play"
+    {
+      "text": "lottery_text",
+      "interval": 605000
     },
-    "auth_server": {
-        "enabled": false,
-        "username": "",
-        "password": "",
-        "key": ""
+    {
+      "text": "facility_text",
+      "interval": 1805000
     },
-    "discord": {
-        "bot_token": "token",
-        "bot_client_id": "id",
-        "guild_id": "id"
-    },
-    "discord_channels": {
-        "console": "id",
-        "command_record": "id",
-        "bet_record": "id",
-        "status": "id",
-        "link": "id",
-        "errors": "id"
-    },
-    "bet": {
-        "emax": 5000000,
-        "emin": 1,
-        "cmax": 10,
-        "cmin": 1,
-        "eodds": 2,
-        "codds": 1.85,
-        "bet_position": [3069, 112, 5134]
-    },
-    "console": {
-        "mode": 1,
-        "public": false,
-        "chat": false,
-        "region": true,
-        "lottery": false,
-        "facility": false,
-        "trade": false,
-        "system": false,
-        "claim": true
-    },
-    "advertisement": [
-        {
-            "text": "trade_text",
-            "interval": 605000
-        },
-        {
-            "text": "lottery_text",
-            "interval": 605000
-        },
-        {
-            "text": "facility_text",
-            "interval": 1805000
-        },
-        {
-            "text": "claim_text",
-            "interval": 120000
-        }
-    ],
-    "roles": {
-        "auto_give": false,
-        "link_role": "member",
-        "link_role_dc": "",
-        "tpa": []
+    {
+      "text": "claim_text",
+      "interval": 120000
     }
+  ],
+  "roles": {
+    "auto_give": false,
+    "link_role": "member",
+    "link_role_dc": "",
+    "tpa": []
+  }
 }
