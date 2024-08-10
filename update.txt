@@ -1,2 +1,0 @@
-171381
-https://raw.githubusercontent.com/jimmy20180130/mcf-bet-public/main/auth/auth.js
