@@ -7,7 +7,6 @@ const { generateVerificationCode } = require(`../utils/uuid.js`);
 const { add_code } = require(`../utils/link_handler.js`);
 
 const fs = require('fs');
-const { config } = require('process');
 const commands = JSON.parse(fs.readFileSync(`${process.cwd()}/config/commands.json`, 'utf8'));
 
 module.exports = {
@@ -22,6 +21,7 @@ module.exports = {
 }
 
 async function executeCommand(bot, playerid, args) {
+    const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
     const messages = JSON.parse(fs.readFileSync(`${process.cwd()}/config/messages.json`, 'utf8'));
     
     if (await canUseCommand(await get_player_uuid(playerid), args.split(' ')[0])) {
