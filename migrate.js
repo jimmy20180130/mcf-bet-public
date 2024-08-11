@@ -100,6 +100,7 @@ async function migrateDatabase() {
             const stmt = data_db.prepare('INSERT INTO bet_history (amount, result_amount, odds, bet_type, time, result, player_uuid, bet_uuid) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
     
             rows.forEach((row) => {
+                console.log(JSON.stringify(row))
                 stmt.run(row.amount, row.win, row.odds, row.bet_type, row.time, row.status, row.player_uuid, row.pay_uuid);
             });
     
@@ -178,7 +179,11 @@ async function migrateDatabase() {
     for (const file of files) {
         const url = `https://raw.githubusercontent.com/jimmy20180130/mcf-bet-public/main/config/${file}`;
         const dest = `config/${file}`;
-        await download(url, dest);
+        try {
+            await download(url, dest);
+        } catch {
+            console.log(`下載失敗，請自行至 https://github.com/jimmy20180130/mcf-bet-public 下載 config 資料夾中的 ${file}`)
+        }
     }
 
     console.log('遷移完成');
