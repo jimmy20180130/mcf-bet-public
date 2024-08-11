@@ -141,7 +141,7 @@ module.exports = {
 
             case '新增餘額':
                 if (interaction.options.getString('貨幣類型') == 'emerald') {
-                    await set_player_wallet(player_uuid, Number(player_wallet_e) - interaction.options.getInteger('數量'), 'emerald')
+                    await set_player_wallet(player_uuid, Number(player_wallet_e) + interaction.options.getInteger('數量'), 'emerald')
                     player_wallet_e = await get_player_wallet(player_uuid, 'emerald')
 
                     switch (player_wallet_e) {
@@ -162,6 +162,11 @@ module.exports = {
                     }
 
                 } else {
+                    if (player_uuid, Number(player_wallet_c) - interaction.options.getInteger('數量') < 0) {
+                        await interaction.editReply('玩家的錢不足')
+                        return
+                    }
+                    
                     await set_player_wallet(player_uuid, Number(player_wallet_c) - interaction.options.getInteger('數量'), 'coin')
                     player_wallet_c = await get_player_wallet(player_uuid, 'coin')
 
