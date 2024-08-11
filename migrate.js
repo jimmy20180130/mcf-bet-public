@@ -136,7 +136,7 @@ async function migrateDatabase() {
         data_db2.serialize(() => {
             const stmt = data_db2.prepare('INSERT INTO user_data VALUES (?, ?, ?)');
             userRows.forEach((row) => {
-                if (row.discord_id === 0) return;
+                if (row.discord_id == 0 || row.discord_id == '0') return;
 
                 console.log(JSON.stringify(row));
                 stmt.run(row.discord_id, row.player_uuid, row.create_time);
