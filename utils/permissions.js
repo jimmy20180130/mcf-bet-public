@@ -11,7 +11,7 @@ async function canUseCommand(player_uuid, command) {
 
     const player_data = await get_user_data(player_uuid);
 
-    if (config.whitelist.includes(await get_player_name(player_uuid))) {
+    if (player_data != 'Not Found' && player_data != 'Unexpected Error' && config.whitelist.includes(await get_player_name(player_uuid))) {
         Logger.debug(`[權限] 玩家 ${await get_player_name(player_uuid)} ，權限：管理員，指令：${command}，是否可用：${'是' ? admin_commands.includes(command) : '否'}`);
         return admin_commands.includes(command);
 
