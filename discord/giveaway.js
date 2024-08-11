@@ -251,13 +251,10 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply({ ephemeral: true });
 
-        let user_roles = interaction.member.roles.cache.filter(role => role.name !== '@everyone').map(role => role.id);
-		let roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf8'));
-
-		if (!user_roles.some(role => roles[role] && (roles[role].reverse_blacklist == false || !roles[role].disallowed_commands == []))) {
-			await interaction.editReply({ content: '你沒有權限使用這個指令', ephemeral: true });
-			return;
-		}
+		if (!config.whitelist || !config.whitelist.includes(await get_player_name((await get_user_data(undefined, interaction.user.id)).player_uuid))) {
+            await interaction.editReply({ content: '你沒有權限使用這個指令', ephemeral: true });
+            return;
+        }
 
         const subcommand = interaction.options.getSubcommand();
 

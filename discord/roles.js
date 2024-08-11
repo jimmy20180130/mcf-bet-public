@@ -72,6 +72,11 @@ module.exports = {
 
     async execute(interaction) {
         await interaction.deferReply({ ephemeral: true });
+
+        if (!config.whitelist || !config.whitelist.includes(await get_player_name((await get_user_data(undefined, interaction.user.id)).player_uuid))) {
+            await interaction.editReply({ content: '你沒有權限使用這個指令', ephemeral: true });
+            return;
+        }
         
 		let roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf8'));
 

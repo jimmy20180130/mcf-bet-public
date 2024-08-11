@@ -4,9 +4,11 @@ const {
     set_player_wallet,
     get_user_data
 } = require(`../utils/database.js`);
+const { get_player_name } = require(`../utils/get_player_info.js`);
 const fs = require('fs')
 
 const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
+const { config } = require('process');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -105,13 +107,10 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply({ ephemeral: true });
 
-        let user_roles = interaction.member.roles.cache.filter(role => role.name !== '@everyone').map(role => role.id);
-		let roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf8'));
-
-        if (!user_roles.some(role => roles[role] && (roles[role].reverse_blacklist == false || !roles[role].disallowed_commands == []))) {
-			await interaction.editReply({ content: '你沒有權限使用這個指令', ephemeral: true });
-			return;
-		}
+        if (!config.whitelist || !config.whitelist.includes(await get_player_name((await get_user_data(undefined, interaction.user.id)).player_uuid))) {
+            await interaction.editReply({ content: '你沒有權限使用這個指令', ephemeral: true });
+            return;
+        }
 
         const user = interaction.options.getUser('使用者')
         const player_uuid = (await get_user_data(undefined, user.id)).discord_id

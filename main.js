@@ -637,6 +637,7 @@ const init_dc = () => {
             let focused_value = ''
             let result = []
             let results = []
+            const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
 
             switch (interaction.commandName) {
                 case 'record':
@@ -678,8 +679,6 @@ const init_dc = () => {
                     break
 
                 case '設定':
-                    const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
-
                     focused_value = interaction.options.getFocused()
                     result = config.advertisement.filter(ad => ad.text.startsWith(focused_value))
                     

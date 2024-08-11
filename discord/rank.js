@@ -224,7 +224,7 @@ module.exports = {
             return;
         }
 
-        const player_roles = client.guilds.cache.get(config.discord.guild_id).members.cache.get(player_data.discord_id).roles.cache.map(role => role.id).filter((role) => {
+        const player_roles = interaction.client.guilds.cache.get(config.discord.guild_id).members.cache.get(player_data.discord_id).roles.cache.map(role => role.id).filter((role) => {
             console.log(role)
             if (Object.keys(roles).includes(role) && roles[role].daily > 0) return true
             else return false

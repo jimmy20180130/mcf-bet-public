@@ -119,6 +119,7 @@ module.exports = {
 			return;
 		}
 
+		const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
 		const roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf8'));
 		let player_uuid = await get_player_uuid(interaction.options.getString('playerid'));
 		if (interaction.options.getString('playerid') == '所有人') {
