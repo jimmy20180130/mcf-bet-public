@@ -114,6 +114,12 @@ module.exports = {
 
         const user = interaction.options.getUser('使用者')
         const player_uuid = (await get_user_data(undefined, user.id)).player_uuid
+
+        if (!player_uuid || player_uuid === 'Not Found' || player_uuid === 'Unexpected Error') {
+            await interaction.editReply(`查無玩家資料`)
+            return
+        }
+
         let player_wallet = await get_player_wallet(player_uuid, 'emerald')
 
         if (player_wallet === 'Not Found') {
