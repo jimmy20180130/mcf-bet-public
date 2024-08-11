@@ -136,11 +136,12 @@ async function process_bet_task() {
 
 async function active_redstone(bot, playerid, amount, type, task_uuid) {
     const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
+    const bet_type = type == 'emerald' || 'e' ? 'e' : 'coin'
 
     try {
         let position = config.bet.bet_position
 
-        if (position == undefined || position.length != 3 || bot.blockAt(position).neme != "redstone_wire") {
+        if (position == undefined || position.length != 3 || bot.blockAt(position).name != "redstone_wire") {
             position = undefined
         }
 
@@ -192,8 +193,6 @@ async function active_redstone(bot, playerid, amount, type, task_uuid) {
                     resolve('timeout');
                 }, 10000);
             });
-
-            const bet_type = type == 'emerald' || 'e' ? 'e' : 'coin'
 
             await Promise.race([no_permission_Promise, bet_result, timeout_Promise]).then(async (value) => {
                 if (value.startsWith('[領地]')) {
