@@ -1,10 +1,10 @@
 const fs = require('fs');
 const { get_user_data } = require(`../utils/database.js`);
 const { get_player_name } = require(`../utils/get_player_info.js`);
-const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
 const Logger = require('../utils/logger.js');
 
 async function canUseCommand(player_uuid, command) {
+    const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
     const not_linked_user_commands = [ "help", "wallet", "link" ];
     const normal_user_commands = [ "help", "hi", "play", "daily", "wallet" ];
     const admin_commands = [ "help", "hi", "link", "play", "stop", "reload", "daily", "wallet", "donate", "cmd", "epay", "cpay", "say", "money" ];

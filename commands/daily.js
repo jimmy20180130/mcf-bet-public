@@ -44,7 +44,7 @@ async function executeCommand(bot, playerid, args, client) {
         let daily_data = await get_daily_data(await get_player_uuid(playerid))
 
         if (daily_data == 'Not Found') {
-            await create_daily_data(await get_player_uuid(playerid))
+            await create_daily_data(await get_player_uuid(playerid), '')
             daily_data = await get_daily_data(await get_player_uuid(playerid))
         }
 
