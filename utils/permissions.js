@@ -15,7 +15,7 @@ async function canUseCommand(player_uuid, command) {
         Logger.debug(`[權限] 玩家 ${await get_player_name(player_uuid)} ，權限：管理員，指令：${command}，是否可用：${'是' ? admin_commands.includes(command) : '否'}`);
         return admin_commands.includes(command);
 
-    } else if (player_data) {
+    } else if (player_data && player_data != 'Not Found' && player_data != 'Unexpected Error') {
         Logger.debug(`[權限] 玩家 ${await get_player_name(player_uuid)} ，權限：已綁定，指令：${command}，是否可用：${'是' ? normal_user_commands.includes(command) : '否'}`);
         return normal_user_commands.includes(command);
 
