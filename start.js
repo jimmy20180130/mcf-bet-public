@@ -16,7 +16,7 @@ let rl = readline.createInterface({
 });
 
 rl.on('line', async function (line) {
-    if (appProcess != undefined) appProcess.stdin.write(line + '\n');
+    //if (appProcess != undefined) appProcess.stdin.write(line + '\n');
 });
 
 let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
