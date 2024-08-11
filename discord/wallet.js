@@ -113,7 +113,7 @@ module.exports = {
         }
 
         const user = interaction.options.getUser('使用者')
-        const player_uuid = (await get_user_data(undefined, user.id)).discord_id
+        const player_uuid = (await get_user_data(undefined, user.id)).player_uuid
         let player_wallet = await get_player_wallet(player_uuid, 'emerald')
 
         if (player_wallet === 'Not Found') {
