@@ -83,74 +83,78 @@ async function migrateDatabase() {
         data_db.close();
     }
 
-    // 遷移 pay_history.db 的資料
-    console.log('遷移 pay_history.db 的資料...');
-    const pay_history_db = new sqlite3.Database('./data/pay_history.db');
-    const rows = await new Promise((resolve, reject) => {
-        pay_history_db.all('SELECT * FROM pay_history', (err, rows) => {
-            if (err) reject(err);
-            else resolve(rows);
-        });
-    });
-
-    const data_db = new sqlite3.Database('./data/data.db');
-    await new Promise((resolve, reject) => {
-        data_db.serialize(() => {
-            data_db.run('BEGIN TRANSACTION');
-            const stmt = data_db.prepare('INSERT INTO bet_history (amount, result_amount, odds, bet_type, time, result, player_uuid, bet_uuid) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-    
-            rows.forEach((row) => {
-                console.log(JSON.stringify(row))
-                stmt.run(row.amount, row.win, row.odds, row.bet_type, row.time, row.status, row.player_uuid, row.pay_uuid);
-            });
-    
-            stmt.finalize((err) => {
-                if (err) {
-                    data_db.run('ROLLBACK');
-                    reject(err);
-                } else {
-                    data_db.run('COMMIT', (commitErr) => {
-                        if (commitErr) reject(commitErr);
-                        else resolve();
-                    });
-                }
-            });
-        });
-    });
-    
-
-    data_db.close();
-    pay_history_db.close();
-
-    // 遷移 user_data.db 的資料
-    console.log('遷移 user_data.db 的資料...');
-    const user_data_db = new sqlite3.Database('./data/user_data.db');
-    const userRows = await new Promise((resolve, reject) => {
-        user_data_db.all('SELECT * FROM user', (err, rows) => {
-            if (err) reject(err);
-            else resolve(rows);
-        });
-    });
-
-    const data_db2 = new sqlite3.Database('./data/data.db');
-    await new Promise((resolve, reject) => {
-        data_db2.serialize(() => {
-            const stmt = data_db2.prepare('INSERT INTO user_data VALUES (?, ?, ?)');
-            userRows.forEach((row) => {
-                if (row.discord_id == 0 || row.discord_id == '0') return;
-
-                console.log(JSON.stringify(row));
-                stmt.run(row.discord_id, row.player_uuid, row.create_time);
-            });
-            stmt.finalize((err) => {
+    if (fs.existsSync('data/pay_history.db')) {
+        // 遷移 pay_history.db 的資料
+        console.log('遷移 pay_history.db 的資料...');
+        const pay_history_db = new sqlite3.Database('./data/pay_history.db');
+        const rows = await new Promise((resolve, reject) => {
+            pay_history_db.all('SELECT * FROM pay_history', (err, rows) => {
                 if (err) reject(err);
-                else resolve();
+                else resolve(rows);
             });
         });
-    });
 
-    data_db2.close();
-    user_data_db.close();
+        const data_db = new sqlite3.Database('./data/data.db');
+        await new Promise((resolve, reject) => {
+            data_db.serialize(() => {
+                data_db.run('BEGIN TRANSACTION');
+                const stmt = data_db.prepare('INSERT INTO bet_history (amount, result_amount, odds, bet_type, time, result, player_uuid, bet_uuid) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+        
+                rows.forEach((row) => {
+                    console.log(JSON.stringify(row))
+                    stmt.run(row.amount, row.win, row.odds, row.bet_type, row.time, row.status, row.player_uuid, row.pay_uuid);
+                });
+        
+                stmt.finalize((err) => {
+                    if (err) {
+                        data_db.run('ROLLBACK');
+                        reject(err);
+                    } else {
+                        data_db.run('COMMIT', (commitErr) => {
+                            if (commitErr) reject(commitErr);
+                            else resolve();
+                        });
+                    }
+                });
+            });
+        });
+        
+
+        data_db.close();
+        pay_history_db.close();   
+    }
+
+    if (fs.existsSync('data/user_data.db')) {
+        // 遷移 user_data.db 的資料
+        console.log('遷移 user_data.db 的資料...');
+        const user_data_db = new sqlite3.Database('./data/user_data.db');
+        const userRows = await new Promise((resolve, reject) => {
+            user_data_db.all('SELECT * FROM user', (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows);
+            });
+        });
+
+        const data_db2 = new sqlite3.Database('./data/data.db');
+        await new Promise((resolve, reject) => {
+            data_db2.serialize(() => {
+                const stmt = data_db2.prepare('INSERT INTO user_data VALUES (?, ?, ?)');
+                userRows.forEach((row) => {
+                    if (row.discord_id == 0 || row.discord_id == '0') return;
+
+                    console.log(JSON.stringify(row));
+                    stmt.run(row.discord_id, row.player_uuid, row.create_time);
+                });
+                stmt.finalize((err) => {
+                    if (err) reject(err);
+                    else resolve();
+                });
+            });
+        });
+
+        data_db2.close();
+        user_data_db.close();
+    }
 
     // 創建備份文件夾
     ensureDirectoryExistence('backup');

@@ -217,6 +217,7 @@ module.exports = {
 
         const roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf8'));
         const user_data = await get_user_data(undefined, String(interaction.member.id))
+        const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
         let user_uuid = user_data?.player_uuid;
 
         if (!user_uuid) {
