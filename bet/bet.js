@@ -10,6 +10,7 @@ const { bet_win, bet_lose, error_embed } = require(`../discord/embed.js`);
 const { generateUUID } = require(`../utils/uuid.js`)
 const Vec3 = require('vec3');
 const Decimal = require('decimal.js');
+const Logger = require('../utils/logger.js');
 
 let bet_task = [];
 let client = undefined
@@ -39,7 +40,7 @@ async function add_bet_task(bot, player_id, amount, type) {
     })
     fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
 
-    console.log(`[INFO] 收到下注任務 (${pay_uuid}): ${player_id} 下注 ${amount} 個 ${type} ，時間為 ${create_time}`)
+    Logger.log(`收到下注任務 (${pay_uuid}): ${player_id} 下注 ${amount} 個 ${type} ，時間為 ${create_time}`)
 }
 
 async function process_bet_task() {
@@ -62,7 +63,7 @@ async function process_bet_task() {
                 cache.bet.shift()
                 fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
                 
-                console.log(`[INFO] 下注任務 (${task.uuid}) 超過上限，歸還玩家 ${task.player_id}  ${task.amount} 個 ${task.type}`)
+                Logger.log(`下注任務 (${task.uuid}) 超過上限，歸還玩家 ${task.player_id}  ${task.amount} 個 ${task.type}`)
 
                 resolve()
             } else if (task.type == 'coin' && coin < task.amount*config.bet.codds) {
@@ -72,7 +73,7 @@ async function process_bet_task() {
                 cache.bet.shift()
                 fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
                 
-                console.log(`[INFO] 下注任務 (${task.uuid}) 超過上限，歸還玩家 ${task.player_id}  ${task.amount} 個村民錠`)
+                Logger.log(`下注任務 (${task.uuid}) 超過上限，歸還玩家 ${task.player_id}  ${task.amount} 個村民錠`)
 
                 resolve()
             } else {
@@ -83,7 +84,7 @@ async function process_bet_task() {
                     resolve()
                 }
 
-                console.log(`[INFO] 開始處理下注任務 (${task.uuid}): ${task.player_id} 下注 ${task.amount} 個 ${task.type}`)
+                Logger.log(`開始處理下注任務 (${task.uuid}): ${task.player_id} 下注 ${task.amount} 個 ${task.type}`)
                 await active_redstone(bot, task.player_id, task.amount, task.type, task_uuid);
                 let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'))
                 cache.bet.shift()
@@ -115,12 +116,12 @@ async function process_bet_task() {
 
         await Promise.race([process_task_promise, timeout_promise, stop_promise]).then(async (value) => {
             if (value == 'timeout') {
-                console.log(`[INFO] 處理下注任務 (${task_uuid}) 超時`)
+                Logger.warn(`處理下注任務 (${task_uuid}) 超時`)
             } else if (value == 'stop') {
-                console.log(`[INFO] Bot 離線，停止處理下注任務 (${task_uuid})`)
+                Logger.warn(`Bot 離線，停止處理下注任務 (${task_uuid})`)
                 should_stop = true
             } else {
-                console.log(`[INFO] 下注任務 (${task_uuid}) 處理完成，機器人待命中...`)
+                Logger.log(`下注任務 (${task_uuid}) 處理完成，機器人待命中...`)
             }
 
             bot.removeListener('end', stop_handler_function)
@@ -162,7 +163,7 @@ async function active_redstone(bot, playerid, amount, type, task_uuid) {
                     await activateBlock(bot, block);
                 }
             } catch (error) {
-                console.log(error)
+                Logger.error(error)
             }
             
             let no_permission_Promise = bot.awaitMessage(/^\[領地\] 您沒有(.+)/);
@@ -248,7 +249,6 @@ async function process_bet_result(bot, wool, amount, player_id, type, task_uuid)
     if (wool == 'yes') {
         if (type == 'emerald') {
             const pay_result = await pay_handler(bot, player_id, Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber()), 'e', client)
-            console.log(pay_result)
             await chat(bot, `${await process_msg(bot, messages.bet.ewin.replaceAll('%multiply%', config.bet.eodds).replaceAll('%amount%', amount).replaceAll('%after_amount%', Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber())), player_id)}`)
             //await write_pay_history(amount, Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber()), config.bet.eodds, pay_result, await get_player_uuid(player_id), type)
             await write_bet_record(task_uuid, await get_player_uuid(player_id), amount, config.bet.eodds, Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber()), type, 'success', Math.floor((new Date()).getTime() / 1000))
@@ -258,7 +258,7 @@ async function process_bet_result(bot, wool, amount, player_id, type, task_uuid)
                 const embed = await bet_win(player_id, `${amount} -> ${Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber())} 個綠寶石 💵 (賠率為 ${config.bet.eodds})`)
                 await channel.send({ embeds: [embed] });
             }
-            console.log(`[INFO] 下注任務 (${task_uuid}) 完成，支付玩家 ${player_id} ${Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber())} 個綠寶石，賠率為 ${config.bet.eodds} ，支付狀態為 ${pay_result}`)
+            Logger.log(`下注任務 (${task_uuid}) 完成，支付玩家 ${player_id} ${Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber())} 個綠寶石，賠率為 ${config.bet.eodds} ，支付狀態為 ${pay_result}`)
         } else if (type == 'coin') {
             const pay_result = await pay_handler(bot, player_id, Math.floor(new Decimal(amount).mul(new Decimal(config.bet.codds)).toNumber()), 'c', client)
             await chat(bot, `${await process_msg(bot, messages.bet.cwin.replaceAll('%multiply%', config.bet.codds).replaceAll('%amount%', amount).replaceAll('%after_amount%', Math.floor(new Decimal(amount).mul(new Decimal(config.bet.codds)).toNumber())), player_id)}`)
@@ -270,7 +270,7 @@ async function process_bet_result(bot, wool, amount, player_id, type, task_uuid)
                 const embed = await bet_win(player_id, `${amount} -> ${Math.floor(new Decimal(amount).mul(new Decimal(config.bet.codds)).toNumber())} 個村民錠 🪙 (賠率為 ${config.bet.codds})`)
                 await channel.send({ embeds: [embed] });
             }
-            console.log(`[INFO] 下注任務 (${task_uuid}) 完成，支付玩家 ${player_id} ${Math.floor(new Decimal(amount).mul(new Decimal(config.bet.codds)).toNumber())} 個村民錠，賠率為 ${config.bet.eodds} ，支付狀態為 ${pay_result}`)
+            Logger.log(`下注任務 (${task_uuid}) 完成，支付玩家 ${player_id} ${Math.floor(new Decimal(amount).mul(new Decimal(config.bet.codds)).toNumber())} 個村民錠，賠率為 ${config.bet.eodds} ，支付狀態為 ${pay_result}`)
         }
 
     } else if (wool == 'no') {
@@ -284,7 +284,7 @@ async function process_bet_result(bot, wool, amount, player_id, type, task_uuid)
                 const embed = await bet_lose(player_id, `下注 ${amount} 個綠寶石 💵，未中獎 (賠率為 ${config.bet.eodds})`)
                 await channel.send({ embeds: [embed] });
             }
-            console.log(`[INFO] 下注任務 (${task_uuid}) 完成，支付玩家 ${player_id} 0 個綠寶石，賠率為 ${config.bet.eodds}`)
+            Logger.log(`下注任務 (${task_uuid}) 完成，支付玩家 ${player_id} 0 個綠寶石，賠率為 ${config.bet.eodds}`)
 
         } else if (type == 'coin') {
             await chat(bot, `${await process_msg(bot, messages.bet.close.replaceAll('%amount%', amount), player_id)}`)
@@ -296,7 +296,7 @@ async function process_bet_result(bot, wool, amount, player_id, type, task_uuid)
                 const embed = await bet_lose(player_id, `下注 ${amount} 個村民錠 🪙，未中獎 (賠率為 ${config.bet.codds})`)
                 await channel.send({ embeds: [embed] });
             }
-            console.log(`[INFO] 下注任務 (${task_uuid}) 完成，支付玩家 ${player_id} 0 個村民錠，賠率為 ${config.bet.eodds}`)
+            Logger.log(`下注任務 (${task_uuid}) 完成，支付玩家 ${player_id} 0 個村民錠，賠率為 ${config.bet.eodds}`)
 
         }
         
@@ -304,11 +304,11 @@ async function process_bet_result(bot, wool, amount, player_id, type, task_uuid)
         if (type == 'emerald') {
             await pay_handler(bot, player_id, amount, 'e', client)
             await write_bet_record(task_uuid, await get_player_uuid(player_id), amount, config.bet.eodds, amount, type, 'error', Math.floor((new Date()).getTime() / 1000))
-            console.log(`[INFO] 下注任務 (${task_uuid}) 失敗，退還玩家 ${player_id} ${amount} 個綠寶石，賠率為 ${config.bet.eodds} ，支付狀態為 ${pay_result}`)
+            Logger.warn(`下注任務 (${task_uuid}) 失敗，退還玩家 ${player_id} ${amount} 個綠寶石，賠率為 ${config.bet.eodds} ，支付狀態為 ${pay_result}`)
         } else if (type == 'coin') {
             await pay_handler(bot, player_id, amount, 'c', client)
             await write_bet_record(task_uuid, await get_player_uuid(player_id), amount, config.bet.codds, amount, type, 'error', Math.floor((new Date()).getTime() / 1000))
-            console.log(`[INFO] 下注任務 (${task_uuid}) 失敗，退還玩家 ${player_id} ${amount} 個村民錠，賠率為 ${config.bet.eodds} ，支付狀態為 ${pay_result}`)
+            Logger.warn(`下注任務 (${task_uuid}) 失敗，退還玩家 ${player_id} ${amount} 個村民錠，賠率為 ${config.bet.eodds} ，支付狀態為 ${pay_result}`)
         }
     }
 }
