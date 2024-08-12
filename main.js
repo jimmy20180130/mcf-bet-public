@@ -20,6 +20,7 @@ const moment = require('moment-timezone');
 const { initDB, closeDB } = require(`./utils/db_write.js`);
 const path = require('path');
 const Logger = require(`./utils/logger.js`);
+const { pay_handler } = require('./utils/pay_handler.js');
 
 initDB()
 
@@ -191,7 +192,14 @@ const init_bot = async () => {
                 if (playerid === bot.username) {return};
                 if (amount > config.bet.emax || amount < config.bet.emin) {
                     await chat(bot, `/m ${playerid} ${messages.errors.bet.e_over_limit.replaceAll('%emin%', config.bet.emin).replaceAll('%emax%', config.bet.emax)}`);
-                    await chat(bot, `/pay ${playerid} ${amount}`)
+                    await pay_handler(bot, playerid, amount, 'emerald', client)
+                    return
+                }
+
+                if (!is_on) {
+                    let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'));
+                    cache.bet.push({"player_id": playerid, "amount": amount, "type": 'emerald', "added": false})
+                    fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
                     return
                 }
 
@@ -206,8 +214,14 @@ const init_bot = async () => {
                 if (playerid === bot.username) {return};
                 if (amount > config.bet.cmax || amount < config.bet.cmin) {
                     await chat(bot, `/m ${playerid} ${messages.errors.bet.c_over_limit.replaceAll('%cmin%', config.bet.cmin).replaceAll('%cmax%', config.bet.cmax)}`);
-                    await chat(bot, `/cointrans ${playerid} ${amount}`)
-                    await chat(bot, playerid)
+                    await pay_handler(bot, playerid, amount, 'coin', client)
+                    return
+                }
+
+                if (!is_on) {
+                    let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'));
+                    cache.bet.push({"player_id": playerid, "amount": amount, "type": 'coin', "added": false})
+                    fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
                     return
                 }
 
@@ -296,6 +310,16 @@ const init_bot = async () => {
             await channel.send({ embeds: [embed] });
 
             add_bot(bot)
+
+            if (cache.msg.length > 0) {
+                for (const item of cache.msg) {
+                    await chat(bot, item);
+                }
+        
+                cache.msg = []
+                fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
+            }
+            
             await chat(bot, `[${moment(new Date()).tz('Asia/Taipei').format('HH:mm:ss')}] Jimmy Bot 已上線!`)
             await chat(bot, `如果剛剛有尚未處理的任務，請稍待 10 秒鐘，機器人應會繼續執行，感謝您的配合`)
 
@@ -320,15 +344,6 @@ const init_bot = async () => {
                         }
                 
                         cache.bet = []
-                        fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
-                    }
-                
-                    if (cache.msg.length > 0) {
-                        for (const item of cache.msg) {
-                            await chat(bot, item);
-                        }
-                
-                        cache.msg = []
                         fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
                     }
                 
