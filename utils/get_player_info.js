@@ -1,8 +1,10 @@
 const Logger = require('./logger');
 const axios = require('axios');
+const fs = require('fs');
+let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'));
 
 // [{"uuid": "uuid", "playerid": "name", "time": 12345}]
-let uuids = [];
+let uuids = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8')).player_names;
 
 async function get_player_uuid(playerid) {
     for (const item of uuids) {
@@ -12,13 +14,28 @@ async function get_player_uuid(playerid) {
         }
     }
 
-    return await new Promise(async (resolve, reject) => {
-        let result;
-        await axios.get(`https://api.mojang.com/users/profiles/minecraft/${playerid}`)
+    let result;
+
+    await axios.get(`https://api.mojang.com/users/profiles/minecraft/${playerid}`)
+        .then(response => {
+            if (response.data && response.data.id) {
+                result = response.data.id
+                Logger.debug(`[玩家資料] 玩家 ${playerid} 的 UUID: ${result}`)
+            } else {
+                Logger.warn(`[玩家資料] 無法取得玩家 ${playerid} 的 UUID: ${response.data.errorMessage}`)
+                result = 'Not Found'
+            }
+        })
+        .catch(error => {
+            Logger.error(`[玩家資料] 查詢玩家 UUID 時發現錯誤: ${error}`)
+            result = 'Unexpected Error'
+        });
+
+    if (!result || result == 'Not Found' || result == 'Unexpected Error') {
+        await axios.get(`https://playerdb.co/api/player/minecraft/${playerid}`)
             .then(response => {
-                if (response.data && response.data.id) {
-                    result = response.data.id
-                    uuids.push({"uuid": result, "playerid": playerid, "time": Date.now()})
+                if (response.data) {
+                    result = response.data.data.player.id
                     Logger.debug(`[玩家資料] 玩家 ${playerid} 的 UUID: ${result}`)
                 } else {
                     Logger.warn(`[玩家資料] 無法取得玩家 ${playerid} 的 UUID: ${response.data.errorMessage}`)
@@ -29,11 +46,14 @@ async function get_player_uuid(playerid) {
                 Logger.error(`[玩家資料] 查詢玩家 UUID 時發現錯誤: ${error}`)
                 result = 'Unexpected Error'
             });
-        
-        resolve(result)
-    })
-    .then(result => result)
-    .catch(error => Logger.error(`[玩家資料] 無法取得玩家 ${playerid} 的 UUID: ${error}`));
+    }
+
+    if (result && result != 'Not Found' && result != 'Unexpected Error') {
+        uuids.push({"uuid": result, "playerid": playerid, "time": Date.now()})
+        cache.player_names.push({"uuid": result, "playerid": playerid, "time": Date.now()})
+    }
+
+    return result
 }
 
 async function get_player_name(uuid) {
@@ -61,16 +81,55 @@ async function get_player_name(uuid) {
             Logger.error(`[玩家資料] 查詢玩家名稱時發現錯誤: ${error}`)
         });
 
+    if (!result || result == 'Not Found' || result == 'Unexpected Error') {
+        await axios.get(`https://playerdb.co/api/player/minecraft/${uuid}`)
+            .then(response => {
+                if (response.data) {
+                    result = response.data.data.player.username
+                    Logger.debug(`[玩家資料] 玩家 ${uuid} 的名稱: ${result}`)
+                } else {
+                    result = 'Not Found'
+                    Logger.warn(`[玩家資料] 無法取得玩家 ${uuid} 的名稱: ${response.data.errorMessage}`)
+                }
+            })
+            .catch(error => {
+                result = 'Unexpected Error'
+                Logger.error(`[玩家資料] 查詢玩家名稱時發現錯誤: ${error}`)
+            });
+    }
+
     if (result && result != 'Not Found' && result != 'Unexpected Error') {
         uuids.push({
             playerid: result,
             'uuid': uuid,
             time: Date.now()
         })
+
+        cache.player_names.push({
+            playerid: result,
+            uuid: uuid,
+            time: Date.now()
+        })
     }
     
     return result
 }
+
+setInterval(async () => {
+    const now = Date.now();
+
+    for (const item of cache.player_names) {
+        if (item.time + 900000 < now) {
+            await get_player_uuid(item.playerid);
+            
+            await new Promise(resolve => setTimeout(resolve, 5000));
+        }
+    }
+}, 900000);
+
+setInterval(() => {
+    fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4), 'utf8');
+}, 60000);
 
 module.exports = {
     get_player_uuid,

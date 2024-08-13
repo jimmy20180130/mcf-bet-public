@@ -8,13 +8,11 @@ module.exports = {
         .setName('rank')
         .setNameLocalizations({
             "en-US": "record",
-            "zh-CN": "wewe简体中文",
             "zh-TW": "查詢排名"
         })
         .setDescription('check bet record')
         .setDescriptionLocalizations({
             "en-US": "check bet record",
-            "zh-CN": "目前不支援简体中文",
             "zh-TW": "查詢排名"
         })
         .setDMPermission(false)
@@ -22,13 +20,11 @@ module.exports = {
             option.setName('coin_type')
                 .setNameLocalizations({
                     "en-US": "coin_type",
-                    "zh-CN": "vdfv简体中文",
                     "zh-TW": "貨幣種類"
                 })
                 .setDescription('The coin type you want to query')
                 .setDescriptionLocalizations({
                     "en-US": "The coin type you want to query",
-                    'zh-CN': '目前不支援简体中文',
                     "zh-TW": "您欲查詢的貨幣種類"
                 })
                 .addChoices(
@@ -41,13 +37,11 @@ module.exports = {
             option.setName('result_type')
                 .setNameLocalizations({
                     "en-US": "result_type",
-                    "zh-CN": "vxbgv简体中文",
                     "zh-TW": "結果種類"
                 })
                 .setDescription('The result type you want to query')
                 .setDescriptionLocalizations({
                     "en-US": "The result type you want to query",
-                    'zh-CN': '目前不支援简体中文',
                     "zh-TW": "您欲查詢的結果種類"
                 })
                 .addChoices(
@@ -61,13 +55,11 @@ module.exports = {
             option.setName('type')
                 .setNameLocalizations({
                     "en-US": "type",
-                    "zh-CN": "4rrgv简体中文",
                     "zh-TW": "排名類型"
                 })
                 .setDescription('The type of ranking you want to query')
                 .setDescriptionLocalizations({
                     "en-US": "The type of ranking you want to query",
-                    'zh-CN': '目前不支援简体中文',
                     "zh-TW": "您欲查詢的排名類型"
                 })
                 .addChoices(
@@ -82,13 +74,11 @@ module.exports = {
             option.setName('order')
                 .setNameLocalizations({
                     "en-US": "order",
-                    "zh-CN": "bdv简体中文",
                     "zh-TW": "排名順序"
                 })
                 .setDescription('The order of ranking you want to query')
                 .setDescriptionLocalizations({
                     "en-US": "The order of ranking you want to query",
-                    'zh-CN': '目前不支援简体中文',
                     "zh-TW": "您欲查詢的排名順序"
                 })
                 .addChoices(
@@ -101,13 +91,11 @@ module.exports = {
             option.setName('odds')
                 .setNameLocalizations({
                     "en-US": "odds",
-                    "zh-CN": "dregwv简体中文",
                     "zh-TW": "賠率"
                 })
                 .setDescription('The odds you want to query')
                 .setDescriptionLocalizations({
                     "en-US": "The odds you want to query",
-                    'zh-CN': '目前不支援简体中文',
                     "zh-TW": "您欲查詢的賠率"
                 })
         )
@@ -115,91 +103,77 @@ module.exports = {
             option.setName('late')
                 .setNameLocalizations({
                     "en-US": "late",
-                    "zh-CN": "vdfbv简体中文",
                     "zh-TW": "晚於"
                 })
                 .setDescription('time must late than'))
         .setDescriptionLocalizations({
             "en-US": "time must late than",
-            'zh-CN': '目前不支援简体中文',
             "zh-TW": "時間需晚於"
         })
         .addStringOption(option =>
             option.setName('early')
                 .setNameLocalizations({
                     "en-US": "early",
-                    "zh-CN": "saev简体中文",
                     "zh-TW": "早於"
                 })
                 .setDescription('time must early than'))
         .setDescriptionLocalizations({
             "en-US": "time must early than",
-            'zh-CN': '目前不支援简体中文',
             "zh-TW": "時間需早於"
         })
         .addStringOption(option =>
             option.setName('duration')
                 .setNameLocalizations({
                     "en-US": "duration",
-                    "zh-CN": "dlov简体中文",
                     "zh-TW": "期間"
                 })
                 .setDescription('time must in the'))
         .setDescriptionLocalizations({
             "en-US": "time must early than",
-            'zh-CN': '目前不支援简体中文',
             "zh-TW": "時間需在期間內"
         })
         .addIntegerOption(option =>
             option.setName('amount-bigger-than')
                 .setNameLocalizations({
                     "en-US": "amount-bigger-than",
-                    "zh-CN": "dil简体中文",
                     "zh-TW": "大於"
                 })
                 .setDescription('amount must bigger than'))
         .setDescriptionLocalizations({
             "en-US": "amount must bigger than",
-            'zh-CN': '目前不支援简体中文',
             "zh-TW": "金額需大於"
         })
         .addIntegerOption(option =>
             option.setName('amount-smaller-than')
                 .setNameLocalizations({
                     "en-US": "amount-smaller-than",
-                    "zh-CN": "eruif简体中文",
                     "zh-TW": "小於"
                 })
                 .setDescription('amount must smaller than'))
         .setDescriptionLocalizations({
             "en-US": "amount must smaller than",
-            'zh-CN': '目前不支援简体中文',
             "zh-TW": "金額需小於"
         })
         .addIntegerOption(option =>
             option.setName('amount-equal')
                 .setNameLocalizations({
                     "en-US": "amount-equal",
-                    "zh-CN": "rtdg简体中文",
                     "zh-TW": "等於"
                 })
                 .setDescription('amount must equal to'))
         .setDescriptionLocalizations({
             "en-US": "amount must equal to",
-            'zh-CN': '目前不支援简体中文',
             "zh-TW": "金額需等於"
         })
         .addBooleanOption(option =>
             option.setName('public')
                 .setNameLocalizations({
                     "en-US": "public",
-                    "zh-CN": "dbf简体中文",
                     "zh-TW": "公開"
                 })
                 .setDescription('public or not'))
         .setDescriptionLocalizations({
             "en-US": "public or not",
-            'zh-CN': '目前不支援简体中文',
             "zh-TW": "是否讓您的結果公開"
         }),
 
@@ -225,8 +199,11 @@ module.exports = {
             return;
         }
 
-        const player_roles = await client.guilds.fetch(config.discord.guild_id).members.fetch(player_data.discord_id).roles.cache.map(role => role.id).filter((role) => {
-            if (Object.keys(roles).includes(role) && roles[role].daily > 0) return true
+        const guild = await client.guilds.fetch(config.discord.guild_id)
+        const member = await guild.members.fetch(player_data.discord_id)
+
+        const player_roles = (await member).roles.cache.map(role => role.id).filter((role) => {
+            if (Object.keys(roles).includes(role)) return true
             else return false
         })
 

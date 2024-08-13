@@ -3,7 +3,7 @@ const fs = require('fs');
 let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
 const { add_bet_task, add_client, add_bot, process_bet_task } = require(`./bet/bet.js`);
 const { chat } = require(`./utils/chat.js`);
-const { get_player_uuid } = require(`./utils/get_player_info.js`);
+const { get_player_uuid, get_player_name } = require(`./utils/get_player_info.js`);
 const { start_rl, stop_rl } = require(`./utils/readline.js`);
 const { process_msg } = require(`./utils/process_msg.js`);
 const { mc_error_handler } = require(`./error/mc_handler.js`)
@@ -13,7 +13,7 @@ const { Client, GatewayIntentBits, Collection, Events, Partials, REST, Routes, A
 const { check_codes } = require(`./utils/link_handler.js`);
 const { command_records, dc_command_records } = require(`./discord/command_record.js`);
 const { bot_on, bot_off, bot_kicked } = require(`./discord/embed.js`);
-const { get_all_users } = require(`./utils/database.js`);
+const { get_all_users, get_user_data } = require(`./utils/database.js`);
 const { canUseCommand } = require(`./utils/permissions.js`);
 const { check_token } = require(`./auth/auth.js`);
 const moment = require('moment-timezone');
@@ -46,7 +46,8 @@ let is_on = false;
 const filePath = 'cache/cache.json';
 const defaultContent = {
     "bet": [],
-    "msg": []
+    "msg": [],
+    "player_names": []
 };
 
 fs.readFile(filePath, 'utf8', (err, data) => {
@@ -656,7 +657,17 @@ const init_dc = () => {
             switch (interaction.commandName) {
                 case 'record':
                     try {
-                        const players = await get_all_users()
+                        // 這個會返回一堆 Discord ID ，有個白癡以為這是玩家 ID
+                        let players = await get_all_users()
+                        // 轉成玩家 ID，希望不要被 Mojang 429
+
+                        players = await Promise.all(players.map(async (player) => {
+                            let player_uuid = (await get_user_data(undefined, player)).player_uuid
+                            return await get_player_name(player_uuid)
+                        }))
+
+                        players = players.filter(player => player != 'Not Found' && player != 'Unexpected Error')
+
                         let roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf8'));
 
                         if (players == 'Not Found' || players == 'Unexpected Error' || players == undefined) {
@@ -687,6 +698,7 @@ const init_dc = () => {
                         interaction.respond(results.slice(0, 25)).catch((e) => {Logger.error(e)})
                     } catch (e) {
                         Logger.error(e)
+                        console.log(e)
                         interaction.respond([{ name: '查詢玩家資料時發生錯誤', value: '查詢玩家資料時發生錯誤' }]).catch(() => {})
                     }
 

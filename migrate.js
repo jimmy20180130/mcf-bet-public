@@ -193,4 +193,19 @@ async function migrateDatabase() {
     console.log('遷移完成');
 }
 
+async function migrate_config() {
+    const old_config = JSON.parse(fs.readFileSync(`${process.cwd()}/backup/config.json`, 'utf8'));
+    const new_config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
+    // if old config includes key that new config has, then migrate
+
+    for (const key of old_config) {
+        if (new_config[key]) {
+            new_config[key] = old_config[key];
+        }
+    }
+
+    fs.writeFileSync(`${process.cwd()}/config/config.json`, JSON.stringify(new_config, null, 4));
+}
+
 migrateDatabase().catch(console.error);
+migrate_config().catch(console.error);

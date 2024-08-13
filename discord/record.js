@@ -121,9 +121,12 @@ module.exports = {
 
 		const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
 		const roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf8'));
-		let player_uuid = await get_player_uuid(interaction.options.getString('playerid'));
+		let player_uuid
+
 		if (interaction.options.getString('playerid') == '所有人') {
 			player_uuid = '所有人'
+		} else {
+			player_uuid = await get_player_uuid(interaction.options.getString('playerid'));
 		}
 
 		if (interaction.options.getString('playerid') != '所有人' && player_uuid == 'Not Found' || String(player_uuid).startsWith('Unexpected Error')) {
@@ -185,13 +188,13 @@ module.exports = {
 			}
 
 			const client = interaction.client;
+			const guild = await client.guilds.fetch(config.discord.guild_id)
+			const member = await guild.members.fetch(interaction.member.id)
 			const user_data = await get_user_data(undefined, String(interaction.member.id))
-			const user_role = await client.guilds.cache.get(config.discord.guild_id).members.fetch(player_data.discord_id).then(async (member) => {
-                return member.roles.cache.map(role => role.id).filter((role) => {
-                    if (Object.keys(roles).includes(role) && roles[role].daily > 0) return true
-                    else return false
-                })
-            })
+			const user_role = (await member).roles.cache.map(role => role.id).filter((role) => {
+				if (Object.keys(roles).includes(role)) return true
+				else return false
+			})
 
 			let user_uuid = undefined
 			if (user_data.player_uuid) user_uuid = user_data.player_uuid
@@ -214,11 +217,11 @@ module.exports = {
 				if (time_type == 'duration' && (record.time < time_unix || record.time > time_unix_2)) continue
 				if (record.bet_type == 'emerald') {
 					total_bet += record.amount
-					total_win += record.win
+					total_win += record.result_amount
 					total_bet_count += 1
 				} else if (record.bet_type == 'coin') {
 					total_coin_bet += record.amount
-					total_coin_win += record.win
+					total_coin_win += record.result_amount
 					total_coin_bet_count += 1
 				}
 			}
@@ -243,12 +246,12 @@ module.exports = {
 				player_id = '所有人'
 			}
 
-			if (user_data && roles[user_role[0]] && roles[user_role[0]].record_settings.advanced == true) {
-				if (user_data && roles[user_role[0]] && roles[user_role[0]].record_settings.others == false) player_uuid = user_uuid
+			if (config.whitelist.includes(await get_player_name(user_data.player_uuid)) || (user_data && roles[user_role[0]] && roles[user_role[0]].record_settings.advanced == true)) {
+				if (!config.whitelist.includes(await get_player_name(user_data.player_uuid)) && user_data && roles[user_role[0]] && roles[user_role[0]].record_settings.others == false) player_uuid = user_uuid
 				let betAmount = `下注金額: ${total_bet}`;
 				let betTimes = `下注次數: ${total_bet_count}`;
 				let winAmount = `贏得金額: ${total_win}`; 
-				let totalProfitLoss = `總盈虧: ${total_bet - total_win}`;
+				let totalProfitLoss = `賭場盈虧: ${total_bet - total_win}`;
 
 				const maxLength = Math.max(betAmount.length, betTimes.length, winAmount.length, totalProfitLoss.length);
 
@@ -260,7 +263,7 @@ module.exports = {
 				let cbetAmount = `下注金額: ${total_coin_bet}`;
 				let cbetTimes = `下注次數: ${total_coin_bet_count}`;
 				let cwinAmount = `贏得金額: ${total_coin_win}`; 
-				let ctotalProfitLoss = `總盈虧: ${total_coin_bet - total_coin_win}`;
+				let ctotalProfitLoss = `賭場盈虧: ${total_coin_bet - total_coin_win}`;
 
 				const cmaxLength = Math.max(cbetAmount.length, cbetTimes.length, cwinAmount.length, ctotalProfitLoss.length);
 
@@ -298,9 +301,9 @@ module.exports = {
 				)
 				
 				await interaction.editReply({ embeds: [embed] });
-			} else if (user_data && roles[user_role[0]] && roles[user_role[0]].record_settings.others == true) {
-				if (user_data && roles[user_role[0]] && roles[user_role[0]].record_settings.me == false && player_uuid == user_uuid) {
-					interaction.editReply('no permission')
+			} else if (config.whitelist.includes(await get_player_name(user_data.player_uuid)) || (user_data && roles[user_role[0]] && roles[user_role[0]].record_settings.others == true)) {
+				if (!config.whitelist.includes(await get_player_name(user_data.player_uuid)) && user_data && roles[user_role[0]] && roles[user_role[0]].record_settings.me == false && player_uuid == user_uuid) {
+					interaction.editReply('您無權限查詢自己的紀錄')
 					return
 				}
 
@@ -340,12 +343,15 @@ module.exports = {
 					return;
 				}
 				
+				// 避免到時候他找到玩家然後下注紀錄很奇怪
 				if (player_data == 'Not Found' || String(player_data).startsWith('Unexpected Error')) {
 					await interaction.editReply('找不到玩家');
 					return;
+				// 綁定才能查流水，不然沒辦法驗證他的 minecraft 帳號是啥
 				} else if (player_uuid == 'Not Found' || String(player_uuid).startsWith('Unexpected Error') || player_uuid == undefined) {
 					await interaction.editReply('請先綁定您的帳號');
 					return;
+				// 這個是防止他查別人的紀錄
 				} else if (await get_player_uuid(player_id) != player_uuid) {
 					interaction.editReply('您無權限查詢其他玩家的紀錄')
 					return

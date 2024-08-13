@@ -134,18 +134,6 @@ module.exports = {
 					.setName('錯誤紀錄')
 					.setDescription('Discord 錯誤紀錄的頻道')
 			)
-	)
-	
-	.addSubcommand(subcommand =>
-		subcommand
-			.setName('綁定身份組')
-			.setDescription('綁定身份組設定')
-			.addRoleOption(option =>
-				option
-					.setName('身份組')
-					.setDescription('要綁定的身份組')
-					.setRequired(true)
-			)
 	),
 
 	async execute(interaction) {
@@ -255,20 +243,6 @@ module.exports = {
 					}
 				}
 				
-				fs.writeFileSync(`${process.cwd()}/config/config.json`, JSON.stringify(config, null, 4));
-				await interaction.reply({ content: '設定完成', ephemeral: true });
-				break;
-			
-			case '綁定身份組':
-				if (!interaction.options.getRole('身份組')) {
-					await interaction.reply({ content: '請輸入身份組', ephemeral: true });
-					return;
-				}
-
-				config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
-
-				config.roles.link_role = interaction.options.getRole('身份組').name;
-				config.roles.link_role_dc = interaction.options.getRole('身份組').id;
 				fs.writeFileSync(`${process.cwd()}/config/config.json`, JSON.stringify(config, null, 4));
 				await interaction.reply({ content: '設定完成', ephemeral: true });
 				break;
