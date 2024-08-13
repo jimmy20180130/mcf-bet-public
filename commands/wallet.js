@@ -19,12 +19,12 @@ module.exports = {
     description: commands.wallet.description,
     aliases: commands.wallet.name,
     usage: commands.wallet.usage,
-    async execute(bot, playerid, args) {
-        await executeCommand(bot, playerid, args);
+    async execute(bot, playerid, args, client) {
+        await executeCommand(bot, playerid, args, client);
     }
 }
 
-async function executeCommand(bot, playerid, args) {
+async function executeCommand(bot, playerid, args, client) {
     const messages = JSON.parse(fs.readFileSync(`${process.cwd()}/config/messages.json`, 'utf8'));
 
     if (await canUseCommand(await get_player_uuid(playerid), args.split(' ')[0])) {
@@ -45,11 +45,11 @@ async function executeCommand(bot, playerid, args) {
         const now_money_c = await get_player_wallet(await get_player_uuid(playerid), 'coin')
         
         if (now_money_e > 0) {
-            await pay_handler(bot, playerid, await get_player_wallet(await get_player_uuid(playerid), 'emerald'), 'e', false)
+            await pay_handler(bot, playerid, await get_player_wallet(await get_player_uuid(playerid), 'emerald'), 'e', client)
             await set_player_wallet(await get_player_uuid(playerid), 0, 'emerald')
 
         } else if (now_money_c > 0) {
-            await pay_handler(bot, playerid, await get_player_wallet(await get_player_uuid(playerid), 'coin'), 'c', false)
+            await pay_handler(bot, playerid, await get_player_wallet(await get_player_uuid(playerid), 'coin'), 'c', client)
             await set_player_wallet(await get_player_uuid(playerid), 0, 'coin')
 
         } else {

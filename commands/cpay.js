@@ -23,8 +23,9 @@ async function executeCommand(bot, playerid, args, client) {
     const messages = JSON.parse(fs.readFileSync(`${process.cwd()}/config/messages.json`, 'utf8'));
 
     if (await canUseCommand(await get_player_uuid(playerid), args.split(' ')[0])) {
-        await pay_handler(bot, args.split(' ')[1], args.split(' ')[2], 'coin', client);
-        await chat(bot, `/m ${playerid} ${await process_msg(bot, messages.commands.cpay['default'].replaceAll('%coin%', args.split(' ')[2]).replaceAll('%playerid&', args.split(' ')[1]), playerid)}`)
+        if (await pay_handler(bot, args.split(' ')[1], args.split(' ')[2], 'coin', client) == 'success') {
+            await chat(bot, `/m ${playerid} ${await process_msg(bot, messages.commands.cpay['default'].replaceAll('%coin%', args.split(' ')[2]).replaceAll('%playerid&', args.split(' ')[1]), playerid)}`)
+        }
         Logger.log(`[村錠支付] 玩家 ${playerid} 讓 bot 轉帳 ${args.split(' ')[2]} 個村民錠給 ${args.split(' ')[1]}`)
         
     } else {
