@@ -62,7 +62,6 @@ module.exports = {
 		await interaction.deferReply({ ephemeral: true });
 
 		const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
-		const roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf8'));
 
 		const verification_code = interaction.options.getString('驗證碼')
 

@@ -9,7 +9,8 @@ const commands = JSON.parse(fs.readFileSync(`${process.cwd()}/config/commands.js
 
 const {
     get_player_wallet,
-    set_player_wallet
+    set_player_wallet,
+    create_player_wallet
 } = require(`../utils/database.js`);
 
 module.exports = {
@@ -27,7 +28,20 @@ async function executeCommand(bot, playerid, args) {
     const messages = JSON.parse(fs.readFileSync(`${process.cwd()}/config/messages.json`, 'utf8'));
 
     if (await canUseCommand(await get_player_uuid(playerid), args.split(' ')[0])) {
-        const now_money_e = await get_player_wallet(await get_player_uuid(playerid), 'emerald')
+        let now_money_e = await get_player_wallet(await get_player_uuid(playerid), 'emerald')
+
+        if (!now_money_e || now_money_e == 'Not Found' || now_money_e == 'Unexpected Error') {
+            const player_uuid = await get_player_uuid(playerid)
+            if (player_uuid == 'Not Found' || player_uuid == 'Unexpected Error') {
+                await mc_error_handler(bot, 'general', 'no_permission', playerid)
+                await chat(bot, `/m ${playerid} &c&l災難性的錯誤`)
+                return
+            }
+
+            await create_player_wallet(player_uuid)
+            now_money_e = await get_player_wallet(await get_player_uuid(playerid), 'emerald')
+        }
+
         const now_money_c = await get_player_wallet(await get_player_uuid(playerid), 'coin')
         
         if (now_money_e > 0) {

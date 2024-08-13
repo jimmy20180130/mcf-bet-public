@@ -142,7 +142,7 @@ async function active_redstone(bot, playerid, amount, type, task_uuid) {
     try {
         let position = config.bet.bet_position
 
-        if (position == undefined || position.length != 3 || bot.blockAt(position).name != "redstone_wire") {
+        if (position == undefined || position.length != 3 || !bot.blockAt(new Vec3(position[0], position[1], position[2])) || bot.blockAt(new Vec3(position[0], position[1], position[2])).name != "redstone_wire") {
             position = undefined
         }
 

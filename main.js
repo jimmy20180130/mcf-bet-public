@@ -46,8 +46,7 @@ let is_on = false;
 const filePath = 'cache/cache.json';
 const defaultContent = {
     "bet": [],
-    "msg": [],
-    "link": []
+    "msg": []
 };
 
 fs.readFile(filePath, 'utf8', (err, data) => {
@@ -319,7 +318,7 @@ const init_bot = async () => {
                 cache.msg = []
                 fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
             }
-            
+
             await chat(bot, `[${moment(new Date()).tz('Asia/Taipei').format('HH:mm:ss')}] Jimmy Bot 已上線!`)
             await chat(bot, `如果剛剛有尚未處理的任務，請稍待 10 秒鐘，機器人應會繼續執行，感謝您的配合`)
 

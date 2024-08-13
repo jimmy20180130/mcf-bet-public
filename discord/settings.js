@@ -1,5 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
 const fs = require('fs');
+const { get_player_name } = require(`../utils/get_player_info.js`);
+const { get_user_data } = require(`../utils/database.js`);
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -147,12 +149,12 @@ module.exports = {
 	),
 
 	async execute(interaction) {
+		let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
+		
 		if (!config.whitelist || !config.whitelist.includes(await get_player_name((await get_user_data(undefined, interaction.user.id)).player_uuid))) {
             await interaction.editReply({ content: '你沒有權限使用這個指令', ephemeral: true });
             return;
         }
-
-		let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
 		
 		switch (interaction.options.getSubcommand()) {
 			case '對賭':

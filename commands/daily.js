@@ -33,7 +33,6 @@ async function executeCommand(bot, playerid, args, client) {
     const roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf8'));
     const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
     const player_data = await get_user_data(await get_player_uuid(playerid))
-    console.log(player_data)
 
     if (await canUseCommand(await get_player_uuid(playerid), args.split(' ')[0].toLowerCase())) {
         if (!config.discord.enabled) {
@@ -66,11 +65,12 @@ async function executeCommand(bot, playerid, args, client) {
             return;
         } else {
             // player_uuid roles amount
-            const player_roles = await client.guilds.cache.get(config.discord.guild_id).members.fetch(player_data.discord_id).then(async (member) => {
-                return member.roles.cache.map(role => role.id).filter((role) => {
-                    if (Object.keys(roles).includes(role) && roles[role].daily > 0) return true
-                    else return false
-                })
+            const guild = await client.guilds.fetch(config.discord.guild_id)
+            const member = await guild.members.fetch(player_data.discord_id)
+
+            const player_roles = (await member).roles.cache.map(role => role.id).filter((role) => {
+                if (Object.keys(roles).includes(role) && roles[role].daily > 0) return true
+                else return false
             })
             
             if (!player_roles || player_roles.length == 0) {
@@ -79,7 +79,7 @@ async function executeCommand(bot, playerid, args, client) {
                 return
             }
 
-            const first_role = client.guild.roles.cache.get(player_roles[0]).name
+            const first_role = await guild.roles.fetch(player_roles[0]).then(role => { return role.name })
 
             let amount = 0
 

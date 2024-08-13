@@ -1,5 +1,5 @@
 const fs = require('fs');
-const { executeQuery, initDB } = require(`../utils/db_write.js`);
+const { executeQuery } = require(`../utils/db_write.js`);
 const Logger = require('../utils/logger.js');
 
 async function get_user_data(player_uuid = undefined, discord_id = undefined) {
@@ -30,6 +30,8 @@ async function get_user_data(player_uuid = undefined, discord_id = undefined) {
 
 async function create_user_data(player_uuid, discord_id) {
     const insertSql = 'INSERT INTO user_data (discord_id, player_uuid, create_time) VALUES (?, ?, ?)';
+
+    if (player_uuid == 'Unexpected Error' || discord_id == 'Unexpected Error') return 'Unexpected Error'
 
     return await new Promise((resolve, reject) => {
         executeQuery(insertSql, [discord_id, player_uuid, Math.round(new Date() / 1000)], (err) => {
@@ -72,6 +74,8 @@ async function remove_user_data(player_uuid = undefined, discord_id = undefined)
 
 async function create_daily_data(player_uuid) {
     const insertSql = 'INSERT INTO daily (player_uuid, date_code) VALUES (?, ?)';
+
+    if (player_uuid == 'Unexpected Error') return 'Unexpected Error'
 
     return await new Promise((resolve, reject) => {
         executeQuery(insertSql, [player_uuid, ''], (err) => {
@@ -122,6 +126,9 @@ async function get_daily_data(player_uuid) {
 }
 
 async function write_daily_data(player_uuid, role, amount) {
+    if (player_uuid == 'Unexpected Error') return 'Unexpected Error'
+
+
     const date_code = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     // 20240805|rolename|amount
     const daily_data = `${date_code}|${role}|${amount}`;
@@ -146,6 +153,8 @@ async function write_daily_data(player_uuid, role, amount) {
 }
 
 async function create_player_wallet(player_uuid) {
+    if (player_uuid == 'Unexpected Error') return 'Unexpected Error'
+
     const insertSql = 'INSERT INTO wallet (player_uuid, emerald_amount, coin_amount) VALUES (?, ?, ?)';
     const default_amount = 0;
 
@@ -214,6 +223,8 @@ async function set_player_wallet(player_uuid, amount, type) {
 }
 
 async function write_pay_history(pay_uuid, player_uuid, amount, result, time, type) {
+    if (player_uuid == 'Unexpected Error') return 'Unexpected Error'
+
     const insertSql = 'INSERT INTO pay_history (amount, type, result, time, player_uuid, pay_uuid) VALUES (?, ?, ?, ?, ?, ?)';
 
     return await new Promise((resolve, reject) => {
@@ -235,6 +246,8 @@ async function write_pay_history(pay_uuid, player_uuid, amount, result, time, ty
 }
 
 async function write_bet_record(bet_uuid, player_uuid, amount, odds, return_amount, type, result, time) {
+    if (player_uuid == 'Unexpected Error') return 'Unexpected Error'
+
     const insertSql = 'INSERT INTO bet_history (amount, result_amount, odds, bet_type, time, result, player_uuid, bet_uuid) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
 
     return await new Promise((resolve, reject) => {
