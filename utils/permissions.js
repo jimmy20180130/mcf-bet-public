@@ -9,7 +9,7 @@ async function canUseCommand(player_uuid, command) {
     const normal_user_commands = [ "help", "hi", "play", "daily", "wallet" ];
     const admin_commands = [ "help", "hi", "link", "play", "stop", "reload", "daily", "wallet", "donate", "cmd", "epay", "cpay", "say", "money" ];
     const commands = JSON.parse(fs.readFileSync(`${process.cwd()}/config/commands.json`, 'utf8'));
-    let command_result;
+    let command_result = command
 
     for (const command_name of Object.keys(commands)) {
         if (commands[command_name].name.includes(command)) {

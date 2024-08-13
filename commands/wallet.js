@@ -45,12 +45,18 @@ async function executeCommand(bot, playerid, args, client) {
         const now_money_c = await get_player_wallet(await get_player_uuid(playerid), 'coin')
         
         if (now_money_e > 0) {
-            await pay_handler(bot, playerid, await get_player_wallet(await get_player_uuid(playerid), 'emerald'), 'e', client)
-            await set_player_wallet(await get_player_uuid(playerid), 0, 'emerald')
+            if (await pay_handler(bot, playerid, await get_player_wallet(await get_player_uuid(playerid), 'emerald'), 'e', client) == 'success') {
+                await set_player_wallet(await get_player_uuid(playerid), 0, 'emerald')
+            } else {
+                await set_player_wallet(await get_player_uuid(playerid), now_money_e, 'emerald')
+            }
 
         } else if (now_money_c > 0) {
-            await pay_handler(bot, playerid, await get_player_wallet(await get_player_uuid(playerid), 'coin'), 'c', client)
-            await set_player_wallet(await get_player_uuid(playerid), 0, 'coin')
+            if (await pay_handler(bot, playerid, await get_player_wallet(await get_player_uuid(playerid), 'coin'), 'c', client) == 'success') {
+                await set_player_wallet(await get_player_uuid(playerid), 0, 'coin')
+            } else {
+                await set_player_wallet(await get_player_uuid(playerid), now_money_c, 'coin')
+            }
 
         } else {
             await chat(bot, await process_msg(bot, messages.commands.wallet.not_enough_money, playerid))
