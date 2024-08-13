@@ -1,6 +1,7 @@
 const fs = require('fs');
 const { executeQuery } = require(`../utils/db_write.js`);
 const Logger = require('../utils/logger.js');
+const moment = require('moment-timezone');
 
 async function get_user_data(player_uuid = undefined, discord_id = undefined) {
     const selectSql = 'SELECT * FROM user_data WHERE player_uuid = ? OR discord_id = ?';
@@ -97,7 +98,7 @@ async function create_daily_data(player_uuid) {
 
 async function get_daily_data(player_uuid) {
     // ex: 20240805
-    const date_code = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const date_code = moment(new Date()).tz('Asia/Taipei').format('YYYYMMDD').toLocaleString().slice(0, 10).replace(/-/g, '');
     const selectSql = 'SELECT * FROM daily WHERE player_uuid = ?';
 
     return await new Promise((resolve, reject) => {
@@ -128,8 +129,7 @@ async function get_daily_data(player_uuid) {
 async function write_daily_data(player_uuid, role, amount) {
     if (player_uuid == 'Unexpected Error') return 'Unexpected Error'
 
-
-    const date_code = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const date_code = moment(new Date()).tz('Asia/Taipei').format('YYYYMMDD').toLocaleString().slice(0, 10).replace(/-/g, '');
     // 20240805|rolename|amount
     const daily_data = `${date_code}|${role}|${amount}`;
     const updateSql = 'UPDATE daily SET date_code = ? WHERE player_uuid = ?';
