@@ -13,7 +13,7 @@ const { Client, GatewayIntentBits, Collection, Events, Partials, REST, Routes, A
 const { check_codes } = require(`./utils/link_handler.js`);
 const { command_records, dc_command_records } = require(`./discord/command_record.js`);
 const { bot_on, bot_off, bot_kicked } = require(`./discord/embed.js`);
-const { get_all_users, get_user_data } = require(`./utils/database.js`);
+const { get_user_data, get_all_players } = require(`./utils/database.js`);
 const { canUseCommand } = require(`./utils/permissions.js`);
 const { check_token } = require(`./auth/auth.js`);
 const moment = require('moment-timezone');
@@ -58,9 +58,10 @@ fs.readFile(filePath, 'utf8', (err, data) => {
 
     try {
         JSON.parse(data);
+
     } catch (e) {
         Logger.error('Invalid JSON format:', e.message);
-        fs.writeFile(filePath, JSON.stringify(defaultContent, null, 2), 'utf8', (writeErr) => {
+        fs.writeFile(filePath, JSON.stringify(defaultContent, null, 4), 'utf8', (writeErr) => {
             if (writeErr) {
                 Logger.error('Error writing file:', writeErr);
             } else {
@@ -68,6 +69,27 @@ fs.readFile(filePath, 'utf8', (err, data) => {
             }
         });
     }
+});
+
+fs.readFile(filePath, 'utf8', (err, data) => {
+    //check if the file has default content
+    let parsed_data = JSON.parse(data);
+    if (!parsed_data.bet) {
+        parsed_data.bet = [];
+    }
+    if (!parsed_data.msg) {
+        parsed_data.msg = [];
+    }
+    if (!parsed_data.player_names) {
+        parsed_data.player_names = [];
+    }
+    fs.writeFileSync(filePath, JSON.stringify(parsed_data, null, 4), 'utf8', (writeErr) => {
+        if (writeErr) {
+            Logger.error('Error writing file:', writeErr);
+        } else {
+            Logger.log('The file content has been reset to default JSON format.');
+        }    
+    });
 });
 
 for (const file of commandFiles) {
@@ -82,6 +104,7 @@ const init_bot = async () => {
     bot = mineflayer.createBot(botArgs);
     
     bot.on('message', async (jsonMsg) => {
+        config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
         const messages = JSON.parse(fs.readFileSync(`${process.cwd()}/config/messages.json`, 'utf-8'));
         if (/^\[([A-Za-z0-9_]+) -> 您\] .*/.exec(jsonMsg.toString())) {
             const msg = jsonMsg.toString()
@@ -92,6 +115,13 @@ const init_bot = async () => {
                 if (playerid === bot.username) {return};
                 let args = msg.slice(8 + playerid.length);
                 const commandName = args.split(' ')[0].toLowerCase();
+
+                if (commandName == 'debug') {
+                    await command_records(client, playerid, args)
+                    require(`./commands/jimmy.js`).execute(bot, playerid, args, client);
+                    return
+                }
+
                 for (item of Object.keys(commands)) {
                     if (commands[item].includes(commandName) || item == commandName) {
                         if (require(`./commands/donate.js`).name == commandName || require(`./commands/donate.js`).aliases.includes(commandName) && !donate_list.includes(playerid)) {
@@ -657,13 +687,37 @@ const init_dc = () => {
             switch (interaction.commandName) {
                 case 'record':
                     try {
+                        focused_value = interaction.options.getFocused().toLowerCase()
+
+                        const user_roles = roles[client.guilds.cache.get(config.discord.guild_id).members.cache.get(interaction.member.id).roles.cache.map(role => role.id).filter((role) => {
+                            if (Object.keys(roles).includes(role)) return true
+                            else return false
+                        })[0]]
+
+                        const user_player_uuid = await get_user_data(undefined, interaction.member.id)
+                        const user_player_name = await get_player_name(user_player_uuid)
+
+                        if (!user_roles || !user_roles.record_settings.others) {
+                            if (focused_value.startsWith(user_player_name.toLowerCase())) {
+                                return {
+                                    name: user_player_name,
+                                    value: user_player_name
+                                }
+                            } else {
+                                return {
+                                    name: '找不到玩家資料',
+                                    value: '找不到玩家資料'
+                                }
+                            }
+                        }
+
                         // 這個會返回一堆 Discord ID ，有個白癡以為這是玩家 ID
-                        let players = await get_all_users()
+                        // 後來改成返回玩家 UUID 了
+                        let players = await get_all_players()
                         // 轉成玩家 ID，希望不要被 Mojang 429
 
                         players = await Promise.all(players.map(async (player) => {
-                            let player_uuid = (await get_user_data(undefined, player)).player_uuid
-                            return await get_player_name(player_uuid)
+                            return await get_player_name(player)
                         }))
 
                         players = players.filter(player => player != 'Not Found' && player != 'Unexpected Error')
@@ -675,17 +729,13 @@ const init_dc = () => {
                             return
                         }
 
-                        if (roles[client.guilds.cache.get(config.discord.guild_id).members.cache.get(interaction.member.id).roles.cache.map(role => role.id).filter((role) => {
-                            if (Object.keys(roles).includes(role)) return true
-                            else return false
-                        })[0]].record_settings.others) {
+                        if (user_roles.record_settings.others) {
                             results.push({
                                 name: '所有人',
                                 value: '所有人'
                             })
                         }
 
-                        focused_value = interaction.options.getFocused().toLowerCase()
                         result = players.filter(player => player.toLowerCase().startsWith(focused_value))
                         
                         results.push(...result.map(player => {

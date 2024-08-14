@@ -199,15 +199,15 @@ module.exports = {
             return;
         }
 
-        const guild = await client.guilds.fetch(config.discord.guild_id)
-        const member = await guild.members.fetch(player_data.discord_id)
+        const guild = await interaction.client.guilds.fetch(config.discord.guild_id)
+        const member = await guild.members.fetch(interaction.member.id)
 
         const player_roles = (await member).roles.cache.map(role => role.id).filter((role) => {
             if (Object.keys(roles).includes(role)) return true
             else return false
         })
 
-        if (!roles[player_roles[0]] || (!roles[player_roles[0]].record_settings.others && !roles[player_roles[0]].record_settings.advanced)) {
+        if (!config.whitelist.includes(await get_player_name(user_data.player_uuid)) && !roles[player_roles[0]] || (!roles[player_roles[0]].record_settings.others && !roles[player_roles[0]].record_settings.advanced)) {
             await interaction.editReply('您沒有權限使用此指令');
             return;
         }

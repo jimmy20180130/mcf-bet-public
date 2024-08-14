@@ -1,7 +1,6 @@
 const Logger = require('./logger');
 const axios = require('axios');
 const fs = require('fs');
-let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'));
 
 // [{"uuid": "uuid", "playerid": "name", "time": 12345}]
 let uuids = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8')).player_names;
@@ -50,7 +49,6 @@ async function get_player_uuid(playerid) {
 
     if (result && result != 'Not Found' && result != 'Unexpected Error') {
         uuids.push({"uuid": result, "playerid": playerid, "time": Date.now()})
-        cache.player_names.push({"uuid": result, "playerid": playerid, "time": Date.now()})
     }
 
     return result
@@ -104,12 +102,6 @@ async function get_player_name(uuid) {
             'uuid': uuid,
             time: Date.now()
         })
-
-        cache.player_names.push({
-            playerid: result,
-            uuid: uuid,
-            time: Date.now()
-        })
     }
     
     return result
@@ -117,6 +109,7 @@ async function get_player_name(uuid) {
 
 setInterval(async () => {
     const now = Date.now();
+    let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'));
 
     for (const item of cache.player_names) {
         if (item.time + 900000 < now) {
@@ -128,8 +121,10 @@ setInterval(async () => {
 }, 900000);
 
 setInterval(() => {
+    let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'));
+    cache.player_names = uuids;
     fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4), 'utf8');
-}, 60000);
+}, 1200000);
 
 module.exports = {
     get_player_uuid,

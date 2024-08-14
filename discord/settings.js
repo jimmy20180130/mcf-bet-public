@@ -75,7 +75,7 @@ module.exports = {
 			.setDescription('設定機器人自動發話')
 			.addSubcommand(subcommand => 
 				subcommand
-					.setName('新增')
+					.setName('建立')
 					.setDescription('新增自動發話的文字')
 					.addStringOption(option =>
 						option.setName('文字或指令')
@@ -96,6 +96,34 @@ module.exports = {
 						option.setName('文字或指令')
 							.setAutocomplete(true)
 							.setDescription('自動發話的內容')
+					)
+			)
+	)
+
+	.addSubcommandGroup(group =>
+		group
+			.setName('管理員')
+			.setDescription('設定管理員')
+			.addSubcommand(subcommand =>
+				subcommand
+					.setName('新增')
+					.setDescription('新增管理員')
+					.addUserOption(option =>
+						option
+							.setName('使用者')
+							.setDescription('新增的管理員')
+							.setRequired(true)
+					)
+			)
+			.addSubcommand(subcommand =>
+				subcommand
+					.setName('移除')
+					.setDescription('刪除管理員')
+					.addUserOption(option =>
+						option
+							.setName('使用者')
+							.setDescription('刪除的管理員')
+							.setRequired(true)
 					)
 			)
 	)
@@ -211,7 +239,7 @@ module.exports = {
 				await interaction.reply({ content: '設定完成', ephemeral: true });
 				break;
 
-			case '新增':
+			case '建立':
 				config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
 				
 				if (!interaction.options.getString('文字或指令') || !interaction.options.getInteger('間隔時間')) {
@@ -240,6 +268,39 @@ module.exports = {
 					let index = config.advertisement.findIndex(x => x.text === interaction.options.getString('文字或指令'));
 					if (index !== -1) {
 						config.advertisement = config.advertisement.splice(index, 1);
+					}
+				}
+				
+				fs.writeFileSync(`${process.cwd()}/config/config.json`, JSON.stringify(config, null, 4));
+				await interaction.reply({ content: '設定完成', ephemeral: true });
+				break;
+			
+			case '新增':
+				config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
+
+				if (!interaction.options.getUser('使用者')) {
+					await interaction.reply({ content: '請輸入使用者', ephemeral: true })
+					return
+
+				} else {
+					config.whitelist.push(interaction.options.getUser('使用者').id);
+				}
+				
+				fs.writeFileSync(`${process.cwd()}/config/config.json`, JSON.stringify(config, null, 4));
+				await interaction.reply({ content: '設定完成', ephemeral: true });
+				break;
+
+			case '移除':
+				config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
+
+				if (!interaction.options.getUser('使用者')) {
+					await interaction.reply({ content: '請輸入使用者', ephemeral: true })
+					return
+
+				} else {
+					let index = config.whitelist.findIndex(x => x === interaction.options.getUser('使用者').id);
+					if (index !== -1) {
+						config.whitelist = config.whitelist.splice(index, 1);
 					}
 				}
 				
