@@ -1,4 +1,5 @@
 const { create_user_data, get_user_data } = require(`../utils/database.js`);
+const { get_player_name } = require(`../utils/get_player_info.js`);
 const Logger = require('../utils/logger.js');
 
 let codes = []
@@ -15,7 +16,7 @@ const validate_code = async (code, discord_id) => {
 
         codes = codes.filter(code_item => code_item.code != code)
         result = result[0]
-        await create_user_data(result.player_uuid, discord_id)
+        await create_user_data(result.player_uuid, discord_id, await get_player_name(result.player_uuid))
         Logger.debug(`[綁定] ${discord_id} 綁定成功，綁定的 UUID 為 ${result.player_uuid}`);
         return result.player_uuid
     } else {

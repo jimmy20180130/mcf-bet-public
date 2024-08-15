@@ -29,13 +29,13 @@ async function get_user_data(player_uuid = undefined, discord_id = undefined) {
     });
 };
 
-async function create_user_data(player_uuid, discord_id) {
-    const insertSql = 'INSERT INTO user_data (discord_id, player_uuid, create_time) VALUES (?, ?, ?)';
+async function create_user_data(player_uuid, discord_id, player_id) {
+    const insertSql = 'INSERT INTO user_data (discord_id, player_uuid, create_time, player_id) VALUES (?, ?, ?, ?)';
 
     if (player_uuid == 'Unexpected Error' || discord_id == 'Unexpected Error') return 'Unexpected Error'
 
     return await new Promise((resolve, reject) => {
-        executeQuery(insertSql, [discord_id, player_uuid, Math.round(new Date() / 1000)], (err) => {
+        executeQuery(insertSql, [discord_id, player_uuid, Math.round(new Date() / 1000), player_id], (err) => {
             if (err) {
                 Logger.error(err);
                 reject('Unexpected Error');
@@ -388,8 +388,54 @@ async function get_all_players() {
     .then(rows => {
         Logger.debug(`[資料庫] 找到所有玩家資料: ${rows.length}`);
         // put all player_uuid into a array
-        const player_uuids = rows.map(row => row.player_uuid);
-        return player_uuids;
+        const player_ids = rows.map(row => row.player_id);
+        return player_ids;
+    })
+    .catch(err => {
+        Logger.warn(`[資料庫] 無法找到所有玩家資料: ${err}`);
+        return err
+    });
+}
+
+async function update_player_id(player_uuid, player_id) {
+    const updateSql = 'UPDATE user_data SET player_id = ? WHERE player_uuid = ?';
+
+    return await new Promise((resolve, reject) => {
+        executeQuery(updateSql, [player_id, player_uuid], (err) => {
+            if (err) {
+                Logger.error(err);
+                reject('Unexpected Error');
+            } else {
+                resolve();
+            }
+        });
+    })
+    .then(() => {
+        Logger.debug(`[資料庫] 更新玩家 ID: ${player_uuid} (${player_id})`);
+    })
+    .catch(err => {
+        Logger.warn(`[資料庫] 無法更新玩家 ID: ${err}`);
+    });
+}
+
+async function get_all_user_data() {
+    const selectSql = 'SELECT * FROM user_data';
+
+    return await new Promise((resolve, reject) => {
+        executeQuery(selectSql, [], (err, rows) => {
+            if (err) {
+                Logger.error(err);
+                reject('Unexpected Error');
+            } else if (rows === undefined || rows.length === 0) {
+                reject('Not Found');
+            } else {
+                resolve(rows);
+            }
+        });
+    })
+    .then(rows => {
+        Logger.debug(`[資料庫] 找到所有玩家資料: ${rows.length}`);
+        return rows;
     })
     .catch(err => {
         Logger.warn(`[資料庫] 無法找到所有玩家資料: ${err}`);
@@ -413,5 +459,7 @@ module.exports = {
     get_all_bet_record,
     get_bet_record,
     get_all_users,
-    get_all_players
+    get_all_players,
+    update_player_id,
+    get_all_user_data
 };

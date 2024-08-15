@@ -1,6 +1,7 @@
 const Logger = require('./logger');
 const axios = require('axios');
 const fs = require('fs');
+const { update_player_id } = require('./database');
 
 // [{"uuid": "uuid", "playerid": "name", "time": 12345}]
 let uuids = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8')).player_names;
@@ -49,6 +50,7 @@ async function get_player_uuid(playerid) {
 
     if (result && result != 'Not Found' && result != 'Unexpected Error') {
         uuids.push({"uuid": result, "playerid": playerid, "time": Date.now()})
+        await update_player_id(result, playerid);
     }
 
     return result
@@ -102,6 +104,7 @@ async function get_player_name(uuid) {
             'uuid': uuid,
             time: Date.now()
         })
+        await update_player_id(uuid, result);
     }
     
     return result

@@ -13,7 +13,7 @@ const { Client, GatewayIntentBits, Collection, Events, Partials, REST, Routes, A
 const { check_codes } = require(`./utils/link_handler.js`);
 const { command_records, dc_command_records } = require(`./discord/command_record.js`);
 const { bot_on, bot_off, bot_kicked } = require(`./discord/embed.js`);
-const { get_user_data, get_all_players } = require(`./utils/database.js`);
+const { get_user_data, get_all_players, get_all_user_data, update_player_id } = require(`./utils/database.js`);
 const { canUseCommand } = require(`./utils/permissions.js`);
 const { check_token } = require(`./auth/auth.js`);
 const moment = require('moment-timezone');
@@ -91,6 +91,38 @@ fs.readFile(filePath, 'utf8', (err, data) => {
         }    
     });
 });
+
+// open data/data.db
+const sqlite3 = require('sqlite3').verbose();
+const db = new sqlite3.Database('data/data.db', (err) => {
+    if (err) {
+        Logger.error('Error opening database:', err.message);
+    } else {
+        //check if there r player_id in table user_data, if not, modify the table
+        db.run(`ALTER TABLE user_data ADD COLUMN player_id TEXT`, (err) => {
+            if (err) {
+                Logger.debug('Column player_id already exists');
+            }
+        });
+    }
+});
+
+db.close((err) => {
+    if (err) {
+        Logger.error('Error closing database:', err.message);
+    }
+});
+
+async function init_username() {
+    for (const player of await get_all_user_data()) {
+        if (!player.player_id) {
+            await update_player_id(player.player_uuid, await get_player_name(player.player_uuid))
+            Logger.debug(`[資料庫] 玩家 ${player.player_uuid} 的名稱已更新`)
+        }
+    }   
+}
+
+init_username()
 
 for (const file of commandFiles) {
     const command = require(`./commands/${file}`);
@@ -689,40 +721,31 @@ const init_dc = () => {
                     try {
                         focused_value = interaction.options.getFocused().toLowerCase()
 
+                        let roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf8'));
                         const user_roles = roles[client.guilds.cache.get(config.discord.guild_id).members.cache.get(interaction.member.id).roles.cache.map(role => role.id).filter((role) => {
                             if (Object.keys(roles).includes(role)) return true
                             else return false
                         })[0]]
 
                         const user_player_uuid = await get_user_data(undefined, interaction.member.id)
-                        const user_player_name = await get_player_name(user_player_uuid)
+                        const user_player_name = await get_player_name(user_player_uuid.player_uuid)
 
-                        if (!user_roles || !user_roles.record_settings.others) {
-                            if (focused_value.startsWith(user_player_name.toLowerCase())) {
-                                return {
-                                    name: user_player_name,
-                                    value: user_player_name
-                                }
+                        if (!config.whitelist.includes(user_player_name) && (!user_roles || !user_roles.record_settings.others)) {
+                            if (focused_value.startsWith(user_player_name.toLowerCase()) || focused_value == '') {
+                                await interaction.respond([{ name: user_player_name, value: user_player_name }])
+                                return
                             } else {
-                                return {
-                                    name: '找不到玩家資料',
-                                    value: '找不到玩家資料'
-                                }
+                                await interaction.respond([{ name: '找不到玩家資料', value: '找不到玩家資料' }])
+                                return
                             }
                         }
 
                         // 這個會返回一堆 Discord ID ，有個白癡以為這是玩家 ID
-                        // 後來改成返回玩家 UUID 了
+                        // 後來改成返回玩家 ID 了
                         let players = await get_all_players()
                         // 轉成玩家 ID，希望不要被 Mojang 429
 
-                        players = await Promise.all(players.map(async (player) => {
-                            return await get_player_name(player)
-                        }))
-
-                        players = players.filter(player => player != 'Not Found' && player != 'Unexpected Error')
-
-                        let roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf8'));
+                        players = players.filter(player => player && player != 'Not Found' && player != 'Unexpected Error')
 
                         if (players == 'Not Found' || players == 'Unexpected Error' || players == undefined) {
                             await interaction.respond([{ name: '找不到玩家資料', value: '找不到玩家資料' }])
@@ -854,6 +877,7 @@ const init_dc = () => {
 
 process.on("unhandledRejection", async (error) => {
     Logger.error(error)
+    console.log(error)
     is_on = false;
     closeDB()
     process.exit(1)

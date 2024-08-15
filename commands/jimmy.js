@@ -3,7 +3,6 @@ const { chat } = require(`../utils/chat.js`);
 const { activateBlock } = require(`../utils/better-mineflayer.js`)
 
 module.exports = {
-    name: 'jimmy',
     async execute(bot, playerid, args, client) {
         await executeCommand(bot, playerid, args, client);
     }
