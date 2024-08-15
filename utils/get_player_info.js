@@ -110,7 +110,7 @@ async function get_player_name(uuid) {
     return result
 }
 
-setInterval(async () => {
+let update1 = setInterval(async () => {
     const now = Date.now();
     let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'));
 
@@ -121,9 +121,9 @@ setInterval(async () => {
             await new Promise(resolve => setTimeout(resolve, 5000));
         }
     }
-}, 900000);
+}, 1200000);
 
-setInterval(() => {
+let update2 = setInterval(() => {
     let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'));
     cache.player_names = uuids;
     fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4), 'utf8');
@@ -131,5 +131,7 @@ setInterval(() => {
 
 module.exports = {
     get_player_uuid,
-    get_player_name
+    get_player_name,
+    update1,
+    update2
 };

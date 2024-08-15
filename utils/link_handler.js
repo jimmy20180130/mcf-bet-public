@@ -7,7 +7,7 @@ let codes = []
 const validate_code = async (code, discord_id) => {
     let result = codes.filter(code_item => code_item.code == code)
     if (result.length > 0) {
-        const user_data = await get_user_data(discord_id)
+        const user_data = await get_user_data(undefined, discord_id)
 
         if (user_data && user_data != 'Not Found' && user_data != 'Unexpected Error') {
             Logger.debug(`[綁定] ${discord_id} 綁定失敗: 已經綁定過了`)

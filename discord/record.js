@@ -144,7 +144,7 @@ module.exports = {
 			if (pay_history.length == 0) {
 				await interaction.editReply('找不到紀錄');
 				return;
-			} else if (player_data == 'Not Found' || String(player_data).startsWith('Unexpected Error')) {
+			} else if (interaction.options.getString('playerid') != '所有人' && (player_data == 'Not Found' || String(player_data).startsWith('Unexpected Error'))) {
 				await interaction.editReply('找不到玩家');
 				return;
 			}

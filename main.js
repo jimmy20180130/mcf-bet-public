@@ -3,7 +3,7 @@ const fs = require('fs');
 let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
 const { add_bet_task, add_client, add_bot, process_bet_task } = require(`./bet/bet.js`);
 const { chat } = require(`./utils/chat.js`);
-const { get_player_uuid, get_player_name } = require(`./utils/get_player_info.js`);
+const { get_player_uuid, get_player_name, update1, update2 } = require(`./utils/get_player_info.js`);
 const { start_rl, stop_rl } = require(`./utils/readline.js`);
 const { process_msg } = require(`./utils/process_msg.js`);
 const { mc_error_handler } = require(`./error/mc_handler.js`)
@@ -71,26 +71,17 @@ fs.readFile(filePath, 'utf8', (err, data) => {
     }
 });
 
-fs.readFile(filePath, 'utf8', (err, data) => {
-    //check if the file has default content
-    let parsed_data = JSON.parse(data);
-    if (!parsed_data.bet) {
-        parsed_data.bet = [];
-    }
-    if (!parsed_data.msg) {
-        parsed_data.msg = [];
-    }
-    if (!parsed_data.player_names) {
-        parsed_data.player_names = [];
-    }
-    fs.writeFileSync(filePath, JSON.stringify(parsed_data, null, 4), 'utf8', (writeErr) => {
-        if (writeErr) {
-            Logger.error('Error writing file:', writeErr);
-        } else {
-            Logger.log('The file content has been reset to default JSON format.');
-        }    
-    });
-});
+const cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'));
+if (!cache.bet) {
+    cache.bet = [];
+}
+if (!cache.msg) {
+    cache.msg = [];
+}
+if (!cache.player_names) {
+    cache.player_names = [];
+}
+fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4));
 
 // open data/data.db
 const sqlite3 = require('sqlite3').verbose();
@@ -445,6 +436,8 @@ const init_bot = async () => {
 
     bot.once('error', async (err) => {
         Logger.error(err.message)
+        clearInterval(update1)
+        clearInterval(update2)
 
         for (let item of intervals) {
             clearInterval(item)
@@ -462,6 +455,8 @@ const init_bot = async () => {
 
     bot.once('kicked', async (reason) => {
         clearTimeout(is_on_timeout)
+        clearInterval(update1)
+        clearInterval(update2)
         stop_rl()
         stop_msg()
         Logger.warn('Minecraft 機器人被伺服器踢出了!');
@@ -481,6 +476,8 @@ const init_bot = async () => {
         clearTimeout(is_on_timeout)
         stop_rl()
         stop_msg()
+        clearInterval(update1)
+        clearInterval(update2)
 
         for (let item of intervals) {
             clearInterval(item)
@@ -752,7 +749,7 @@ const init_dc = () => {
                             return
                         }
 
-                        if (user_roles.record_settings.others) {
+                        if (config.whitelist.includes(user_player_name) || user_roles.record_settings.others) {
                             results.push({
                                 name: '所有人',
                                 value: '所有人'

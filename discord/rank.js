@@ -206,8 +206,8 @@ module.exports = {
             if (Object.keys(roles).includes(role)) return true
             else return false
         })
-
-        if (!config.whitelist.includes(await get_player_name(user_data.player_uuid)) && !roles[player_roles[0]] || (!roles[player_roles[0]].record_settings.others && !roles[player_roles[0]].record_settings.advanced)) {
+        
+        if (!config.whitelist.includes(await get_player_name(user_uuid)) && (!roles[player_roles[0]] || (!roles[player_roles[0]].record_settings.others && !roles[player_roles[0]].record_settings.advanced))) {
             await interaction.editReply('您沒有權限使用此指令');
             return;
         }
