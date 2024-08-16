@@ -111,6 +111,7 @@ async function get_player_name(uuid) {
 }
 
 let update1 = setInterval(async () => {
+    Logger.debug('[玩家資料] 開始更新玩家資料快取');
     const now = Date.now();
     let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'));
 
@@ -118,7 +119,7 @@ let update1 = setInterval(async () => {
         if (item.time + 900000 < now) {
             await get_player_uuid(item.playerid);
             
-            await new Promise(resolve => setTimeout(resolve, 5000));
+            await new Promise(resolve => setTimeout(resolve, 3000));
         }
     }
 }, 1200000);
@@ -129,9 +130,13 @@ let update2 = setInterval(() => {
     fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4), 'utf8');
 }, 1200000);
 
+function clear_interval() {
+    clearInterval(update1);
+    clearInterval(update2);
+}
+
 module.exports = {
     get_player_uuid,
     get_player_name,
-    update1,
-    update2
+    clear_interval
 };

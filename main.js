@@ -3,7 +3,7 @@ const fs = require('fs');
 let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
 const { add_bet_task, add_client, add_bot, process_bet_task } = require(`./bet/bet.js`);
 const { chat } = require(`./utils/chat.js`);
-const { get_player_uuid, get_player_name, update1, update2 } = require(`./utils/get_player_info.js`);
+const { get_player_uuid, get_player_name, clear_interval } = require(`./utils/get_player_info.js`);
 const { start_rl, stop_rl } = require(`./utils/readline.js`);
 const { process_msg } = require(`./utils/process_msg.js`);
 const { mc_error_handler } = require(`./error/mc_handler.js`)
@@ -436,8 +436,7 @@ const init_bot = async () => {
 
     bot.once('error', async (err) => {
         Logger.error(err.message)
-        clearInterval(update1)
-        clearInterval(update2)
+        clear_interval()
 
         for (let item of intervals) {
             clearInterval(item)
@@ -455,8 +454,7 @@ const init_bot = async () => {
 
     bot.once('kicked', async (reason) => {
         clearTimeout(is_on_timeout)
-        clearInterval(update1)
-        clearInterval(update2)
+        clear_interval()
         stop_rl()
         stop_msg()
         Logger.warn('Minecraft 機器人被伺服器踢出了!');
@@ -476,8 +474,7 @@ const init_bot = async () => {
         clearTimeout(is_on_timeout)
         stop_rl()
         stop_msg()
-        clearInterval(update1)
-        clearInterval(update2)
+        clear_interval()
 
         for (let item of intervals) {
             clearInterval(item)
