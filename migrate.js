@@ -138,12 +138,12 @@ async function migrateDatabase() {
         const data_db2 = new sqlite3.Database('./data/data.db');
         await new Promise((resolve, reject) => {
             data_db2.serialize(() => {
-                const stmt = data_db2.prepare('INSERT INTO user_data VALUES (?, ?, ?)');
+                const stmt = data_db2.prepare('INSERT INTO user_data VALUES (?, ?, ?, ?)');
                 userRows.forEach((row) => {
                     if (row.discord_id == 0 || row.discord_id == '0') return;
 
                     console.log(JSON.stringify(row));
-                    stmt.run(row.discord_id, row.player_uuid, row.create_time);
+                    stmt.run(row.discord_id, row.player_uuid, row.create_time, '');
                 });
                 stmt.finalize((err) => {
                     if (err) reject(err);
@@ -207,5 +207,9 @@ async function migrate_config() {
     fs.writeFileSync(`${process.cwd()}/config/config.json`, JSON.stringify(new_config, null, 4));
 }
 
-migrateDatabase().catch(console.error);
-migrate_config().catch(console.error);
+migrateDatabase().then(() => {
+    migrate_config();
+    console.log('遷移完成');
+}).catch((err) => {
+    console.error(`遷移失敗: ${err}`);
+});
