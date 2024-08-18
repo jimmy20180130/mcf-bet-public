@@ -198,7 +198,7 @@ async function migrate_config() {
     const new_config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
     // if old config includes key that new config has, then migrate
 
-    for (const key of old_config) {
+    for (const key of Object.keys(old_config)) {
         if (new_config[key]) {
             new_config[key] = old_config[key];
         }
