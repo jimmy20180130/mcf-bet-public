@@ -171,7 +171,7 @@ async function error_embed(client, bet_uuid, error_msg, player_id, amount, type)
     
     const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
 
-    if (config.discord.enabled) {
+    if (config.discord_channels.errors) {
         const channel = await client.channels.fetch(config.discord_channels.errors);
         await channel.send({ embeds: [embed] });
     }
@@ -190,7 +190,7 @@ async function pay_error(client, pay_uuid, player_id, amount, type, reason) {
 
     const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
     
-    if (config.discord.enabled) {
+    if (config.discord_channels.errors) {
         const channel = await client.channels.fetch(config.discord_channels.errors);
         await channel.send({ embeds: [embed] });
     }

@@ -10,14 +10,14 @@ let appProcess = undefined;
 
 Logger.log('正在開始執行由 Jimmy 開發的 [廢土對賭機器人]');
 
-let rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout   
-});
+// let rl = readline.createInterface({
+//     input: process.stdin,
+//     output: process.stdout   
+// });
 
-rl.on('line', async function (line) {
-    //if (appProcess != undefined) appProcess.stdin.write(line + '\n');
-});
+// rl.on('line', async function (line) {
+//     if (appProcess != undefined) appProcess.stdin.write(line + '\n');
+// });
 
 let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
 

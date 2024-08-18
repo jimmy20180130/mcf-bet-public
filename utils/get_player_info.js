@@ -12,6 +12,10 @@ async function get_player_uuid(playerid) {
             Logger.debug(`[玩家資料] 從快取取得玩家 ${playerid} 的 UUID: ${item['uuid']}`)
             return item['uuid']
         }
+
+        if (item['playerid'] == playerid && item['time'] + 900000 < Date.now()) {
+            uuids.splice(uuids.indexOf(item), 1);
+        }
     }
 
     let result;
@@ -63,6 +67,10 @@ async function get_player_name(uuid) {
         if (item['uuid'] == uuid && item['time'] + 900000 > Date.now()) {
             Logger.debug(`[玩家資料] 從快取取得玩家 ${uuid} 的名稱: ${item['playerid']}`)
             return item['playerid']
+        }
+
+        if (item['uuid'] == uuid && item['time'] + 900000 < Date.now()) {
+            uuids.splice(uuids.indexOf(item), 1);
         }
     }
 
@@ -130,9 +138,18 @@ let update2 = setInterval(() => {
     fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4), 'utf8');
 }, 1200000);
 
+let update3 = setInterval(() => {
+    for (const item of uuids) {
+        if (item['time'] + 900000 < Date.now()) {
+            uuids.splice(uuids.indexOf(item), 1);
+        }
+    }
+}, 60000);
+
 function clear_interval() {
     clearInterval(update1);
     clearInterval(update2);
+    clearInterval(update3);
 }
 
 module.exports = {

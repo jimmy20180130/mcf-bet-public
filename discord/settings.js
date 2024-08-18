@@ -166,9 +166,10 @@ module.exports = {
 
 	async execute(interaction) {
 		let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
-		
-		if (!config.whitelist || !config.whitelist.includes(await get_player_name((await get_user_data(undefined, interaction.user.id)).player_uuid))) {
-            await interaction.editReply({ content: '你沒有權限使用這個指令', ephemeral: true });
+		let user_data = await get_user_data(undefined, interaction.user.id);
+				
+		if (!config.whitelist || !user_data || user_data == 'Not Found' || user_data == 'Unexpected Error' ||!config.whitelist.includes(await get_player_name(user_data.player_uuid))) {
+            await interaction.reply({ content: '你沒有權限使用這個指令', ephemeral: true });
             return;
         }
 		
@@ -266,8 +267,8 @@ module.exports = {
 
 				} else {
 					let index = config.advertisement.findIndex(x => x.text === interaction.options.getString('文字或指令'));
-					if (index !== -1) {
-						config.advertisement = config.advertisement.splice(index, 1);
+					if (index != -1) {
+						config.advertisement.splice(index, 1);
 					}
 				}
 				

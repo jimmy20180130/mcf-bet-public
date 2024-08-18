@@ -37,7 +37,8 @@ const commandFiles = fs.readdirSync(path.join(__dirname, 'commands')).filter(fil
 const commands = {}
 let is_on_timeout;
 let intervals = [];
-let auto_ckeck_giveaway;
+let ads = [];
+let auto_check_ad
 
 let bot;
 let client;
@@ -105,7 +106,10 @@ db.close((err) => {
 });
 
 async function init_username() {
-    for (const player of await get_all_user_data()) {
+    const userdata = await get_user_data();
+    if (!userdata || userdata == 'Not Found' || userdata == 'Unexpected Error') return;
+
+    for (const player of userdata) {
         if (!player.player_id) {
             await update_player_id(player.player_uuid, await get_player_name(player.player_uuid))
             Logger.debug(`[資料庫] 玩家 ${player.player_uuid} 的名稱已更新`)
@@ -336,7 +340,7 @@ const init_bot = async () => {
 
     bot.once('spawn', async () => {
         Logger.log('Minecraft 機器人已上線!');
-
+        
         if (config.discord.enabled) {
             Logger.debug('Discord 機器人已啟用')
             init_dc()
@@ -358,9 +362,11 @@ const init_bot = async () => {
             const roundedY = Math.round(bot.entity.position.y);
             const roundedZ = Math.round(bot.entity.position.z);
             const string = `【登入時間】${time}\n【連線位址】${botSocket.server ? botSocket.server : botSocket._host}\n【玩家名稱】${bot.username}\n【我的座標】(${roundedX}, ${roundedY}, ${roundedZ})`
-            const embed = await bot_on(string)
-            const channel = await client.channels.fetch(config.discord_channels.status);
-            await channel.send({ embeds: [embed] });
+            if (config.discord_channels.status) {
+                const embed = await bot_on(string)
+                const channel = await client.channels.fetch(config.discord_channels.status);
+                await channel.send({ embeds: [embed] });
+            }
 
             add_bot(bot)
 
@@ -404,27 +410,60 @@ const init_bot = async () => {
                 })
             }, 10000);
 
-            const ad = () => {
+            const ad = async () => {
                 let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'))
 
                 for (let item of config.advertisement) {
                     intervals.push(setInterval(async () => {
                         try {
-                            await chat(bot, item.text)
-                            Logger.debug(`發送廣告: ${item.text}`)
+                            let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'))
+
+                            if (config.advertisement.includes(item)) {
+                                await chat(bot, item.text)
+                                Logger.debug(`發送廣告: ${item.text}`)
+                            }
                         } catch {}
                     }, item.interval))
+
+                    ads.push(item)
                 }
+
+                
+                auto_check_ad = setInterval(async () => {
+                    if (config.advertisement.length != ads.length) {
+                        for (let item of config.advertisement) {
+                            if (!ads.includes(item)) {
+                                await chat(bot, item.text)
+                                Logger.debug(`發送廣告: ${item.text}`)
+                                intervals.push(setInterval(async () => {
+                                    try {
+                                        let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'))
+                
+                                        if (config.advertisement.includes(item)) {
+                                            await chat(bot, item.text)
+                                            Logger.debug(`發送廣告: ${item.text}`)
+                                        }
+                                    } catch {}
+                                }, item.interval))
+                            }
+                        }
+
+                        ads = config.advertisement
+                    }
+                }, 5000)
             }
 
             for (let item of config.advertisement) {
                 await chat(bot, item.text)
             }
     
-            setTimeout(() => {
-                ad()
+            setTimeout(async () => {
+                await ad()
             }, 5000)
-        } catch (e) {}
+        } catch (e) {
+            Logger.error(e)
+            process.exit(1000)
+        }
     });
 
     bot.once('login', async () => {
@@ -437,6 +476,7 @@ const init_bot = async () => {
     bot.once('error', async (err) => {
         Logger.error(err.message)
         clear_interval()
+        clearInterval(auto_check_ad)
 
         for (let item of intervals) {
             clearInterval(item)
@@ -454,6 +494,7 @@ const init_bot = async () => {
 
     bot.once('kicked', async (reason) => {
         clearTimeout(is_on_timeout)
+        clearInterval(auto_check_ad)
         clear_interval()
         stop_rl()
         stop_msg()
@@ -471,6 +512,7 @@ const init_bot = async () => {
     });
 
     bot.once('end', async () => {
+        clearInterval(auto_check_ad)
         clearTimeout(is_on_timeout)
         stop_rl()
         stop_msg()
@@ -494,7 +536,7 @@ const init_bot = async () => {
     });
 }
 
-const init_dc = () => {
+async function init_dc() {
     try {
         const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
 
@@ -555,6 +597,7 @@ const init_dc = () => {
         client.once(Events.ClientReady, async c => {
             Logger.log(`Discord 機器人成功以 ${c.user.tag} 的名稱登入`)
             const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
+
             if (config.console.mode == 1) {
                 discord_console(client)
             } else {

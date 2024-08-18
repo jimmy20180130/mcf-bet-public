@@ -72,7 +72,7 @@ async function migrateDatabase() {
                 data_db.run('CREATE TABLE "daily" ("player_uuid" INTEGER,"date_code" TEXT)');
                 data_db.run('CREATE TABLE "data_change_history" ("discord_id" INTEGER,"player_uuid" TEXT,"table" TEXT,"change_type" TEXT,"original_value" TEXT,"after_value" TEXT)');
                 data_db.run('CREATE TABLE "pay_history" ("pay_uuid" TEXT,"player_uuid" TEXT,"amount" INTEGER,"result" TEXT,"time" INTEGER, "type" TEXT)');
-                data_db.run('CREATE TABLE "user_data" ("discord_id" TEXT,"player_uuid" TEXT, "create_time" INTEGER)');
+                data_db.run('CREATE TABLE "user_data" ("discord_id" TEXT,"player_uuid" TEXT, "create_time" INTEGER, "player_id" TEXT)');
                 data_db.run('CREATE TABLE "wallet" ("player_uuid" TEXT,"emerald_amount" INTEGER,"coin_amount" INTEGER)', (err) => {
                     if (err) reject(err);
                     else resolve();

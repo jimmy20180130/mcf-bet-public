@@ -77,9 +77,11 @@ module.exports = {
 				if (verify_success && verify_success != 'already_linked') {
 					Logger.debug(`[綁定] ${interaction.member.id} 綁定成功，綁定的 UUID 為 ${verify_success}`);
 					await interaction.editReply(`成功綁定您的 Minecraft 帳號 (${(await get_player_name(verify_success)).replace(/(_)/g, "\\$1")}) 至您的 Discord 帳號 (<@${interaction.member.id}>)`);
-					const embed = await link_embed((await get_player_name(verify_success)).replace(/(_)/g, "\\$1"), verify_success.replace(/(_)/g, "\\$1"), interaction.member.user.tag.replace(/(_)/g, "\\$1"), interaction.member.user.id, await get_player_name(verify_success))
-					const channel = await interaction.client.channels.fetch(config.discord_channels.link)
-					await channel.send({ embeds: [embed] });
+					try {
+						const embed = await link_embed((await get_player_name(verify_success)).replace(/(_)/g, "\\$1"), verify_success.replace(/(_)/g, "\\$1"), interaction.member.user.tag.replace(/(_)/g, "\\$1"), interaction.member.user.id, await get_player_name(verify_success))
+						const channel = await interaction.client.channels.fetch(config.discord_channels.link)
+						await channel.send({ embeds: [embed] });
+					} catch (error) {}
 
 				} else if (verify_success == 'already_linked') {
 					Logger.debug(`[綁定] ${interaction.member.id} 已經綁定過了`);

@@ -253,7 +253,7 @@ async function process_bet_result(bot, wool, amount, player_id, type, task_uuid)
             //await write_pay_history(amount, Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber()), config.bet.eodds, pay_result, await get_player_uuid(player_id), type)
             await write_bet_record(task_uuid, await get_player_uuid(player_id), amount, config.bet.eodds, Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber()), type, 'success', Math.floor((new Date()).getTime() / 1000))
             
-            if (config.discord.enabled) {
+            if (config.discord_channels.bet_record) {
                 const channel = await client.channels.fetch(config.discord_channels.bet_record);
                 const embed = await bet_win(player_id, `${amount} -> ${Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber())} 個綠寶石 💵 (賠率為 ${config.bet.eodds})`)
                 await channel.send({ embeds: [embed] });
@@ -265,7 +265,7 @@ async function process_bet_result(bot, wool, amount, player_id, type, task_uuid)
             //await write_pay_history(amount, Math.floor(new Decimal(amount).mul(new Decimal(config.bet.codds)).toNumber()), config.bet.codds, 'success', await get_player_uuid(player_id), type)
             await write_bet_record(task_uuid, await get_player_uuid(player_id), amount, config.bet.codds, Math.floor(new Decimal(amount).mul(new Decimal(config.bet.codds)).toNumber()), type, 'success', Math.floor((new Date()).getTime() / 1000))
 
-            if (config.discord.enabled) {
+            if (config.discord_channels.bet_record) {
                 const channel = await client.channels.fetch(config.discord_channels.bet_record);
                 const embed = await bet_win(player_id, `${amount} -> ${Math.floor(new Decimal(amount).mul(new Decimal(config.bet.codds)).toNumber())} 個村民錠 🪙 (賠率為 ${config.bet.codds})`)
                 await channel.send({ embeds: [embed] });
@@ -279,7 +279,7 @@ async function process_bet_result(bot, wool, amount, player_id, type, task_uuid)
             //await write_pay_history(amount, 0, config.bet.eodds, 'success', await get_player_uuid(player_id), type)
             await write_bet_record(task_uuid, await get_player_uuid(player_id), amount, config.bet.eodds, 0, type, 'success', Math.floor((new Date()).getTime() / 1000))
 
-            if (config.discord.enabled) {
+            if (config.discord_channels.bet_record) {
                 const channel = await client.channels.fetch(config.discord_channels.bet_record);
                 const embed = await bet_lose(player_id, `下注 ${amount} 個綠寶石 💵，未中獎 (賠率為 ${config.bet.eodds})`)
                 await channel.send({ embeds: [embed] });
@@ -291,7 +291,7 @@ async function process_bet_result(bot, wool, amount, player_id, type, task_uuid)
             //await write_pay_history(amount, 0, config.bet.codds, 'success', await get_player_uuid(player_id), type)
             await write_bet_record(task_uuid, await get_player_uuid(player_id), amount, config.bet.codds, 0, type, 'success', Math.floor((new Date()).getTime() / 1000))
             
-            if (config.discord.enabled) {
+            if (config.discord_channels.bet_record) {
                 const channel = await client.channels.fetch(config.discord_channels.bet_record);
                 const embed = await bet_lose(player_id, `下注 ${amount} 個村民錠 🪙，未中獎 (賠率為 ${config.bet.codds})`)
                 await channel.send({ embeds: [embed] });

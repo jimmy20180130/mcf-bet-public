@@ -97,7 +97,6 @@ const discord_console = async (discord_client=undefined) => {
             }
             await new Promise(resolve => setTimeout(resolve, 1000));
         } else {
-            console.log('找不到頻道')
             await new Promise(resolve => setTimeout(resolve, 500));
         }
         current_msg = undefined;
@@ -118,7 +117,6 @@ const discord_console_2 = async (discord_client=undefined) => {
             msgs.shift();
             await new Promise(resolve => setTimeout(resolve, 1000));
         } else {
-            console.log('找不到頻道')
             await new Promise(resolve => setTimeout(resolve, 500));
         }
         current_msg = undefined;
