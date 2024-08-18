@@ -1,11 +1,17 @@
 {
     "key": "",
-    "debug": false,
     "bot_args": {
         "host": "sg.mcfallout.net",
         "port": "25565",
         "username": "example@example.com"
     },
+    "discord": {
+        "enabled": true,
+        "bot_token": "",
+        "bot_client_id": "",
+        "guild_id": ""
+    },
+    "debug": false,
     "bot": {
         "server": 61,
         "home": "play"
@@ -15,12 +21,6 @@
         "username": "",
         "password": "",
         "key": ""
-    },
-    "discord": {
-        "enabled": true,
-        "bot_token": "",
-        "bot_client_id": "",
-        "guild_id": ""
     },
     "discord_channels": {
         "console": "",
