@@ -16,13 +16,11 @@ module.exports = {
 				.setName('link')
 				.setNameLocalizations({
 					"en-US": "link",
-					"zh-CN": "gertqw简体中文",
 					"zh-TW": "綁定"
 				})
 				.setDescription('link your discord account with your minecraft account')
 				.setDescriptionLocalizations({
 					"en-US": "link your discord account with your minecraft account",
-					"zh-CN": "目前不支援简体中文",
 					"zh-TW": "綁定您的 Minecraft 帳號"
 				})
 				.addStringOption(option =>
@@ -31,13 +29,11 @@ module.exports = {
 						.setRequired(true)
 						.setNameLocalizations({
 							"en-US": "verify-code",
-							"zh-CN": "wqere简体中文",
 							"zh-TW": "驗證碼"
 						})
 						.setDescription('您在遊戲中收到的驗證碼')
 						.setDescriptionLocalizations({
 							"en-US": "the verification code you get in the game",
-							'zh-CN': '目前不支援简体中文',
 							"zh-TW": "您在遊戲中收到的驗證碼"
 						})
 				)
@@ -47,13 +43,11 @@ module.exports = {
 				.setName('unlink')
 				.setNameLocalizations({
 					"en-US": "unlink",
-					"zh-CN": "xcvdsf简体中文",
 					"zh-TW": "解綁"
 				})
 				.setDescription('unlink your discord account with your minecraft account')
 				.setDescriptionLocalizations({
 					"en-US": "unlink your discord account with your minecraft account",
-					"zh-CN": "目前不支援简体中文",
 					"zh-TW": "解綁您的 Minecraft 帳號"
 				})
 		),

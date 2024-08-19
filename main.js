@@ -106,7 +106,7 @@ db.close((err) => {
 });
 
 async function init_username() {
-    const userdata = await get_user_data();
+    const userdata = await get_all_user_data();
     if (!userdata || userdata == 'Not Found' || userdata == 'Unexpected Error') return;
 
     for (const player of userdata) {
@@ -765,10 +765,11 @@ async function init_dc() {
                         })[0]]
 
                         const user_player_uuid = await get_user_data(undefined, interaction.member.id)
+
                         const user_player_name = await get_player_name(user_player_uuid.player_uuid)
 
                         if (!config.whitelist.includes(user_player_name) && (!user_roles || !user_roles.record_settings.others)) {
-                            if (focused_value.startsWith(user_player_name.toLowerCase()) || focused_value == '') {
+                            if (user_player_name.toLowerCase() != 'undefined' && focused_value.startsWith(user_player_name.toLowerCase()) || focused_value == '') {
                                 await interaction.respond([{ name: user_player_name, value: user_player_name }])
                                 return
                             } else {
