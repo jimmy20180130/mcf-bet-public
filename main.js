@@ -348,6 +348,11 @@ const init_bot = async () => {
             Logger.debug('Discord 機器人未啟用')
         }
 
+        //wait until dc bot is ready
+        while (!client) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+
         let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'));
 
         for (let item of cache.bet) {

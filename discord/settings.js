@@ -300,7 +300,7 @@ module.exports = {
 				} else {
 					let index = config.whitelist.findIndex(x => x.toLowerCase() === interaction.options.getString('使用者').toLowerCase());
 					if (index !== -1) {
-						config.whitelist = config.whitelist.splice(index, 1);
+						config.whitelist.splice(index, 1);
 					}
 				}
 
