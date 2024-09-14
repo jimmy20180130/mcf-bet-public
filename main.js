@@ -417,17 +417,15 @@ const init_bot = async () => {
 
             const ad = async () => {
                 let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'))
-
                 for (let item of config.advertisement) {
                     intervals.push(setInterval(async () => {
                         try {
                             let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'))
-
-                            if (config.advertisement.includes(item)) {
+                            if (config.advertisement.some(adObject => adObject.text == item.text && adObject.interval == item.interval)) {
                                 await chat(bot, item.text)
                                 Logger.debug(`發送廣告: ${item.text}`)
                             }
-                        } catch {}
+                        } catch (e) {Logger.error(e)}
                     }, item.interval))
 
                     ads.push(item)
@@ -435,26 +433,24 @@ const init_bot = async () => {
 
                 
                 auto_check_ad = setInterval(async () => {
-                    if (config.advertisement.length != ads.length) {
-                        for (let item of config.advertisement) {
-                            if (!ads.includes(item)) {
-                                await chat(bot, item.text)
-                                Logger.debug(`發送廣告: ${item.text}`)
-                                intervals.push(setInterval(async () => {
-                                    try {
-                                        let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'))
-                
-                                        if (config.advertisement.includes(item)) {
-                                            await chat(bot, item.text)
-                                            Logger.debug(`發送廣告: ${item.text}`)
-                                        }
-                                    } catch {}
-                                }, item.interval))
-                            }
+                    let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'))
+                    for (let item of config.advertisement) {
+                        if (!ads.some(adObj => adObj.text == item.text && adObj.interval == item.interval)) {
+                            await chat(bot, item.text)
+                            Logger.debug(`發送廣告: ${item.text}`)
+                            intervals.push(setInterval(async () => {
+                                try {
+                                    let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'))
+                                    if (config.advertisement.some(adObject => adObject.text == item.text && adObject.interval == item.interval)) {
+                                        await chat(bot, item.text)
+                                        Logger.debug(`發送廣告: ${item.text}`)
+                                    }
+                                } catch {}
+                            }, item.interval))
                         }
-
-                        ads = config.advertisement
                     }
+
+                    ads = config.advertisement
                 }, 5000)
             }
 
