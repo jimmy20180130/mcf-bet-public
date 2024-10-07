@@ -115,8 +115,8 @@ function startApp() {
     });
 
     checkProcess.stdout.on('data', (data) => {
-        Logger.log(`配置檢查輸出: ${data}`);
-      });
+        Logger.log(`配置檢查輸出: ${String(data).replace(/\n$/, '')}`);
+    });
       
     checkProcess.stderr.on('data', (data) => {
         Logger.error(`配置檢查錯誤: ${data}`);

@@ -1,139 +1,119 @@
-// const fs = require('fs').promises;
-// const path = require('path');
-// const axios = require('axios');
-// const sqlite3 = require('sqlite3').verbose();
+const axios = require('axios');
+const fs = require('fs').promises;
+const path = require('path');
 
-// const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/jimmy20180130/mcf-bet-public/main/default_files';
-// const LOCAL_BASE_PATH = './default_files';
+class JsonSyncer {
+    constructor(syncConfigs) {
+        this.syncConfigs = syncConfigs;
+    }
 
-// const FILES_TO_CHECK = {
-//   'config/config.json': true,
-//   'config/messages.json': true,
-//   'config/commands.json': true,
-//   'data/giveaways.json': true,
-//   'cache/cache.json': true
-// };
+    async getGithubJson(url) {
+        try {
+            const response = await axios.get(url);
+            return response.data;
+        } catch (error) {
+            console.error(`無法從GitHub獲取JSON (${url}):`, error.message);
+            return null;
+        }
+    }
 
-// async function downloadFile(filePath) {
-//   const url = `${GITHUB_RAW_URL}/${filePath}`;
-//   const response = await axios.get(url);
-//   const localPath = path.join(LOCAL_BASE_PATH, filePath);
-//   await fs.mkdir(path.dirname(localPath), { recursive: true });
-//   await fs.writeFile(localPath, JSON.stringify(response.data, null, 2));
-//   console.log(`Downloaded: ${filePath}`);
-// }
+    async getLocalJson(filePath) {
+        try {
+            const data = await fs.readFile(filePath, 'utf8');
+            return JSON.parse(data);
+        } catch (error) {
+            if (error.code === 'ENOENT') {
+                console.log(`本地檔案不存在 (${filePath})，將創建新檔案`);
+                return {};
+            }
+            console.error(`讀取本地JSON檔案時出錯 (${filePath}):`, error.message);
+            return null;
+        }
+    }
 
-// async function updateJsonFile(filePath) {
-//   const url = `${GITHUB_RAW_URL}/${filePath}`;
-//   const response = await axios.get(url);
-//   const githubData = response.data;
+    async syncSingleJson(githubUrl, localFilePath) {
+        console.log(`開始同步: ${localFilePath}`);
+        const githubJson = await this.getGithubJson(githubUrl);
+        if (!githubJson) return false;
 
-//   const localPath = path.join(LOCAL_BASE_PATH, filePath);
-//   let localData = JSON.parse(await fs.readFile(localPath, 'utf-8'));
+        let localJson = await this.getLocalJson(localFilePath);
+        if (localJson === null) return false;
 
-//   for (const key in githubData) {
-//     if (!(key in localData)) {
-//       localData[key] = githubData[key];
-//     }
-//   }
+        let hasChanges = false;
+        for (const [key, value] of Object.entries(githubJson)) {
+            if (!(key in localJson)) {
+                localJson[key] = value;
+                hasChanges = true;
+                console.log(`新增key: ${key} 到 ${localFilePath}`);
+            }
+        }
 
-//   for (const key in localData) {
-//     if (!(key in githubData)) {
-//       delete localData[key];
-//     }
-//   }
+        if (hasChanges) {
+            try {
+                // 確保目標目錄存在
+                await fs.mkdir(path.dirname(localFilePath), { recursive: true });
+                
+                await fs.writeFile(
+                    localFilePath, 
+                    JSON.stringify(localJson, null, 2),
+                    'utf8'
+                );
+                console.log(`本地JSON檔案已更新: ${localFilePath}`);
+            } catch (error) {
+                console.error(`寫入本地JSON檔案時出錯 (${localFilePath}):`, error.message);
+                return false;
+            }
+        } else {
+            console.log(`本地檔案已是最新，無需更新: ${localFilePath}`);
+        }
 
-//   await fs.writeFile(localPath, JSON.stringify(localData, null, 2));
-//   console.log(`Updated: ${filePath}`);
-// }
+        return true;
+    }
 
-// async function updateDbFile(filePath) {
-//   const url = `${GITHUB_RAW_URL}/${filePath}`;
-//   const response = await axios.get(url, { responseType: 'arraybuffer' });
-//   const githubDb = new sqlite3.Database(':memory:');
+    async syncAllJson() {
+        const results = [];
+        for (const config of this.syncConfigs) {
+            const result = await this.syncSingleJson(config.githubUrl, config.localPath);
+            results.push({
+                localPath: config.localPath,
+                success: result
+            });
+        }
+        return results;
+    }
+}
 
-//   await new Promise((resolve, reject) => {
-//     githubDb.serialize(() => {
-//       githubDb.run('BEGIN TRANSACTION');
-//       githubDb.exec(response.data, (err) => {
-//         if (err) reject(err);
-//         githubDb.run('COMMIT', resolve);
-//       });
-//     });
-//   });
+async function main() {
+    // 使用示例
+    const syncConfigs = [
+        {
+            githubUrl: 'https://raw.githubusercontent.com/jimmy20180130/mcf-bet-public/main/config/config.json',
+            localPath: `${process.cwd()}/config/config.json`
+        },
+        {
+            githubUrl: 'https://raw.githubusercontent.com/jimmy20180130/mcf-bet-public/main/config/commands.json',
+            localPath: `${process.cwd()}/config/commands.json`
+        },
+        {
+            githubUrl: 'https://raw.githubusercontent.com/jimmy20180130/mcf-bet-public/main/config/messages.json',
+            localPath: `${process.cwd()}/config/messages.json`
+        },
+        {
+            githubUrl: 'https://raw.githubusercontent.com/jimmy20180130/mcf-bet-public/main/config/roles.json',
+            localPath: `${process.cwd()}/config/roles.json`
+        },
+    ];
 
-//   const localPath = path.join(LOCAL_BASE_PATH, filePath);
-//   const localDb = new sqlite3.Database(localPath);
+    const syncer = new JsonSyncer(syncConfigs);
+    const results = await syncer.syncAllJson();
 
-//   await new Promise((resolve, reject) => {
-//     localDb.serialize(() => {
-//       localDb.run('BEGIN TRANSACTION');
-      
-//       // Get all tables from GitHub DB
-//       githubDb.all("SELECT name FROM sqlite_master WHERE type='table'", [], (err, tables) => {
-//         if (err) reject(err);
+    console.log('檔案同步結果:');
+    results.forEach(async result => {
+        console.log(`${result.localPath}: ${result.success ? '成功' : '失敗'}`);
+        await new Promise(resolve => setTimeout(resolve, 100));
+    });
+}
 
-//         tables.forEach(table => {
-//           // Get all columns for each table
-//           githubDb.all(`PRAGMA table_info(${table.name})`, [], (err, columns) => {
-//             if (err) reject(err);
-
-//             // Create table if it doesn't exist in local DB
-//             const createTableSQL = `CREATE TABLE IF NOT EXISTS ${table.name} (${columns.map(col => `${col.name} ${col.type}`).join(', ')})`;
-//             localDb.run(createTableSQL);
-
-//             // Add missing columns to local DB
-//             columns.forEach(column => {
-//               localDb.run(`ALTER TABLE ${table.name} ADD COLUMN IF NOT EXISTS ${column.name} ${column.type}`);
-//             });
-
-//             // Remove extra columns from local DB
-//             localDb.all(`PRAGMA table_info(${table.name})`, [], (err, localColumns) => {
-//               if (err) reject(err);
-
-//               localColumns.forEach(localColumn => {
-//                 if (!columns.find(col => col.name === localColumn.name)) {
-//                   localDb.run(`ALTER TABLE ${table.name} DROP COLUMN ${localColumn.name}`);
-//                 }
-//               });
-//             });
-//           });
-//         });
-//       });
-
-//       localDb.run('COMMIT', resolve);
-//     });
-//   });
-
-//   localDb.close();
-//   githubDb.close();
-//   console.log(`Updated: ${filePath}`);
-// }
-
-// async function checkAndUpdateFile(filePath, isJson) {
-//   const localPath = path.join(LOCAL_BASE_PATH, filePath);
-//   try {
-//     await fs.access(localPath);
-//     if (isJson) {
-//       await updateJsonFile(filePath);
-//     } else {
-//       await updateDbFile(filePath);
-//     }
-//   } catch (error) {
-//     if (error.code === 'ENOENT') {
-//       await downloadFile(filePath);
-//     } else {
-//       console.error(`Error processing ${filePath}:`, error);
-//     }
-//   }
-// }
-
-// async function main() {
-//   for (const [filePath, isJson] of Object.entries(FILES_TO_CHECK)) {
-//     await checkAndUpdateFile(filePath, isJson);
-//   }
-// }
-
-// main()
-//     .then(() => process.exit(0))
-//     .catch(error => console.error('An error occurred:', error));
+main()
+    .then(() => process.exit(0))
+    .catch(error => console.error('An error occurred:', error));

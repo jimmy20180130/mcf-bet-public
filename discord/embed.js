@@ -180,7 +180,7 @@ async function error_embed(client, bet_uuid, error_msg, player_id, amount, type)
 async function pay_error(client, pay_uuid, player_id, amount, type, reason) {
     const embed = new EmbedBuilder()
         .setTitle(`❌ 轉帳錯誤 (\`${pay_uuid}\`)`)
-        .setDescription(`**處理方式** | \`${reason != 'timeout' ? `新增 ${amount} 元至玩家 ${player_id} 的錢包` : `管理員手動補發`}\`\n**詳細資訊** | \`PlayerID: ${player_id}, Amount: ${amount}, Type: ${type}, Reason: ${reason}\``)
+        .setDescription(`**處理方式** | \`${(reason != 'timeout' || reason != 'dailyNotSamePlace') ? `新增 ${amount} 元至玩家 ${player_id} 的錢包` : `管理員手動補發`}\`\n**詳細資訊** | \`PlayerID: ${player_id}, Amount: ${amount}, Type: ${type}, Reason: ${reason}\``)
         .setColor("#f50000")
         .setFooter({
             text: "Jimmy Bot",

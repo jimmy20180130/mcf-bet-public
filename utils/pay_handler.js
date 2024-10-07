@@ -7,7 +7,7 @@ const fs = require('fs');
 const { pay_error } = require(`../discord/embed.js`)
 const Logger = require('../utils/logger.js');
 
-async function pay_handler(bot, player_id, amount, type, client) {
+async function pay_handler(bot, player_id, amount, type, client, isDaily=false) {
     const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
     const pay_uuid = generateUUID()
 
@@ -63,6 +63,17 @@ async function pay_handler(bot, player_id, amount, type, client) {
                     resolve('bot_no_money')
 
                 } else if (string.startsWith('[系統] 只能轉帳給同一分流的線上玩家. 請檢查對方的ID與所在分流')) {
+                    if (isDaily) {
+                        Logger.warn(`[轉帳] 玩家 ${player_id} 簽到時發生錯誤: 不在同一分流 (UUID: ${pay_uuid})`)
+                        await mc_error_handler(bot, 'pay', 'dailyNotSamePlace', player_id, '', pay_uuid)
+
+                        await set_player_wallet(await get_player_uuid(player_id), player_wallet + amount, 'emerald')
+                        await pay_error(client, pay_uuid, player_id, amount, 'emerald', 'dailyNotSamePlace')
+                        await write_pay_history(pay_uuid, await get_player_uuid(player_id), amount, 'dailyNotSamePlace', Math.floor((new Date()).getTime() / 1000), type)
+                        
+                        resolve('dailyNotSamePlace')
+                    }
+
                     Logger.warn(`[轉帳] 轉帳 ${amount} 個 ${type} 給 ${player_id} 時發生錯誤: 不在同一分流 (UUID: ${pay_uuid})`)
                     await mc_error_handler(bot, 'pay', 'not_same_place', player_id, '', pay_uuid)
 
