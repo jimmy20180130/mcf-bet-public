@@ -89,7 +89,7 @@ async function executeCommand(bot, playerid, args, client) {
 
             await write_daily_data(await get_player_uuid(playerid), first_role, amount)
 
-            await pay_handler(bot, playerid, amount, 'emerald', client)
+            await pay_handler(bot, playerid, amount, 'emerald', client, true)
 
             await chat(bot, `/m ${playerid} ${await process_msg(bot, messages.commands.daily.success.replaceAll('%amount%', amount).replaceAll('%time%', moment(new Date()).tz('Asia/Taipei').format('YYYY-MM-DD HH:mm:ss')).replaceAll('%role%', first_role), playerid)}`)
             await chat(bot, `&b&l${playerid} &6&l領取了身份組 ${first_role} 的每日簽到 &a&l${amount} &6&l元`)
