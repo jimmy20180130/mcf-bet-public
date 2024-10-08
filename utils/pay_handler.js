@@ -72,16 +72,16 @@ async function pay_handler(bot, player_id, amount, type, client, isDaily=false) 
                         await write_pay_history(pay_uuid, await get_player_uuid(player_id), amount, 'dailyNotSamePlace', Math.floor((new Date()).getTime() / 1000), type)
                         
                         resolve('dailyNotSamePlace')
+                    } else {
+                        Logger.warn(`[轉帳] 轉帳 ${amount} 個 ${type} 給 ${player_id} 時發生錯誤: 不在同一分流 (UUID: ${pay_uuid})`)
+                        await mc_error_handler(bot, 'pay', 'not_same_place', player_id, '', pay_uuid)
+
+                        await set_player_wallet(await get_player_uuid(player_id), player_wallet + amount, 'emerald')
+                        await pay_error(client, pay_uuid, player_id, amount, 'emerald', 'not_same_place')
+                        await write_pay_history(pay_uuid, await get_player_uuid(player_id), amount, 'not_same_place', Math.floor((new Date()).getTime() / 1000), type)
+
+                        resolve('not_same_place')
                     }
-
-                    Logger.warn(`[轉帳] 轉帳 ${amount} 個 ${type} 給 ${player_id} 時發生錯誤: 不在同一分流 (UUID: ${pay_uuid})`)
-                    await mc_error_handler(bot, 'pay', 'not_same_place', player_id, '', pay_uuid)
-
-                    await set_player_wallet(await get_player_uuid(player_id), player_wallet + amount, 'emerald')
-                    await pay_error(client, pay_uuid, player_id, amount, 'emerald', 'not_same_place')
-                    await write_pay_history(pay_uuid, await get_player_uuid(player_id), amount, 'not_same_place', Math.floor((new Date()).getTime() / 1000), type)
-
-                    resolve('not_same_place')
 
                 } else if (string.startsWith('[系統] 正在處理您的其他請求, 請稍後')) {
                     Logger.warn(`[轉帳] 轉帳 ${amount} 個 ${type} 給 ${player_id} 時發生錯誤: 系統忙碌 (UUID: ${pay_uuid})`)

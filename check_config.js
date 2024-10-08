@@ -79,23 +79,14 @@ class JsonSyncer {
         let localJson = await this.getLocalJson(localFilePath);
         if (localJson === null) return false;
 
-        let hasChanges = false;
-        for (const [key, value] of Object.entries(githubJson)) {
-            if (!(key in localJson)) {
-                localJson[key] = value;
-                hasChanges = true;
-                console.log(`新增key: ${key} 到 ${localFilePath}`);
-            }
-        }
+        const { result: mergedJson, changed: hasChanges } = this.deepMerge(localJson, githubJson);
 
         if (hasChanges) {
             try {
-                // 確保目標目錄存在
                 await fs.mkdir(path.dirname(localFilePath), { recursive: true });
-                
                 await fs.writeFile(
                     localFilePath, 
-                    JSON.stringify(localJson, null, 2),
+                    JSON.stringify(mergedJson, null, 2),
                     'utf8'
                 );
                 console.log(`本地JSON檔案已更新: ${localFilePath}`);
@@ -142,6 +133,10 @@ async function main() {
             githubUrl: 'https://raw.githubusercontent.com/jimmy20180130/mcf-bet-public/main/config/roles.json',
             localPath: `${process.cwd()}/config/roles.json`
         },
+        {
+            githubUrl: 'https://raw.githubusercontent.com/jimmy20180130/mcf-bet-public/main/cache/cache.json',
+            localPath: `${process.cwd()}/cache/cache.json`
+        }
     ];
 
     const syncer = new JsonSyncer(syncConfigs);
