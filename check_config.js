@@ -31,6 +31,46 @@ class JsonSyncer {
         }
     }
 
+    deepMerge(localObj, githubObj, path = '') {
+        let hasChanges = false;
+        const mergeResult = { ...localObj };
+
+        for (const [key, githubValue] of Object.entries(githubObj)) {
+            const currentPath = path ? `${path}.${key}` : key;
+
+            if (!(key in mergeResult)) {
+                // 如果本地對象完全沒有這個key
+                mergeResult[key] = githubValue;
+                console.log(`新增key: ${currentPath}`);
+                hasChanges = true;
+            } else if (
+                typeof githubValue === 'object' && 
+                githubValue !== null &&
+                !Array.isArray(githubValue) &&
+                typeof mergeResult[key] === 'object' &&
+                mergeResult[key] !== null &&
+                !Array.isArray(mergeResult[key])
+            ) {
+                // 如果兩邊都是對象，則遞迴處理
+                const { result, changed } = this.deepMerge(
+                    mergeResult[key], 
+                    githubValue, 
+                    currentPath
+                );
+                if (changed) {
+                    mergeResult[key] = result;
+                    hasChanges = true;
+                }
+            }
+            // 如果本地已有此key且不是對象，則保留本地值
+        }
+
+        return {
+            result: mergeResult,
+            changed: hasChanges
+        };
+    }
+
     async syncSingleJson(githubUrl, localFilePath) {
         console.log(`開始同步: ${localFilePath}`);
         const githubJson = await this.getGithubJson(githubUrl);
