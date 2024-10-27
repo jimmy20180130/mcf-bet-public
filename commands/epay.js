@@ -23,7 +23,7 @@ async function executeCommand(bot, playerid, args, client) {
     const messages = JSON.parse(fs.readFileSync(`${process.cwd()}/config/messages.json`, 'utf8'));
 
     if (await canUseCommand(await get_player_uuid(playerid), args.split(' ')[0])) {
-        if (await pay_handler(bot, playerid, args.split(' ')[2], 'e', client) == 'success') {
+        if (await pay_handler(bot, args.split(' ')[1], args.split(' ')[2], 'e', client) == 'success') {
             await chat(bot, `/m ${playerid} ${await process_msg(bot, messages.commands.epay.default.replaceAll('%emerald%', args.split(' ')[2]), playerid)}`)
         }
         Logger.log(`[綠寶石支付] 玩家 ${playerid} 讓 bot 轉帳 ${args.split(' ')[2]} 個綠寶石給 ${args.split(' ')[1]}`)
