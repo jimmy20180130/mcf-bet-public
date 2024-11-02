@@ -108,10 +108,10 @@ module.exports = {
 					subcommand
 						.setName('新增')
 						.setDescription('新增管理員')
-						.addUserOption(option =>
+						.addStringOption(option =>
 							option
 								.setName('使用者')
-								.setDescription('新增的管理員')
+								.setDescription('新增的管理員(請輸入 Minecraft ID)')
 								.setRequired(true)
 						)
 				)
@@ -119,7 +119,7 @@ module.exports = {
 					subcommand
 						.setName('移除')
 						.setDescription('刪除管理員')
-						.addUserOption(option =>
+						.addStringOption(option =>
 							option
 								.setName('使用者')
 								.setDescription('刪除的管理員')

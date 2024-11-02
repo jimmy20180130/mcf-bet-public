@@ -65,8 +65,8 @@ module.exports = {
                         .setDescription('刪除身份組')
                         .addRoleOption(option =>
                             option
-                                .setName('身份組名稱')
-                                .setDescription('要刪除的身份組名稱')
+                                .setName('dc身份組')
+                                .setDescription('要刪除的dc身份組名稱')
                                 .setRequired(true)
                         )
                 )

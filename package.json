@@ -6,7 +6,7 @@
         "bignumber.js": "^4.0.4",
         "crypto-js": "^4.2.0",
         "decimal.js": "10.4.3",
-        "discord.js": "^14.13.0",
+        "discord.js": "^14.16.3",
         "minecraft-data": "^3.48.0",
         "minecraft-protocol": "^1.44.0",
         "mineflayer": "^4.17.0",
