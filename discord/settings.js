@@ -266,7 +266,7 @@ module.exports = {
 					return
 
 				} else {
-					let index = config.advertisement.findIndex(x => x.text === interaction.options.getString('文字或指令'));
+					let index = config.advertisement.findIndex(x => x.text.slice(0, 25) === interaction.options.getString('文字或指令'));
 					if (index != -1) {
 						config.advertisement.splice(index, 1);
 					}
