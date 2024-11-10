@@ -67,7 +67,6 @@ async function pay_handler(bot, player_id, amount, type, client, isDaily=false) 
                         Logger.warn(`[轉帳] 玩家 ${player_id} 簽到時發生錯誤: 不在同一分流 (UUID: ${pay_uuid})`)
                         await mc_error_handler(bot, 'pay', 'dailyNotSamePlace', player_id, '', pay_uuid)
 
-                        await set_player_wallet(await get_player_uuid(player_id), player_wallet + amount, 'emerald')
                         await pay_error(client, pay_uuid, player_id, amount, 'emerald', 'dailyNotSamePlace')
                         await write_pay_history(pay_uuid, await get_player_uuid(player_id), amount, 'dailyNotSamePlace', Math.floor((new Date()).getTime() / 1000), type)
                         
