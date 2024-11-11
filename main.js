@@ -769,7 +769,7 @@ async function init_dc() {
 
                         const user_player_name = await get_player_name(user_player_uuid.player_uuid)
 
-                        if (!config.whitelist.includes(user_player_name) && (!user_roles || !user_roles.record_settings.others)) {
+                        if ((!config.whitelist.includes(user_player_name.toLowerCase()) && !config.whitelist.includes(user_player_name)) && (!user_roles || !user_roles.record_settings.others)) {
                             if (user_player_name.toLowerCase() != 'undefined' && focused_value.startsWith(user_player_name.toLowerCase()) || focused_value == '') {
                                 await interaction.respond([{ name: user_player_name, value: user_player_name }])
                                 return
@@ -791,7 +791,7 @@ async function init_dc() {
                             return
                         }
 
-                        if (config.whitelist.includes(user_player_name) || user_roles.record_settings.others) {
+                        if ((config.whitelist.includes(user_player_name.toLowerCase()) || config.whitelist.includes(user_player_name)) || user_roles.record_settings.others) {
                             results.push({
                                 name: '所有人',
                                 value: '所有人'

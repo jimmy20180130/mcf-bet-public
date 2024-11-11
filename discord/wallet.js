@@ -108,7 +108,7 @@ module.exports = {
         const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
         let user_data = await get_user_data(undefined, interaction.user.id);
 				
-		if (!config.whitelist || !user_data || user_data == 'Not Found' || user_data == 'Unexpected Error' ||!config.whitelist.includes(await get_player_name(user_data.player_uuid))) {
+		if (!config.whitelist || !user_data || user_data == 'Not Found' || user_data == 'Unexpected Error' || (!config.whitelist.includes((await get_player_name(user_data.player_uuid)).toLowerCase()) && !config.whitelist.includes(await get_player_name(user_data.player_uuid)))) {
             await interaction.editReply({ content: '你沒有權限使用這個指令', ephemeral: true });
             return;
         }

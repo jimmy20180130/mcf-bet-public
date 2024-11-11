@@ -139,13 +139,19 @@ module.exports = {
 			} else {
 				pay_history = await get_all_bet_record();
 			}
+
 			const player_data = await get_user_data(player_uuid)
+			const player_data_dc = await get_user_data(undefined, String(interaction.member.id))
 
 			if (pay_history.length == 0) {
 				await interaction.editReply('找不到紀錄');
 				return;
 			} else if (interaction.options.getString('playerid') != '所有人' && (player_data == 'Not Found' || String(player_data).startsWith('Unexpected Error'))) {
-				await interaction.editReply('找不到玩家');
+				if (player_data_dc == 'Not Found' || String(player_data_dc).startsWith('Unexpected Error')) {
+					await interaction.editReply('請先綁定您的帳號');
+				} else {
+					await interaction.editReply('找不到指定的玩家，請確認 ID 是否正確');
+				}
 				return;
 			}
 
@@ -177,13 +183,13 @@ module.exports = {
 				}
 
 				if (/^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}$/.test(time[0])) {
-					time_unix = Math.round(new Date(time) / 1000)
+					time_unix = Math.round(new Date(time) / 1000) - 54400
 				} else if (/^\d{4}-\d{2}-\d{2}$/.test(time[0])) {
-					time_unix = Math.round(new Date(time) / 1000)
+					time_unix = Math.round(new Date(time) / 1000) - 54400
 				} else if (time[1] && /^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}$/.test(time[1])) {
-					time_unix_2 = Math.round(new Date(time[1]) / 1000)
+					time_unix_2 = Math.round(new Date(time[1]) / 1000) - 54400
 				} else if (time[1] && /^\d{4}-\d{2}-\d{2}$/.test(time[1])) {
-					time_unix_2 = Math.round(new Date(time[1]) / 1000)
+					time_unix_2 = Math.round(new Date(time[1]) / 1000) - 54400
 				}
 			}
 
@@ -246,8 +252,8 @@ module.exports = {
 				player_id = '所有人'
 			}
 
-			if (config.whitelist.includes(await get_player_name(user_data.player_uuid)) || (user_data && roles[user_role[0]] && roles[user_role[0]].record_settings.advanced == true)) {
-				if (!config.whitelist.includes(await get_player_name(user_data.player_uuid)) && user_data && roles[user_role[0]] && roles[user_role[0]].record_settings.others == false) player_uuid = user_uuid
+			if (config.whitelist.includes((await get_player_name(user_data.player_uuid)).toLowerCase()) || config.whitelist.includes(await get_player_name(user_data.player_uuid)) || (user_data && roles[user_role[0]] && roles[user_role[0]].record_settings.advanced == true)) {
+				if ((!config.whitelist.includes((await get_player_name(user_uuid)).toLowerCase()) && !config.whitelist.includes(await get_player_name(user_uuid))) && user_data && roles[user_role[0]] && roles[user_role[0]].record_settings.others == false) player_uuid = user_uuid
 				let betAmount = `下注金額: ${total_bet}`;
 				let betTimes = `下注次數: ${total_bet_count}`;
 				let winAmount = `贏得金額: ${total_win}`; 
@@ -301,8 +307,8 @@ module.exports = {
 				)
 				
 				await interaction.editReply({ embeds: [embed] });
-			} else if (config.whitelist.includes(await get_player_name(user_data.player_uuid)) || (user_data && roles[user_role[0]] && roles[user_role[0]].record_settings.others == true)) {
-				if (!config.whitelist.includes(await get_player_name(user_data.player_uuid)) && user_data && roles[user_role[0]] && roles[user_role[0]].record_settings.me == false && player_uuid == user_uuid) {
+			} else if (config.whitelist.includes((await get_player_name(user_data.player_uuid)).toLowerCase()) || config.whitelist.includes(await get_player_name(user_data.player_uuid)) || (user_data && roles[user_role[0]] && roles[user_role[0]].record_settings.others == true)) {
+				if ((!config.whitelist.includes((await get_player_name(user_uuid)).toLowerCase()) && !config.whitelist.includes(await get_player_name(user_uuid))) && user_data && roles[user_role[0]] && roles[user_role[0]].record_settings.me == false && player_uuid == user_uuid) {
 					interaction.editReply('您無權限查詢自己的紀錄')
 					return
 				}

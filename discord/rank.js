@@ -207,7 +207,7 @@ module.exports = {
             else return false
         })
         
-        if (!config.whitelist.includes(await get_player_name(user_uuid)) && (!roles[player_roles[0]] || (!roles[player_roles[0]].record_settings.others && !roles[player_roles[0]].record_settings.advanced))) {
+        if ((!config.whitelist.includes((await get_player_name(user_uuid)).toLowerCase()) && !config.whitelist.includes(await get_player_name(user_uuid))) && (!roles[player_roles[0]] || (!roles[player_roles[0]].record_settings.others && !roles[player_roles[0]].record_settings.advanced))) {
             await interaction.editReply('您沒有權限使用此指令');
             return;
         }
@@ -215,6 +215,7 @@ module.exports = {
         const coin_type = interaction.options.getString('coin_type') === '綠寶石' ? 'emerald' : 'coin';
         const rank_type = interaction.options.getString('type');
         const order = interaction.options.getString('order');
+        const queryUserUuid = user_uuid;
 
         let all_user_data = await get_all_user_data();
         let all_pay_history = await get_all_bet_record();
@@ -223,9 +224,9 @@ module.exports = {
         let time_unix, time_unix_2;
         if (time_type !== 'none') {
             const time = interaction.options.getString(time_type).split('~');
-            time_unix = Math.round(new Date(time[0]) / 1000);
+            time_unix = Math.round(new Date(time[0]) / 1000) - 54400;
             if (time[1]) {
-                time_unix_2 = Math.round(new Date(time[1]) / 1000);
+                time_unix_2 = Math.round(new Date(time[1]) / 1000) - 54400;
             }
         }
 
@@ -239,8 +240,8 @@ module.exports = {
                 record.player_uuid === user.player_uuid &&
                 record.bet_type === coin_type &&
                 (result_type === 'all' ||
-                    (result_type === 'black_wool' && record.odds <= 0) ||
-                    (result_type === 'white_wool' && record.odds > 0)) &&
+                    (result_type === 'black_wool' && record.result_amount <= 0) ||
+                    (result_type === 'white_wool' && record.result_amount > 0)) &&
                 (time_type === 'none' ||
                     (time_type === 'late' && record.time >= time_unix) ||
                     (time_type === 'early' && record.time <= time_unix) ||
@@ -248,7 +249,7 @@ module.exports = {
                 (!amount_bigger_than || record.amount > amount_bigger_than) &&
                 (!amount_smaller_than || record.amount < amount_smaller_than) &&
                 (!amount_equal || record.amount === amount_equal) &&
-                (record.odds === interaction.options.getInteger('odds') || !interaction.options.getInteger('odds'))
+                (record.odds === interaction.options.getNumber('odds') || !interaction.options.getNumber('odds'))
             );
 
             let value = 0;
@@ -257,10 +258,10 @@ module.exports = {
                     value = userHistory.reduce((sum, record) => sum + record.amount, 0);
                     break;
                 case 'win_amount':
-                    value = userHistory.reduce((sum, record) => sum + record.win, 0);
+                    value = userHistory.reduce((sum, record) => sum + record.result_amount, 0);
                     break;
                 case 'profit_loss':
-                    value = userHistory.reduce((sum, record) => sum + (record.win - record.amount), 0);
+                    value = userHistory.reduce((sum, record) => sum + (record.result_amount - record.amount), 0);
                     break;
                 case 'bet_count':
                     value = userHistory.length;
@@ -269,23 +270,62 @@ module.exports = {
 
             return {
                 player_name: user.player_uuid,
-                value: value
+                value: value,
+                isQueryUser: user.player_uuid === queryUserUuid
             };
         });
 
         // 排序
         rankings.sort((a, b) => order === 'desc' ? b.value - a.value : a.value - b.value);
 
-        // 创建排名嵌入消息
+        // 對排名進行分組處理
+        const groupedRankings = rankings.reduce((acc, current) => {
+            const existingGroup = acc.find(group => group.value === current.value);
+            if (existingGroup) {
+                existingGroup.players.push({
+                    uuid: current.player_name,
+                    isQueryUser: current.isQueryUser
+                });
+            } else {
+                acc.push({
+                    value: current.value,
+                    players: [{
+                        uuid: current.player_name,
+                        isQueryUser: current.isQueryUser
+                    }]
+                });
+            }
+            return acc;
+        }, []);
+
+        // 只取前10個不同的值
+        const top10Groups = groupedRankings.slice(0, 10);
+
+        const rank_type_name = {
+            'bet_amount': '下注金額',  
+            'win_amount': '贏得金額',
+            'profit_loss': '盈虧',
+            'bet_count': '下注次數'
+        }
+
+        // 創建排名嵌入消息
         const embed = new EmbedBuilder()
-            .setTitle(`${interaction.options.getString('coin_type') === '綠寶石' ? '綠寶石' : '村民錠'} ${rank_type} 排行榜`)
+            .setTitle(`${interaction.options.getString('coin_type') === '綠寶石' ? '綠寶石' : '村民錠'} ${rank_type_name[rank_type]} 排行榜 (${order === 'desc' ? '由大到小' : '由小到大'}，結果種類為${result_type === 'all' ? '全部' : result_type === 'black_wool' ? '黑羊毛' : '白羊毛'})`)
             .setColor('#0099ff')
             .setTimestamp();
 
-        const top10 = rankings.slice(0, 10);
-        let descriptionPromises = top10.map(async (rank, index) => {
-            const playerName = await get_player_name(rankings[index].player_name);
-            return `${index + 1}. ${playerName}: ${rankings[index].value}`;
+        // 生成描述，確保查詢用戶在同值組中優先顯示
+        let descriptionPromises = top10Groups.map(async (group, index) => {
+            // 對玩家進行排序，查詢用戶優先
+            const sortedPlayers = group.players.sort((a, b) => b.isQueryUser - a.isQueryUser);
+            const playerNames = await Promise.all(sortedPlayers.map(player => get_player_name(player.uuid)));
+            const playerCount = playerNames.length;
+            
+            const playerDisplay = playerCount > 1 
+                ? `${playerNames[0]} 等 ${playerCount} 位玩家`
+                : playerNames[0];
+                
+            return `${index + 1}. ${playerDisplay}: ${group.value}`;
         });
 
         let descriptionArray = await Promise.all(descriptionPromises);

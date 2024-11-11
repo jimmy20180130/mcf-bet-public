@@ -77,7 +77,7 @@ module.exports = {
         const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
         const player_uuid = (await get_user_data(undefined, interaction.user.id)).player_uuid
         
-        if (!config.whitelist || !config.whitelist.includes(await get_player_name(player_uuid))) {
+        if (!config.whitelist || (!config.whitelist.includes((await get_player_name(player_uuid)).toLowerCase()) && !config.whitelist.includes(await get_player_name(player_uuid)))) {
             await interaction.editReply({ content: '你沒有權限使用這個指令', ephemeral: true });
             return;
         }
