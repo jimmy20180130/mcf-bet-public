@@ -98,16 +98,16 @@ module.exports = {
                 for (const role of Object.keys(roles)) {
                     if (role == dc_role.id) {
                         //edit role
-                        if (daily_reward) {
+                        if (daily_reward != undefined) {
                             roles[role].daily = daily_reward
                         }
-                        if (basic_query) {
+                        if (basic_query != undefined) {
                             roles[role].record_settings.me = basic_query
                         }
-                        if (global_query) {
+                        if (global_query != undefined) {
                             roles[role].record_settings.others = global_query
                         }
-                        if (win_loss_query) {
+                        if (win_loss_query != undefined) {
                             roles[role].record_settings.advanced = win_loss_query
                         }
 
