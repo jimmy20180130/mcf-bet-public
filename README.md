@@ -1,7 +1,7 @@
 # 廢土對賭機器人
 **✨一個由 jimmy20180130(XiaoXi_YT) 製作的完全開源的廢土對賭機器人✨**\
 **⭐開始前拜託先給這個專案一顆星星(右上角星星圖示)或buy me a coffee支持我繼續維護此專案⭐**\
-**✨您也可以透過`/warp XiaoXi_YT_7`將綠寶石券投入漏斗裡面以贊助我✨**
+**✨您也可以透過`/warp XiaoXi_YT_8`將綠寶石券投入漏斗裡面以贊助我✨**
 
 ## ⚠️免責聲明
 
@@ -20,7 +20,7 @@
 - Discord.js 文檔: https://discord.js.org/docs/packages/discord.js/main
 
 # 簡介
-- 一個**🆓免費且完全開源🆓**的廢土對賭機器人\
+- 一個**🆓免費且開源🆓**的廢土對賭機器人\
 - 由 jimmy20180130 (Minecraft ID為 XiaoXi_YT) 製作\
 
 # 功能
