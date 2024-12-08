@@ -9,7 +9,7 @@
         "discord.js": "^14.16.3",
         "minecraft-data": "^3.48.0",
         "minecraft-protocol": "^1.44.0",
-        "mineflayer": "^4.17.0",
+        "mineflayer": "git+https://github.com/jimmy20180130/mineflayer.git",
         "moment-timezone": "^0.5.44",
         "prismarine-entity": "^2.3.1",
         "readline": "^1.3.0",
