@@ -181,7 +181,7 @@ async function active_redstone(bot, playerid, amount, type, task_uuid) {
                             bot._client.removeListener('entity_metadata', listener);
                         }
 
-                        await mc_error_handler(bot, 'bet', 'unexpected_err', playerid, error)
+                        await mc_error_handler(bot, 'bet', 'unexpected_err', playerid, e)
 
                         await error_embed(client, task_uuid, e.message, playerid, amount, type)
                         resolve('error');
@@ -197,7 +197,7 @@ async function active_redstone(bot, playerid, amount, type, task_uuid) {
 
             await Promise.race([no_permission_Promise, bet_result, timeout_Promise]).then(async (value) => {
                 if (value.startsWith('[領地]')) {
-                    await mc_error_handler(bot, 'bet', 'no_permission', playerid,)
+                    await mc_error_handler(bot, 'bet', 'no_permission', playerid)
                     await pay_handler(bot, playerid, amount, type, client)
 
                     await error_embed(client, task_uuid, 'Bot 沒有領地的建造權限，請於遊戲內輸入 /tt bot_id 以給予 bot 建造權限', playerid, amount, type)

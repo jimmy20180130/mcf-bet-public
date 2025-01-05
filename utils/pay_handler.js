@@ -127,7 +127,7 @@ async function pay_handler(bot, player_id, amount, type, client, isDaily=false) 
         await chat(bot, player_id)
         //[系統] 兩次所輸入的玩家名稱不一致!
         //[系統] 轉帳成功! (使用了 2 村民錠, 剩餘 995 )
-        const success_Promise = bot.awaitMessage(/^\[系統\] 轉帳成功! \(使用了 (\d+) 村民錠, 剩餘 (\d+) \)$/)
+        const success_Promise = bot.awaitMessage(/^\[系統\] 轉帳成功! \(使用了 (\d{1,3}(,\d{3})*|\d+) 村民錠, 剩餘 (\d{1,3}(,\d{3})*|\d+) \)$/)
         const not_same_player_Promise = bot.awaitMessage(/^\[系統\] 兩次所輸入的玩家名稱不一致!/)
 
         let timeout;
