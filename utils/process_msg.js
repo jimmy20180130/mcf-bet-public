@@ -20,8 +20,10 @@ async function process_msg(bot, message, playerid) {
     return message;
 }
 
-async function add_comma_to_number(number) {
-    return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+function add_comma_to_number(number) {
+    const [integerPart, decimalPart] = number.toString().split("."); // 分開整數與小數部分
+    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ","); // 對整數部分加上逗號
+    return decimalPart ? `${formattedInteger}.${decimalPart}` : formattedInteger; // 組合結果
 }
 
 module.exports = {
