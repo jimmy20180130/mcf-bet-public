@@ -48,6 +48,7 @@
             "node_modules/**/*",
             "main.js",
             "check_config.js",
+            "fixData.js",
             "auth/auth.js",
             "commands/*.js",
             "bet/*.js",
@@ -65,7 +66,8 @@
             "utils/*.js",
             "main.js",
             "check_config.js",
-            "start.js"
+            "start.js",
+            "fixData.js"
         ]
     }
 }
