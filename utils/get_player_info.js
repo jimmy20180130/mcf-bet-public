@@ -39,7 +39,7 @@ async function get_player_uuid(playerid) {
         await axios.get(`https://playerdb.co/api/player/minecraft/${playerid}`)
             .then(response => {
                 if (response.data) {
-                    result = response.data.data.player.id
+                    result = response.data.data.player.raw_id
                     Logger.debug(`[玩家資料] 玩家 ${playerid} 的 UUID: ${result}`)
                 } else {
                     Logger.warn(`[玩家資料] 無法取得玩家 ${playerid} 的 UUID: ${response.data.errorMessage}`)
