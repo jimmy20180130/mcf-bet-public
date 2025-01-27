@@ -44,6 +44,9 @@ async function executeCommand(bot, playerid, args, client) {
 
                 await chat(bot, `/m ${playerid} Redstone dust has been pressed!`);
                 break
+            case 'version':
+                await chat(bot, `/m ${playerid} Bot's Version: v.3.0.0-beta-16`);
+                break;
             default:
                 await chat(bot, `/m ${playerid} Invalid command!`);
                 break;

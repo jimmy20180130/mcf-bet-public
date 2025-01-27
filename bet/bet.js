@@ -63,7 +63,7 @@ async function process_bet_task() {
                 cache.bet.shift()
                 fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
                 
-                Logger.log(`下注任務 (${task.uuid}) 超過上限，歸還玩家 ${player_id}  ${add_comma_to_number(amount)} 個 ${type}`)
+                Logger.log(`下注任務 (${task.uuid}) 超過上限，歸還玩家 ${task.player_id}  ${add_comma_to_number(task.amount)} 個 ${task.type}`)
 
                 resolve()
             } else if (task.type == 'coin' && coin < task.amount*config.bet.codds) {
@@ -73,7 +73,7 @@ async function process_bet_task() {
                 cache.bet.shift()
                 fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
                 
-                Logger.log(`下注任務 (${task.uuid}) 超過上限，歸還玩家 ${player_id}  ${add_comma_to_number(amount)} 個村民錠`)
+                Logger.log(`下注任務 (${task.uuid}) 超過上限，歸還玩家 ${task.player_id}  ${add_comma_to_number(task.amount)} 個村民錠`)
 
                 resolve()
             } else {
@@ -84,12 +84,11 @@ async function process_bet_task() {
                     resolve()
                 }
 
-                Logger.log(`開始處理下注任務 (${task.uuid}): ${player_id} 下注 ${add_comma_to_number(amount)} 個 ${type}`)
+                Logger.log(`開始處理下注任務 (${task.uuid}): ${task.player_id} 下注 ${add_comma_to_number(task.amount)} 個 ${task.type}`)
                 await active_redstone(bot, task.player_id, task.amount, task.type, task_uuid);
                 let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'))
                 cache.bet.shift()
                 fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
-
             }
 
             resolve()
@@ -249,25 +248,25 @@ async function process_bet_result(bot, wool, amount, player_id, type, task_uuid)
     if (wool == 'yes') {
         if (type == 'emerald') {
             const pay_result = await pay_handler(bot, player_id, Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber()), 'e', client)
-            await chat(bot, `${await process_msg(bot, messages.bet.ewin.replaceAll('%multiply%', config.bet.eodds).replaceAll('%amount%', amount).replaceAll('%after_amount%', Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber())), player_id)}`)
+            await chat(bot, `${await process_msg(bot, messages.bet.ewin.replaceAll('%multiply%', config.bet.eodds).replaceAll('%amount%', add_comma_to_number(amount)).replaceAll('%after_amount%', add_comma_to_number(Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber()))), player_id)}`)
             //await write_pay_history(amount, Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber()), config.bet.eodds, pay_result, await get_player_uuid(player_id), type)
             await write_bet_record(task_uuid, await get_player_uuid(player_id), amount, config.bet.eodds, Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber()), type, 'success', Math.floor((new Date()).getTime() / 1000))
             
             if (config.discord_channels.bet_record) {
                 const channel = await client.channels.fetch(config.discord_channels.bet_record);
-                const embed = await bet_win(player_id, `${amount} -> ${add_comma_to_number(Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber()))} 個綠寶石 💵 (賠率為 ${config.bet.eodds})`)
+                const embed = await bet_win(player_id, `${add_comma_to_number(amount)} -> ${add_comma_to_number(Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber()))} 個綠寶石 💵 (賠率為 ${config.bet.eodds})`)
                 await channel.send({ embeds: [embed] });
             }
             Logger.log(`下注任務 (${task_uuid}) 完成，支付玩家 ${player_id} ${add_comma_to_number(Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber()))} 個綠寶石，賠率為 ${config.bet.eodds} ，支付狀態為 ${pay_result}`)
         } else if (type == 'coin') {
             const pay_result = await pay_handler(bot, player_id, Math.floor(new Decimal(amount).mul(new Decimal(config.bet.codds)).toNumber()), 'c', client)
-            await chat(bot, `${await process_msg(bot, messages.bet.cwin.replaceAll('%multiply%', config.bet.codds).replaceAll('%amount%', amount).replaceAll('%after_amount%', Math.floor(new Decimal(amount).mul(new Decimal(config.bet.codds)).toNumber())), player_id)}`)
+            await chat(bot, `${await process_msg(bot, messages.bet.cwin.replaceAll('%multiply%', config.bet.codds).replaceAll('%amount%', add_comma_to_number(amount)).replaceAll('%after_amount%', add_comma_to_number(Math.floor(new Decimal(amount).mul(new Decimal(config.bet.codds)).toNumber()))), player_id)}`)
             //await write_pay_history(amount, Math.floor(new Decimal(amount).mul(new Decimal(config.bet.codds)).toNumber()), config.bet.codds, 'success', await get_player_uuid(player_id), type)
             await write_bet_record(task_uuid, await get_player_uuid(player_id), amount, config.bet.codds, Math.floor(new Decimal(amount).mul(new Decimal(config.bet.codds)).toNumber()), type, 'success', Math.floor((new Date()).getTime() / 1000))
 
             if (config.discord_channels.bet_record) {
                 const channel = await client.channels.fetch(config.discord_channels.bet_record);
-                const embed = await bet_win(player_id, `${amount} -> ${add_comma_to_number(Math.floor(new Decimal(amount).mul(new Decimal(config.bet.codds)).toNumber()))} 個村民錠 🪙 (賠率為 ${config.bet.codds})`)
+                const embed = await bet_win(player_id, `${add_comma_to_number(amount)} -> ${add_comma_to_number(Math.floor(new Decimal(amount).mul(new Decimal(config.bet.codds)).toNumber()))} 個村民錠 🪙 (賠率為 ${config.bet.codds})`)
                 await channel.send({ embeds: [embed] });
             }
             Logger.log(`下注任務 (${task_uuid}) 完成，支付玩家 ${player_id} ${add_comma_to_number(Math.floor(new Decimal(amount).mul(new Decimal(config.bet.codds)).toNumber()))} 個村民錠，賠率為 ${config.bet.codds} ，支付狀態為 ${pay_result}`)
@@ -275,25 +274,25 @@ async function process_bet_result(bot, wool, amount, player_id, type, task_uuid)
 
     } else if (wool == 'no') {
         if (type == 'emerald') {
-            await chat(bot, `${await process_msg(bot, messages.bet.elose.replaceAll('%amount%', amount), player_id)}`)
+            await chat(bot, `${await process_msg(bot, messages.bet.elose.replaceAll('%amount%', add_comma_to_number(amount)), player_id)}`)
             //await write_pay_history(amount, 0, config.bet.eodds, 'success', await get_player_uuid(player_id), type)
             await write_bet_record(task_uuid, await get_player_uuid(player_id), amount, config.bet.eodds, 0, type, 'success', Math.floor((new Date()).getTime() / 1000))
 
             if (config.discord_channels.bet_record) {
                 const channel = await client.channels.fetch(config.discord_channels.bet_record);
-                const embed = await bet_lose(player_id, `下注 ${amount} 個綠寶石 💵，未中獎 (賠率為 ${config.bet.eodds})`)
+                const embed = await bet_lose(player_id, `下注 ${add_comma_to_number(amount)} 個綠寶石 💵，未中獎 (賠率為 ${config.bet.eodds})`)
                 await channel.send({ embeds: [embed] });
             }
             Logger.log(`下注任務 (${task_uuid}) 完成，支付玩家 ${player_id} 0 個綠寶石，賠率為 ${config.bet.eodds}`)
 
         } else if (type == 'coin') {
-            await chat(bot, `${await process_msg(bot, messages.bet.close.replaceAll('%amount%', amount), player_id)}`)
+            await chat(bot, `${await process_msg(bot, messages.bet.close.replaceAll('%amount%', add_comma_to_number(amount)), player_id)}`)
             //await write_pay_history(amount, 0, config.bet.codds, 'success', await get_player_uuid(player_id), type)
             await write_bet_record(task_uuid, await get_player_uuid(player_id), amount, config.bet.codds, 0, type, 'success', Math.floor((new Date()).getTime() / 1000))
             
             if (config.discord_channels.bet_record) {
                 const channel = await client.channels.fetch(config.discord_channels.bet_record);
-                const embed = await bet_lose(player_id, `下注 ${amount} 個村民錠 🪙，未中獎 (賠率為 ${config.bet.codds})`)
+                const embed = await bet_lose(player_id, `下注 ${add_comma_to_number(amount)} 個村民錠 🪙，未中獎 (賠率為 ${config.bet.codds})`)
                 await channel.send({ embeds: [embed] });
             }
             Logger.log(`下注任務 (${task_uuid}) 完成，支付玩家 ${player_id} 0 個村民錠，賠率為 ${config.bet.codds}`)
