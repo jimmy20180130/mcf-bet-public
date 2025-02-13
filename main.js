@@ -149,7 +149,7 @@ const init_bot = async () => {
         const playerid = match[1];
         const configtoml = toml.parse(fs.readFileSync(`${process.cwd()}/config.toml`, 'utf8'));
 
-        if (configtoml.whitelist.includes(playerid) || configtoml.whitelist.includes(playerid.toLowerCase())) {
+        if (configtoml.minecraft.whitelist.includes(playerid) || configtoml.minecraft.whitelist.includes(playerid.toLowerCase())) {
             await chat(bot, '/tok');
         } else {
             await chat(bot, '/tno');
