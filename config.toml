@@ -1,0 +1,35 @@
+# 廢土對賭機器人的設定檔
+[basic]
+key = "key" # 用來驗證的金鑰，若無則留空
+
+[minecraft]
+# minecraft bot 的設定
+username = "mcf-bet-public" # 帳號名稱，不同名稱即代表不同帳號
+serverip = "sg.mcfallout.net" # 伺服器 IP
+whitelist = ["XiaoXi_YT"] # 白名單，填入玩家的 Minecraft ID，例如 ["player1", "player2"]
+
+[bet]
+# 對賭的設定
+emax = 50000 # 最大綠寶石下注金額
+emin = 1 # 最小綠寶石下注金額
+cmax = 10 # 最大村民錠下注金額
+cmin = 1 # 最小村民錠下注金額
+eodds = 2 # 綠寶石的賠率
+codds = 1.85 # 村民錠的賠率
+bet_position = [] # 對賭的位置，以 [x, y, z] 的形式填入，例如 [0, 0, 0]
+
+[discord]
+# discord bot 的設定
+enabled = true # 是否啟用 discord bot
+bot_token = "" # 如果選擇啟用的話，填入 bot 的 token
+bot_client_id = "" # 如果選擇啟用的話，填入 bot 的 application id (client id)
+guild_id = "" # 如果選擇啟用的話，填入 bot 所在的伺服器 id (guild id)
+
+[discord_channels]
+# discord 頻道的設定
+console = "" # 如果選擇啟用的話，填入伺服器控制台的頻道 id
+command_record = "" # 如果選擇啟用的話，填入指令記錄的頻道 id
+bet_record = "" # 如果選擇啟用的話，填入對賭記錄的頻道 id
+status = "" # 如果選擇啟用的話，填入機器人狀態紀錄的頻道 id
+link = "" # 如果選擇啟用的話，填入綁定紀錄的頻道 id
+errors = "" # 如果選擇啟用的話，填入錯誤紀錄的頻道 id
