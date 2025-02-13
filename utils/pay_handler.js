@@ -8,7 +8,6 @@ const { pay_error } = require(`../discord/embed.js`)
 const Logger = require('../utils/logger.js');
 
 async function pay_handler(bot, player_id, amount, type, client, isDaily=false) {
-    const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
     const pay_uuid = generateUUID()
 
     Logger.log(`[轉帳] 轉帳 ${amount} 個 ${type} 給 ${player_id} (UUID: ${pay_uuid})`)
@@ -42,9 +41,12 @@ async function pay_handler(bot, player_id, amount, type, client, isDaily=false) 
 
         return new Promise(async resolve => {
             await Promise.race([negative_Promise, no_emerald_Promise, success_Promise, not_same_place_Promise, wait_Promise, timeout_Promise, can_not_send_msg_Promise]).then(async (string) => {
-                for (listener of bot.listeners('messagestr')) {
-                    bot.removeListener('messagestr', listener);
-                }
+                wait_Promise.cancel()
+                no_emerald_Promise.cancel()
+                success_Promise.cancel()
+                not_same_place_Promise.cancel()
+                negative_Promise.cancel()
+                can_not_send_msg_Promise.cancel()
 
                 clearTimeout(timeout);
                 
@@ -58,7 +60,7 @@ async function pay_handler(bot, player_id, amount, type, client, isDaily=false) 
                     await mc_error_handler(bot, 'pay', 'no_money', player_id, '', pay_uuid)
 
                     await set_player_wallet(await get_player_uuid(player_id), player_wallet + amount, 'emerald')
-                    await pay_error(client, pay_uuid, player_id, amount, 'emerald', 'no_money')
+                    if (client) await pay_error(client, pay_uuid, player_id, amount, 'emerald', 'no_money')
                     await write_pay_history(pay_uuid, await get_player_uuid(player_id), amount, 'no_money', Math.floor((new Date()).getTime() / 1000), type)
                     resolve('bot_no_money')
 
@@ -67,7 +69,7 @@ async function pay_handler(bot, player_id, amount, type, client, isDaily=false) 
                         Logger.warn(`[轉帳] 玩家 ${player_id} 簽到時發生錯誤: 不在同一分流 (UUID: ${pay_uuid})`)
                         await mc_error_handler(bot, 'pay', 'dailyNotSamePlace', player_id, '', pay_uuid)
 
-                        await pay_error(client, pay_uuid, player_id, amount, 'emerald', 'dailyNotSamePlace')
+                        if (client) await pay_error(client, pay_uuid, player_id, amount, 'emerald', 'dailyNotSamePlace')
                         await write_pay_history(pay_uuid, await get_player_uuid(player_id), amount, 'dailyNotSamePlace', Math.floor((new Date()).getTime() / 1000), type)
                         
                         resolve('dailyNotSamePlace')
@@ -76,7 +78,7 @@ async function pay_handler(bot, player_id, amount, type, client, isDaily=false) 
                         await mc_error_handler(bot, 'pay', 'not_same_place', player_id, '', pay_uuid)
 
                         await set_player_wallet(await get_player_uuid(player_id), player_wallet + amount, 'emerald')
-                        await pay_error(client, pay_uuid, player_id, amount, 'emerald', 'not_same_place')
+                        if (client) await pay_error(client, pay_uuid, player_id, amount, 'emerald', 'not_same_place')
                         await write_pay_history(pay_uuid, await get_player_uuid(player_id), amount, 'not_same_place', Math.floor((new Date()).getTime() / 1000), type)
 
                         resolve('not_same_place')
@@ -87,7 +89,7 @@ async function pay_handler(bot, player_id, amount, type, client, isDaily=false) 
                     await mc_error_handler(bot, 'pay', 'busy', player_id, '', pay_uuid)
 
                     await set_player_wallet(await get_player_uuid(player_id), player_wallet + amount, 'emerald')
-                    await pay_error(client, pay_uuid, player_id, amount, type, 'busy')
+                    if (client) await pay_error(client, pay_uuid, player_id, amount, type, 'busy')
                     await write_pay_history(pay_uuid, await get_player_uuid(player_id), amount, 'busy', Math.floor((new Date()).getTime() / 1000), type)
 
                     resolve('busy')
@@ -97,7 +99,7 @@ async function pay_handler(bot, player_id, amount, type, client, isDaily=false) 
                     await mc_error_handler(bot, 'pay', 'negative', player_id, '', pay_uuid)
 
                     await set_player_wallet(await get_player_uuid(player_id), player_wallet + amount, 'emerald')
-                    await pay_error(client, pay_uuid, player_id, amount, type, 'negative')
+                    if (client) await pay_error(client, pay_uuid, player_id, amount, type, 'negative')
                     await write_pay_history(pay_uuid, await get_player_uuid(player_id), amount, 'negative', Math.floor((new Date()).getTime() / 1000), type)
 
                     resolve('negative')
@@ -105,7 +107,7 @@ async function pay_handler(bot, player_id, amount, type, client, isDaily=false) 
                 } else if (string == 'timeout') {
                     Logger.warn(`[轉帳] 轉帳 ${amount} 個 ${type} 給 ${player_id} 時發生錯誤: 逾時 (UUID: ${pay_uuid})`)
                     await mc_error_handler(bot, 'pay', 'timeout', player_id, '', pay_uuid)
-                    await pay_error(client, pay_uuid, player_id, amount, type, 'timeout')
+                    if (client) await pay_error(client, pay_uuid, player_id, amount, type, 'timeout')
                     await write_pay_history(pay_uuid, await get_player_uuid(player_id), amount, 'timeout', Math.floor((new Date()).getTime() / 1000), type)
 
                     resolve('timeout')
@@ -115,7 +117,7 @@ async function pay_handler(bot, player_id, amount, type, client, isDaily=false) 
                     await mc_error_handler(bot, 'pay', 'can\'t send msg', player_id, '', pay_uuid)
 
                     await set_player_wallet(await get_player_uuid(player_id), player_wallet + amount, 'emerald')
-                    await pay_error(client, pay_uuid, player_id, amount, type, 'can\'t send msg')
+                    if (client) await pay_error(client, pay_uuid, player_id, amount, type, 'can\'t send msg')
                     await write_pay_history(pay_uuid, await get_player_uuid(player_id), amount, 'can\'t send msg', Math.floor((new Date()).getTime() / 1000), type)
 
                     resolve('can\'t send msg')
@@ -150,9 +152,8 @@ async function pay_handler(bot, player_id, amount, type, client, isDaily=false) 
 
         return new Promise(async resolve => {
             await Promise.race([success_Promise, not_same_player_Promise, timeout_Promise]).then(async (string) => {
-                for (listener of bot.listeners('messagestr')) {
-                    bot.removeListener('messagestr', listener);
-                }
+                success_Promise.cancel()
+                not_same_player_Promise.cancel()
 
                 clearTimeout(timeout);
                 
@@ -164,14 +165,14 @@ async function pay_handler(bot, player_id, amount, type, client, isDaily=false) 
                     Logger.warn(`[轉帳] 轉帳 ${amount} 個 ${type} 給 ${player_id} 時發生錯誤: 兩次所輸入的玩家名稱不一致 (UUID: ${pay_uuid})`)
                     await mc_error_handler(bot, 'pay', 'not_same_player', player_id, '', pay_uuid)
                     await set_player_wallet(await get_player_uuid(player_id), player_wallet + amount, 'coin')
-                    await pay_error(client, pay_uuid, player_id, amount, type, 'not_same_player')
+                    if (client) await pay_error(client, pay_uuid, player_id, amount, type, 'not_same_player')
 
                     resolve('not_same_player')
 
                 } else if (string == 'timeout') {
                     Logger.warn(`[轉帳] 轉帳 ${amount} 個 ${type} 給 ${player_id} 時發生錯誤: 逾時 (UUID: ${pay_uuid})`)
                     await mc_error_handler(bot, 'pay', 'timeout', player_id, '', pay_uuid)
-                    await pay_error(client, pay_uuid, player_id, amount, type, 'timeout')
+                    if (client) await pay_error(client, pay_uuid, player_id, amount, type, 'timeout')
 
                     resolve('timeout')
                 }

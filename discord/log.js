@@ -1,4 +1,5 @@
 const fs = require('fs');
+const toml = require('toml');
 let client
 let msgs = [];
 let lastMessage;
@@ -67,10 +68,10 @@ function encodeToANSI(jsonMessage) {
 
 const discord_console = async (discord_client=undefined) => {
     if (discord_client !== undefined) client = discord_client;
-    let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'))
+    let configtoml = toml.parse(fs.readFileSync(`${process.cwd()}/config.toml`, 'utf8'));
     let current_msg = msgs[0];
     if (current_msg != undefined) {
-        let console_channel = client.channels.cache.get(config.discord_channels.console);
+        let console_channel = client.channels.cache.get(configtoml.discord_channels.console);
         if (console_channel !== undefined) {
             if (lastMessage != undefined) {
                 if (`${lastMessage.content.replace('```ansi\n', '').replace('\n```', '')}\n${encodeToANSI(current_msg)}`.length < 1500) {
@@ -108,10 +109,10 @@ const discord_console = async (discord_client=undefined) => {
 
 const discord_console_2 = async (discord_client=undefined) => {
     if (discord_client !== undefined) client = discord_client;
-    let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'))
+    let configtoml = toml.parse(fs.readFileSync(`${process.cwd()}/config.toml`, 'utf8'));
     let current_msg = msgs[0];
     if (current_msg != undefined) {
-        let console_channel = client.channels.cache.get(config.discord_channels.console);
+        let console_channel = client.channels.cache.get(configtoml.discord_channels.console);
         if (console_channel !== undefined) {
             await console_channel.send(`\`\`\`ansi\n${encodeToANSI(current_msg)}\n\`\`\``)
             msgs.shift();

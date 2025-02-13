@@ -2,13 +2,14 @@ const fs = require('fs');
 const { get_user_data } = require(`../utils/database.js`);
 const { get_player_name } = require(`../utils/get_player_info.js`);
 const Logger = require('../utils/logger.js');
+const toml = require('toml');
 
 async function canUseCommand(player_uuid, command) {
-    const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
+    const configtoml = toml.parse(fs.readFileSync(`${process.cwd()}/config.toml`, 'utf8'));
     const not_linked_user_commands = [ "help", "wallet", "link" ];
     const normal_user_commands = [ "help", "hi", "play", "daily", "wallet" ];
     const admin_commands = [ "help", "hi", "link", "play", "stop", "reload", "daily", "wallet", "donate", "cmd", "epay", "cpay", "say", "money" ];
-    const commands = JSON.parse(fs.readFileSync(`${process.cwd()}/config/commands.json`, 'utf8'));
+    const commands = JSON.parse(fs.readFileSync(`${process.cwd()}/data/commands.json`, 'utf8'));
     let command_result = command
 
     for (const command_name of Object.keys(commands)) {
@@ -20,7 +21,7 @@ async function canUseCommand(player_uuid, command) {
 
     const player_data = await get_user_data(player_uuid);
 
-    if (player_data != 'Not Found' && player_data != 'Unexpected Error' && config.whitelist.includes(await get_player_name(player_uuid))) {
+    if (player_data != 'Not Found' && player_data != 'Unexpected Error' && configtoml.minecraft.whitelist.includes(await get_player_name(player_uuid))) {
         Logger.debug(`[權限] 玩家 ${await get_player_name(player_uuid)} ，權限：管理員，指令：${command}，是否可用：${'是' ? admin_commands.includes(command_result) : '否'}`);
         return admin_commands.includes(command_result);
 

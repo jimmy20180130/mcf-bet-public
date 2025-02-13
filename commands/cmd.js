@@ -3,7 +3,7 @@ const { canUseCommand } = require(`../utils/permissions.js`);
 const { mc_error_handler } = require(`../error/mc_handler.js`)
 const { chat } = require(`../utils/chat.js`);
 const fs = require('fs');
-const commands = JSON.parse(fs.readFileSync(`${process.cwd()}/config/commands.json`, 'utf8'));
+const commands = JSON.parse(fs.readFileSync(`${process.cwd()}/data/commands.json`, 'utf8'));
 const Logger = require('../utils/logger.js');
 
 module.exports = {
@@ -18,7 +18,7 @@ module.exports = {
 }
 
 async function executeCommand(bot, playerid, args) {
-    const messages = JSON.parse(fs.readFileSync(`${process.cwd()}/config/messages.json`, 'utf8'));
+    const messages = JSON.parse(fs.readFileSync(`${process.cwd()}/data/messages.json`, 'utf8'));
 
     if (await canUseCommand(await get_player_uuid(playerid), args.split(' ')[0])) {
         await chat(bot, `/${args.split(' ').slice(1).join(' ')}`)
@@ -38,9 +38,7 @@ async function executeCommand(bot, playerid, args) {
             }
         })
 
-        for (listener of bot.listeners('messagestr')) {
-            bot.removeListener('messagestr', listener);
-        }
+        msg_Promise.cancel();
     } else {
         await mc_error_handler(bot, 'general', 'no_permission', playerid)
         Logger.warn(`[指令] 玩家 ${playerid} 沒有權限使用指令 ${args.split(' ').slice(1).join(' ')}`)

@@ -2,6 +2,7 @@ const fs = require('fs');
 const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
 const { get_user_data } = require(`../utils/database.js`);
 const { get_player_name } = require(`../utils/get_player_info.js`);
+const toml = require('toml');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -74,15 +75,15 @@ module.exports = {
 
     async execute(interaction) {
         await interaction.deferReply({ ephemeral: true });
-        const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
+        const configtoml = toml.parse(fs.readFileSync(`${process.cwd()}/config.toml`, 'utf8'));
         const player_uuid = (await get_user_data(undefined, interaction.user.id)).player_uuid
         
-        if (!config.whitelist || (!config.whitelist.includes((await get_player_name(player_uuid)).toLowerCase()) && !config.whitelist.includes(await get_player_name(player_uuid)))) {
+        if (!configtoml.minecraft.whitelist || (!configtoml.minecraft.whitelist.includes((await get_player_name(player_uuid)).toLowerCase()) && !configtoml.minecraft.whitelist.includes(await get_player_name(player_uuid)))) {
             await interaction.editReply({ content: '你沒有權限使用這個指令', ephemeral: true });
             return;
         }
         
-		let roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf8'));
+		let roles = JSON.parse(fs.readFileSync(`${process.cwd()}/data/roles.json`, 'utf8'));
 
         let role_name
         let dc_role = interaction.options.getRole('dc身份組');
@@ -93,7 +94,7 @@ module.exports = {
 
         switch (interaction.options.getSubcommand()) {
             case '設定':
-                roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
+                roles = JSON.parse(fs.readFileSync(`${process.cwd()}/data/roles.json`, 'utf-8'));
 
                 for (const role of Object.keys(roles)) {
                     if (role == dc_role.id) {
@@ -111,7 +112,7 @@ module.exports = {
                             roles[role].record_settings.advanced = win_loss_query
                         }
 
-                        fs.writeFileSync(`${process.cwd()}/config/roles.json`, JSON.stringify(roles, null, 4));
+                        fs.writeFileSync(`${process.cwd()}/data/roles.json`, JSON.stringify(roles, null, 4));
 
                         await interaction.editReply('身份組 <@&' + dc_role.id + '> 已更新');
                         return
@@ -132,14 +133,14 @@ module.exports = {
                     }
                 }
 
-                fs.writeFileSync(`${process.cwd()}/config/roles.json`, JSON.stringify(roles, null, 4));
+                fs.writeFileSync(`${process.cwd()}/data/roles.json`, JSON.stringify(roles, null, 4));
 
                 await interaction.editReply('身份組 <@&' + dc_role.id + '> 已建立');
 
                 break
 
             case '資訊':
-                roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
+                roles = JSON.parse(fs.readFileSync(`${process.cwd()}/data/roles.json`, 'utf-8'));
 
                 //get role_name using discord_role_id from roles
                 role_name = dc_role.id
@@ -156,11 +157,11 @@ module.exports = {
                 break
 
             case '刪除':
-                roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf-8'));
+                roles = JSON.parse(fs.readFileSync(`${process.cwd()}/data/roles.json`, 'utf-8'));
 
                 delete roles[dc_role.id]
 
-                fs.writeFileSync(`${process.cwd()}/config/roles.json`, JSON.stringify(roles, null, 4));
+                fs.writeFileSync(`${process.cwd()}/data/roles.json`, JSON.stringify(roles, null, 4));
 
                 await interaction.editReply('已刪除身份組 <@&' + dc_role.id + '>')
 

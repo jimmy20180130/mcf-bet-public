@@ -72,7 +72,7 @@ class Logger {
             return '';
         })(new Error().stack || '');
 
-        const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
+        const config = JSON.parse(fs.readFileSync(`${process.cwd()}/data/config.json`, 'utf8'));
         if (!config.debug) return;
 
         console.log(`[${timestamp}] \x1b[34m[DEBUG]\x1b[0m ${message} ${fileInfo}`);

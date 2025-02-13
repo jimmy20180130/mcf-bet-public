@@ -3,9 +3,8 @@ const { canUseCommand } = require(`../utils/permissions.js`);
 const { process_msg } = require(`../utils/process_msg.js`);
 const { mc_error_handler } = require(`../error/mc_handler.js`)
 const { chat } = require(`../utils/chat.js`);
-
 const fs = require('fs');
-const commands = JSON.parse(fs.readFileSync(`${process.cwd()}/config/commands.json`, 'utf8'));
+const commands = JSON.parse(fs.readFileSync(`${process.cwd()}/data/commands.json`, 'utf8'));
 
 module.exports = {
     display_name: commands.play.display_name,
@@ -19,8 +18,8 @@ module.exports = {
 }
 
 async function executeCommand(bot, playerid, args) {
-    const messages = JSON.parse(fs.readFileSync(`${process.cwd()}/config/messages.json`, 'utf8'));
-    const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
+    const messages = JSON.parse(fs.readFileSync(`${process.cwd()}/data/messages.json`, 'utf8'));
+    const config = JSON.parse(fs.readFileSync(`${process.cwd()}/data/config.json`, 'utf8'));
 
     if (await canUseCommand(await get_player_uuid(playerid), args.split(' ')[0])) {
         await chat(bot, `/ts ${config.bot.server}`)

@@ -6,6 +6,7 @@ const {
 } = require(`../utils/database.js`);
 const { get_player_name } = require(`../utils/get_player_info.js`);
 const fs = require('fs')
+const toml = require('toml')
 
 const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
 
@@ -105,10 +106,10 @@ module.exports = {
 
     async execute(interaction) {
         await interaction.deferReply({ ephemeral: true });
-        const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
+        const configtoml = toml.parse(fs.readFileSync(`${process.cwd()}/config.toml`, 'utf8'));
         let user_data = await get_user_data(undefined, interaction.user.id);
 				
-		if (!config.whitelist || !user_data || user_data == 'Not Found' || user_data == 'Unexpected Error' || (!config.whitelist.includes((await get_player_name(user_data.player_uuid)).toLowerCase()) && !config.whitelist.includes(await get_player_name(user_data.player_uuid)))) {
+		if (!configtoml.minecraft.whitelist || !user_data || user_data == 'Not Found' || user_data == 'Unexpected Error' || (!configtoml.minecraft.whitelist.includes((await get_player_name(user_data.player_uuid)).toLowerCase()) && !configtoml.minecraft.whitelist.includes(await get_player_name(user_data.player_uuid)))) {
             await interaction.editReply({ content: '你沒有權限使用這個指令', ephemeral: true });
             return;
         }
@@ -169,12 +170,7 @@ module.exports = {
                     }
 
                 } else {
-                    if (player_uuid, Number(player_wallet_c) - interaction.options.getInteger('數量') < 0) {
-                        await interaction.editReply('玩家的錢不足')
-                        return
-                    }
-                    
-                    await set_player_wallet(player_uuid, Number(player_wallet_c) - interaction.options.getInteger('數量'), 'coin')
+                    await set_player_wallet(player_uuid, Number(player_wallet_c) + interaction.options.getInteger('數量'), 'coin')
                     player_wallet_c = await get_player_wallet(player_uuid, 'coin')
 
                     switch (player_wallet_c) {
@@ -185,12 +181,12 @@ module.exports = {
                             await interaction.editReply(`查無玩家資料`)
                             break
                         default:
-                            await interaction.editReply(`已成功新增玩家 <@${user.id}> 的錢，他的錢包目前有 ${player_wallet_c} 個綠寶石`)
+                            await interaction.editReply(`已成功新增玩家 <@${user.id}> 的錢，他的錢包目前有 ${player_wallet_c} 個村民錠`)
     
                             const dm = await user.createDM()
     
                             try {
-                                await dm.send(`管理員已新增 ${interaction.options.getInteger('數量')} 個綠寶石至您的錢包中\n您的錢包目前有 ${player_wallet_c} 個綠寶石\n如要領取，請在遊戲中私訊我 "領錢" ，感謝您的配合`)
+                                await dm.send(`管理員已新增 ${interaction.options.getInteger('數量')} 個村民錠至您的錢包中\n您的錢包目前有 ${player_wallet_c} 個村民錠\n如要領取，請在遊戲中私訊我 "領錢" ，感謝您的配合`)
                             } catch (error) { }
                     }
                 }
@@ -227,13 +223,16 @@ module.exports = {
                             await interaction.editReply(`已成功減少玩家 <@${user.id}> 的錢，他的錢包目前有 ${player_wallet_c} 個村民錠`)
                     }
                 }
-
                 
-
                 break
 
             case '清空餘額':
                 if (interaction.options.getString('貨幣類型') == 'emerald') {
+                    if (player_uuid, Number(player_wallet_e) - interaction.options.getInteger('數量') < 0) {
+                        await interaction.editReply('玩家的錢不足')
+                        return
+                    }
+
                     await set_player_wallet(player_uuid, 0, 'emerald')
                     player_wallet_e = await get_player_wallet(player_uuid, 'emerald')
 
@@ -249,6 +248,11 @@ module.exports = {
                     }
 
                 } else {
+                    if (player_uuid, Number(player_wallet_c) - interaction.options.getInteger('數量') < 0) {
+                        await interaction.editReply('玩家的錢不足')
+                        return
+                    }
+
                     await set_player_wallet(player_uuid, 0, 'coin')
                     player_wallet_c = await get_player_wallet(player_uuid, 'coin')
 
@@ -262,7 +266,6 @@ module.exports = {
                         default:
                             await interaction.editReply(`已清空玩家 <@${user.id}> 的錢包`)
                     }
-
                 }
 
                 break

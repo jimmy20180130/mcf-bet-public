@@ -2,6 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { get_user_data, get_all_user_data, get_all_bet_record } = require(`../utils/database.js`);
 const { get_player_name } = require(`../utils/get_player_info.js`);
 const fs = require('fs')
+const toml = require('toml');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -189,9 +190,9 @@ module.exports = {
             return;
         }
 
-        const roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf8'));
+        const roles = JSON.parse(fs.readFileSync(`${process.cwd()}/data/roles.json`, 'utf8'));
         const user_data = await get_user_data(undefined, String(interaction.member.id))
-        const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
+        const configtoml = toml.parse(fs.readFileSync(`${process.cwd()}/config.toml`, 'utf8'));
         let user_uuid = user_data?.player_uuid;
 
         if (!user_uuid) {
@@ -199,7 +200,7 @@ module.exports = {
             return;
         }
 
-        const guild = await interaction.client.guilds.fetch(config.discord.guild_id)
+        const guild = await interaction.client.guilds.fetch(configtoml.discord.guild_id)
         const member = await guild.members.fetch(interaction.member.id)
 
         const player_roles = (await member).roles.cache.map(role => role.id).filter((role) => {
@@ -207,7 +208,7 @@ module.exports = {
             else return false
         })
         
-        if ((!config.whitelist.includes((await get_player_name(user_uuid)).toLowerCase()) && !config.whitelist.includes(await get_player_name(user_uuid))) && (!roles[player_roles[0]] || (!roles[player_roles[0]].record_settings.others && !roles[player_roles[0]].record_settings.advanced))) {
+        if ((!configtoml.minecraft.whitelist.includes((await get_player_name(user_uuid)).toLowerCase()) && !configtoml.minecraft.whitelist.includes(await get_player_name(user_uuid))) && (!roles[player_roles[0]] || (!roles[player_roles[0]].record_settings.others && !roles[player_roles[0]].record_settings.advanced))) {
             await interaction.editReply('您沒有權限使用此指令');
             return;
         }

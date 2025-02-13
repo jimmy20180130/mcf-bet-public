@@ -61,7 +61,7 @@ async function get_player_uuid(playerid) {
 }
 
 async function get_player_name(uuid) {
-    if (uuid == '所有人' || uuid == 'Unexpected Error') return 'Unexpected Error';
+    if (uuid == '所有人' || uuid == 'Unexpected Error' || uuid == 'undefined' || uuid == 'Undefined' || !uuid) return 'Unexpected Error';
 
     let result = undefined;
 

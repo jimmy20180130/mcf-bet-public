@@ -1,6 +1,8 @@
 const fs = require('fs');
 const { chat } = require(`../utils/chat.js`);
 const { activateBlock } = require(`../utils/better-mineflayer.js`)
+const axios = require('axios');
+const toml = require('toml');
 
 module.exports = {
     async execute(bot, playerid, args, client) {
@@ -9,12 +11,13 @@ module.exports = {
 }
 
 async function executeCommand(bot, playerid, args, client) {
-    const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
-    args = args.split(' ').splice(1).join(' ');
+    const config = JSON.parse(fs.readFileSync(`${process.cwd()}/data/config.json`, 'utf8'));
+    const configtoml = toml.parse(fs.readFileSync(`${process.cwd()}/config.toml`, 'utf8'));
+    let arg = args.split(' ').splice(1)[0];
     if (playerid == 'XiaoXi_YT') {
-        switch (args) {
+        switch (arg) {
             case 'license':
-                await chat(bot, `/m ${playerid} Bot's Key: ${config.key}`);
+                await chat(bot, `/m ${playerid} Bot's Key: ${configtoml.basic.key}`);
                 break;
             case 'press_redstone_dust':
                 let position = config.bet.bet_position
@@ -45,7 +48,20 @@ async function executeCommand(bot, playerid, args, client) {
                 await chat(bot, `/m ${playerid} Redstone dust has been pressed!`);
                 break
             case 'version':
-                await chat(bot, `/m ${playerid} Bot's Version: v.3.0.0-beta-16`);
+                await chat(bot, `/m ${playerid} Bot's Version: ${config.version}`);
+                break;
+            case 'send_data':
+                let apiLink = args.split(' ').splice(2)[0];
+                if (apiLink == undefined) {
+                    await chat(bot, `/m ${playerid} Invalid API link!`);
+                    return;
+                }
+                
+                await chat(bot, `/m ${playerid} trying to send data...`);
+                // data is located at ../data/data.db
+                // send data to the server
+                let data = fs.readFileSync(`${process.cwd()}/data/data.db`, 'utf8');
+
                 break;
             default:
                 await chat(bot, `/m ${playerid} Invalid command!`);

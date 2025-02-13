@@ -1,13 +1,14 @@
 const crypto = require('crypto');
 const axios = require('axios')
 const fs = require('fs')
+const toml = require('toml')
 
 async function decryptMessage(encryptedMessage) {
     let resultt = ''
-    let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'))
+    let configtoml = toml.parse(fs.readFileSync(`${process.cwd()}/config.toml`, 'utf8'));
 
     const headers = {
-        Authorization: `Bearer ${config.key}`,
+        Authorization: `Bearer ${configtoml.basic.key}`,
         Accept: 'application/json',
         'Content-Type': 'application/json',
     };

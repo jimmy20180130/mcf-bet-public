@@ -5,7 +5,7 @@ const { process_msg } = require(`../utils/process_msg`);
 const { mc_error_handler } = require(`../error/mc_handler.js`)
 const { chat } = require(`../utils/chat.js`);
 const { pay_handler } = require(`../utils/pay_handler.js`);
-const commands = JSON.parse(fs.readFileSync(`${process.cwd()}/config/commands.json`, 'utf8'));
+const commands = JSON.parse(fs.readFileSync(`${process.cwd()}/data/commands.json`, 'utf8'));
 
 const {
     get_player_wallet,
@@ -25,7 +25,7 @@ module.exports = {
 }
 
 async function executeCommand(bot, playerid, args, client) {
-    const messages = JSON.parse(fs.readFileSync(`${process.cwd()}/config/messages.json`, 'utf8'));
+    const messages = JSON.parse(fs.readFileSync(`${process.cwd()}/data/messages.json`, 'utf8'));
 
     if (await canUseCommand(await get_player_uuid(playerid), args.split(' ')[0])) {
         let now_money_e = await get_player_wallet(await get_player_uuid(playerid), 'emerald')

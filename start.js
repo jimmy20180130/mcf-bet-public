@@ -5,32 +5,34 @@ const crypto = require('crypto');
 const io = require('socket.io-client');
 const path = require('path');
 const Logger = require('./utils/logger.js');
+const toml = require('toml');
 
 let appProcess = undefined;
 
 Logger.log('正在開始執行由 Jimmy 開發的 [廢土對賭機器人]');
 
-let config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
+let config = JSON.parse(fs.readFileSync(`${process.cwd()}/data/config.json`, 'utf8'));
+let configtoml = toml.parse(fs.readFileSync(`${process.cwd()}/config.toml`, 'utf8'));
 
 function hashPassword(password) {
     const hashBuffer = crypto.createHash('sha256').update(password).digest();
     return hashBuffer.toString('hex');
 }
 
-// let rl = readline.createInterface({
-//     input: process.stdin,
-//     output: process.stdout   
-// });
+let rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout   
+});
 
-// rl.on('line', async function (line) {
-//     if (appProcess != undefined) appProcess.stdin.write(line + '\n');
-// });
+rl.on('line', async function (line) {
+    if (appProcess != undefined) appProcess.stdin.write(line + '\n');
+});
 
 const socket = io(`http://uwu.freeserver.tw:21097`);
 
 if (config.auth_server.enabled) {
   async function connectToServer() {
-      const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
+      const config = JSON.parse(fs.readFileSync(`${process.cwd()}/data/config.json`, 'utf8'));
       const token = config.auth_server.key;
       const user = 'bot';
       const username = config.auth_server.username;
@@ -86,7 +88,7 @@ function startApp() {
             const process = spawn('node', [path.join(__dirname, file)]);
 
             process.stdout.on('data', (data) => {
-                Logger.log(`[${file}] 輸出: ${String(data).replace(/\n$/, '')}`);
+                Logger.debug(`[${file}] 輸出: ${String(data).replace(/\n$/, '')}`);
             });
 
             process.stderr.on('data', (data) => {
@@ -101,7 +103,7 @@ function startApp() {
             appProcess = spawn('node', [path.join(__dirname, 'main.js')]);
 
             const sendMessage = (message) => {
-                const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
+                const config = JSON.parse(fs.readFileSync(`${process.cwd()}/data/config.json`, 'utf8'));
                 const token = config.auth_server.key;
                 const user = 'bot';
                 const username = config.auth_server.username;

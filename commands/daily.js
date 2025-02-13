@@ -6,6 +6,7 @@ const { chat } = require(`../utils/chat.js`);
 const { pay_handler } = require(`../utils/pay_handler.js`);
 const moment = require('moment-timezone');
 const Logger = require('../utils/logger.js')
+const toml = require('toml');
 
 const {
     create_daily_data,
@@ -15,7 +16,7 @@ const {
 } = require(`../utils/database.js`);
 
 const fs = require('fs');
-const commands = JSON.parse(fs.readFileSync(`${process.cwd()}/config/commands.json`, 'utf8'));
+const commands = JSON.parse(fs.readFileSync(`${process.cwd()}/data/commands.json`, 'utf8'));
 
 module.exports = {
     display_name: commands.daily.display_name,
@@ -31,9 +32,9 @@ module.exports = {
 let processList = []
 
 async function executeCommand(bot, playerid, args, client) {
-    const messages = JSON.parse(fs.readFileSync(`${process.cwd()}/config/messages.json`, 'utf8'));
-    const roles = JSON.parse(fs.readFileSync(`${process.cwd()}/config/roles.json`, 'utf8'));
-    const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
+    const messages = JSON.parse(fs.readFileSync(`${process.cwd()}/data/messages.json`, 'utf8'));
+    const roles = JSON.parse(fs.readFileSync(`${process.cwd()}/data/roles.json`, 'utf8'));
+    const configtoml = toml.parse(fs.readFileSync(`${process.cwd()}/config.toml`, 'utf8'));
     const player_data = await get_user_data(await get_player_uuid(playerid))
 
     if (processList.includes(playerid)) {
@@ -44,7 +45,7 @@ async function executeCommand(bot, playerid, args, client) {
     processList.push(playerid)
 
     if (await canUseCommand(await get_player_uuid(playerid), args.split(' ')[0].toLowerCase())) {
-        if (!config.discord.enabled) {
+        if (!configtoml.discord.enabled) {
             await chat(bot, `/m ${playerid} &c&l${await process_msg(bot, messages.commands.daily.disabled, playerid)}`)
             processList.splice(processList.indexOf(playerid), 1)
             return;
@@ -78,7 +79,7 @@ async function executeCommand(bot, playerid, args, client) {
             return;
         } else {
             // player_uuid roles amount
-            const guild = await client.guilds.fetch(config.discord.guild_id)
+            const guild = await client.guilds.fetch(configtoml.discord.guild_id)
             const member = await guild.members.fetch(player_data.discord_id)
 
             const player_roles = (await member).roles.cache.map(role => role.id).filter((role) => {

@@ -6,7 +6,7 @@ const { chat } = require(`../utils/chat.js`);
 const Logger = require('../utils/logger.js');
 const { pay_handler } = require(`../utils/pay_handler.js`);
 const fs = require('fs');
-const commands = JSON.parse(fs.readFileSync(`${process.cwd()}/config/commands.json`, 'utf8'));
+const commands = JSON.parse(fs.readFileSync(`${process.cwd()}/data/commands.json`, 'utf8'));
 
 module.exports = {
     display_name: commands.epay.display_name,
@@ -20,7 +20,7 @@ module.exports = {
 }
 
 async function executeCommand(bot, playerid, args, client) {
-    const messages = JSON.parse(fs.readFileSync(`${process.cwd()}/config/messages.json`, 'utf8'));
+    const messages = JSON.parse(fs.readFileSync(`${process.cwd()}/data/messages.json`, 'utf8'));
 
     if (await canUseCommand(await get_player_uuid(playerid), args.split(' ')[0])) {
         if (await pay_handler(bot, args.split(' ')[1], args.split(' ')[2], 'e', client) == 'success') {

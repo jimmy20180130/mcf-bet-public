@@ -1,6 +1,7 @@
 const { EmbedBuilder } = require('discord.js');
 const moment = require('moment-timezone');
 const fs = require('fs');
+const toml = require('toml');
 
 async function bet_record(field0, field1, field2, field3, field4, field5, field6, field7, image_url) {
     const embed = new EmbedBuilder()
@@ -168,11 +169,11 @@ async function error_embed(client, bet_uuid, error_msg, player_id, amount, type)
             iconURL: "https://cdn.discordapp.com/icons/1173075041030787233/bbf79773eab98fb335edc9282241f9fe.webp?size=1024&format=webp&width=0&height=256",
         })
         .setTimestamp();
-    
-    const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
 
-    if (config.discord_channels.errors) {
-        const channel = await client.channels.fetch(config.discord_channels.errors);
+    const configtoml = toml.parse(fs.readFileSync(`${process.cwd()}/config.toml`, 'utf8'));
+
+    if (configtoml.discord_channels.errors) {
+        const channel = await client.channels.fetch(configtoml.discord_channels.errors);
         await channel.send({ embeds: [embed] });
     }
 }
@@ -188,10 +189,10 @@ async function pay_error(client, pay_uuid, player_id, amount, type, reason) {
         })
         .setTimestamp();
 
-    const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
+    const configtoml = toml.parse(fs.readFileSync(`${process.cwd()}/config.toml`, 'utf8'));
     
-    if (config.discord_channels.errors) {
-        const channel = await client.channels.fetch(config.discord_channels.errors);
+    if (configtoml.discord_channels.errors) {
+        const channel = await client.channels.fetch(configtoml.discord_channels.errors);
         await channel.send({ embeds: [embed] });
     }
 }

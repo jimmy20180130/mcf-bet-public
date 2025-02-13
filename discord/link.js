@@ -5,6 +5,7 @@ const { get_player_name } = require(`../utils/get_player_info.js`);
 const { link_embed } = require(`../discord/embed.js`);
 const fs = require('fs')
 const Logger = require('../utils/logger.js');
+const toml = require('toml');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -55,7 +56,7 @@ module.exports = {
 	async execute(interaction) {
 		await interaction.deferReply({ ephemeral: true });
 
-		const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf8'));
+        const configtoml = toml.parse(fs.readFileSync(`${process.cwd()}/config.toml`, 'utf8'));
 
 		const verification_code = interaction.options.getString('驗證碼')
 
@@ -73,7 +74,7 @@ module.exports = {
 					await interaction.editReply(`成功綁定您的 Minecraft 帳號 (${(await get_player_name(verify_success)).replace(/(_)/g, "\\$1")}) 至您的 Discord 帳號 (<@${interaction.member.id}>)`);
 					try {
 						const embed = await link_embed((await get_player_name(verify_success)).replace(/(_)/g, "\\$1"), verify_success.replace(/(_)/g, "\\$1"), interaction.member.user.tag.replace(/(_)/g, "\\$1"), interaction.member.user.id, await get_player_name(verify_success))
-						const channel = await interaction.client.channels.fetch(config.discord_channels.link)
+						const channel = await interaction.client.channels.fetch(configtoml.discord_channels.link)
 						await channel.send({ embeds: [embed] });
 					} catch (error) {}
 
