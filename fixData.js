@@ -1,4 +1,5 @@
 const sqlite3 = require('sqlite3').verbose();
+const axios = require('axios');
 
 let data = null;
 
@@ -28,6 +29,124 @@ function executeQuery(query, params, callback) {
             callback(err, rows);
         });
     });
+}
+
+async function checkDB() {
+    const db = new sqlite3.Database('data/data.db', (err) => {
+        if (err) {
+            console.error('Error opening database:', err.message);
+        } else {
+            //check if there r player_id in table user_data, if not, modify the table
+            db.run(`ALTER TABLE user_data ADD COLUMN player_id TEXT`, (err) => {
+                if (err) {
+                    console.debug('Column player_id already exists');
+                }
+            });
+        }
+    });
+    
+    db.close((err) => {
+        if (err) {
+            console.error('Error closing database:', err.message);
+        }
+    });   
+}
+
+async function get_player_name(uuid) {
+    if (uuid == '所有人' || uuid == 'Unexpected Error') return 'Unexpected Error';
+
+    let result = undefined;
+
+    await axios.get(`https://sessionserver.mojang.com/session/minecraft/profile/${uuid}`)
+        .then(response => {
+            if (response.data) {
+                result = response.data.name
+                console.debug(`[玩家資料] 玩家 ${uuid} 的名稱: ${result}`)
+            } else {
+                result = 'Not Found'
+                console.warn(`[玩家資料] 無法取得玩家 ${uuid} 的名稱: ${response.data.errorMessage}`)
+            }
+        })
+        .catch(error => {
+            result = 'Unexpected Error'
+            console.error(`[玩家資料] 查詢玩家名稱時發現錯誤: ${error}`)
+        });
+
+    if (!result || result == 'Not Found' || result == 'Unexpected Error') {
+        await axios.get(`https://playerdb.co/api/player/minecraft/${uuid}`)
+            .then(response => {
+                if (response.data) {
+                    result = response.data.data.player.username
+                    console.debug(`[玩家資料] 玩家 ${uuid} 的名稱: ${result}`)
+                } else {
+                    result = 'Not Found'
+                    console.warn(`[玩家資料] 無法取得玩家 ${uuid} 的名稱: ${response.data.errorMessage}`)
+                }
+            })
+            .catch(error => {
+                result = 'Unexpected Error'
+                console.error(`[玩家資料] 查詢玩家名稱時發現錯誤: ${error}`)
+            });
+    }
+    
+    return result
+}
+
+async function get_all_user_data() {
+    const selectSql = 'SELECT * FROM user_data';
+
+    return await new Promise((resolve, reject) => {
+        executeQuery(selectSql, [], (err, rows) => {
+            if (err) {
+                console.error(err);
+                reject('Unexpected Error');
+            } else if (rows === undefined || rows.length === 0) {
+                reject('Not Found');
+            } else {
+                resolve(rows);
+            }
+        });
+    })
+    .then(rows => {
+        console.debug(`[資料庫] 找到所有玩家資料: ${rows.length}`);
+        return rows;
+    })
+    .catch(err => {
+        return err
+    });
+}
+
+async function update_player_id(player_uuid, player_id) {
+    const updateSql = 'UPDATE user_data SET player_id = ? WHERE player_uuid = ?';
+
+    return await new Promise((resolve, reject) => {
+        executeQuery(updateSql, [player_id, player_uuid], (err) => {
+            if (err) {
+                console.error(err);
+                reject('Unexpected Error');
+            } else {
+                resolve();
+            }
+        });
+    })
+    .then(() => {
+        console.debug(`[資料庫] 更新玩家 ID: ${player_uuid} (${player_id})`);
+    })
+    .catch(err => {
+        console.warn(`[資料庫] 無法更新玩家 ID: ${err}`);
+    });
+}
+
+async function init_username() {
+    const userdata = await get_all_user_data();
+    if (!userdata || userdata == 'Not Found' || userdata == 'Unexpected Error') return;
+
+    for (const player of userdata) {
+        if (!player.player_id) {
+            await update_player_id(player.player_uuid, await get_player_name(player.player_uuid))
+            console.debug(`[資料庫] 玩家 ${player.player_uuid} 的名稱已更新`)
+        }
+    }   
 }
 
 async function clean_wallet_data() {
@@ -128,7 +247,8 @@ async function removeHyphensFromPlayerUuid(tableName) {
 
 async function run() {
     initDB();
-
+    await checkDB();
+    await init_username();
     await clean_wallet_data()
         .then(maxRow => {
             console.log(`保留的資料: ${JSON.stringify(maxRow)}`);
