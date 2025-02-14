@@ -152,19 +152,19 @@ class JsonSyncer {
 async function main() {
     const syncConfigs = [
         {
-            githubUrl: 'https://raw.githubusercontent.com/jimmy20180130/mcf-bet-public/main/config/config.json',
+            githubUrl: 'https://raw.githubusercontent.com/jimmy20180130/mcf-bet-public/main/data/config.json',
             localPath: `${process.cwd()}/data/config.json`
         },
         {
-            githubUrl: 'https://raw.githubusercontent.com/jimmy20180130/mcf-bet-public/main/config/commands.json',
+            githubUrl: 'https://raw.githubusercontent.com/jimmy20180130/mcf-bet-public/main/data/commands.json',
             localPath: `${process.cwd()}/data/commands.json`
         },
         {
-            githubUrl: 'https://raw.githubusercontent.com/jimmy20180130/mcf-bet-public/main/config/messages.json',
+            githubUrl: 'https://raw.githubusercontent.com/jimmy20180130/mcf-bet-public/main/data/messages.json',
             localPath: `${process.cwd()}/data/messages.json`
         },
         {
-            githubUrl: 'https://raw.githubusercontent.com/jimmy20180130/mcf-bet-public/main/config/roles.json',
+            githubUrl: 'https://raw.githubusercontent.com/jimmy20180130/mcf-bet-public/main/data/roles.json',
             localPath: `${process.cwd()}/data/roles.json`
         },
         {
