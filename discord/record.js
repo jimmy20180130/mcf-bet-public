@@ -5,127 +5,128 @@ const { bet_record } = require(`../discord/embed.js`);
 const fs = require('fs');
 const toml = require('toml');
 const Logger = require('../utils/logger.js');
+const TIME_FILTER_TYPES = ['late', 'early', 'duration'];
+const AMOUNT_FILTERS = ['amount-bigger-than', 'amount-smaller-than', 'amount-equal'];
+const DEFAULT_AVATAR_URL = 'https://minotar.net/helm/Steve/64.png';
 
 module.exports = {
-	data: new SlashCommandBuilder()
-		.setName('record')
-		.setNameLocalizations({
-			"en-US": "record",
-			"zh-TW": "查詢資料"
-		})
-		.setDescription('Check betting records')
-		.setDescriptionLocalizations({
-			"en-US": "Check betting records",
-			"zh-TW": "查詢資料"
-		})
-		.setDMPermission(false)
-		.addStringOption(option =>
-			option.setName('playerid')
-				.setAutocomplete(true)
-				.setRequired(true)
-				.setNameLocalizations({
-					"en-US": "playerid",
-					"zh-TW": "玩家名稱"
-				})
-				.setDescription('the player ID you want to query')
-				.setDescriptionLocalizations({
-					"en-US": "the player ID you want to query",
-					"zh-TW": "您欲查詢的玩家 ID"
-				})
-		)
-		.addStringOption(option =>
-			option.setName('late')
-				.setNameLocalizations({
-					"en-US": "late",
-					"zh-TW": "晚於"
-				})
-				.setDescription('Specify the earliest time to include')
-				.setDescriptionLocalizations({
-					"en-US": "Specify the earliest time to include, format: YYYY-MM-DD HH:MM:SS or YYYY-MM-DD",
-					"zh-TW": "時間需晚於，格式為 YYYY-MM-DD HH:MM:SS 或 YYYY-MM-DD"
-				})
-		)
-		.addStringOption(option =>
-			option.setName('early')
-				.setNameLocalizations({
-					"en-US": "early",
-					"zh-TW": "早於"
-				})
-				.setDescription('Specify the latest time to include')
-				.setDescriptionLocalizations({
-					"en-US": "Specify the latest time to include, format: YYYY-MM-DD HH:MM:SS or YYYY-MM-DD",
-					"zh-TW": "時間需早於，格式為 YYYY-MM-DD HH:MM:SS 或 YYYY-MM-DD"
-				})
-		)
-		.addStringOption(option =>
-			option.setName('duration')
-				.setNameLocalizations({
-					"en-US": "duration",
-					"zh-TW": "期間"
-				})
-				.setDescription('Specify the time period to search')
-				.setDescriptionLocalizations({
-					"en-US": "The time period to search, format: YYYY-MM-DD HH:MM:SS~YYYY-MM-DD HH:MM:SS or YYYY-MM-DD~YYYY-MM-DD",
-					"zh-TW": "時間需在期間內，格式為 YYYY-MM-DD HH:MM:SS~YYYY-MM-DD HH:MM:SS 或 YYYY-MM-DD~YYYY-MM-DD"
-				})
-		)
-		.addIntegerOption(option =>
-			option.setName('amount-bigger-than')
-				.setNameLocalizations({
-					"en-US": "amount-bigger-than",
-					"zh-TW": "大於"
-				})
-				.setDescription('Minimum amount to filter')
-				.setDescriptionLocalizations({
-					"en-US": "Minimum amount to filter",
-					"zh-TW": "金額需大於"
-				})
-		)
-		.addIntegerOption(option =>
-			option.setName('amount-smaller-than')
-				.setNameLocalizations({
-					"en-US": "amount-smaller-than",
-					"zh-TW": "小於"
-				})
-				.setDescription('Maximum amount to filter')
-				.setDescriptionLocalizations({
-					"en-US": "Maximum amount to filter",
-					"zh-TW": "金額需小於"
-				})
-		)
-		.addIntegerOption(option =>
-			option.setName('amount-equal')
-				.setNameLocalizations({
-					"en-US": "amount-equal",
-					"zh-TW": "等於"
-				})
-				.setDescription('Exact amount to match')
-				.setDescriptionLocalizations({
-					"en-US": "Exact amount to match",
-					"zh-TW": "金額需等於"
-				})
-		)
-		.addBooleanOption(option =>
-			option.setName('public')
-				.setNameLocalizations({
-					"en-US": "public",
-					"zh-TW": "公開"
-				})
-				.setDescription('Make results visible to others')
-				.setDescriptionLocalizations({
-					"en-US": "Make results visible to others",
-					"zh-TW": "是否讓您的結果公開"
-				})
-		),
+    data: new SlashCommandBuilder()
+        .setName('record')
+        .setNameLocalizations({
+            "en-US": "record",
+            "zh-TW": "查詢資料"
+        })
+        .setDescription('Check betting records')
+        .setDescriptionLocalizations({
+            "en-US": "Check betting records",
+            "zh-TW": "查詢資料"
+        })
+        .setDMPermission(false)
+        .addStringOption(option =>
+            option.setName('playerid')
+                .setAutocomplete(true)
+                .setRequired(true)
+                .setNameLocalizations({
+                    "en-US": "playerid",
+                    "zh-TW": "玩家名稱"
+                })
+                .setDescription('the player ID you want to query')
+                .setDescriptionLocalizations({
+                    "en-US": "the player ID you want to query",
+                    "zh-TW": "您欲查詢的玩家 ID"
+                })
+        )
+        .addStringOption(option =>
+            option.setName('late')
+                .setNameLocalizations({
+                    "en-US": "late",
+                    "zh-TW": "晚於"
+                })
+                .setDescription('Specify the earliest time to include')
+                .setDescriptionLocalizations({
+                    "en-US": "Specify the earliest time to include, format: YYYY-MM-DD HH:MM:SS or YYYY-MM-DD",
+                    "zh-TW": "時間需晚於，格式為 YYYY-MM-DD HH:MM:SS 或 YYYY-MM-DD"
+                })
+        )
+        .addStringOption(option =>
+            option.setName('early')
+                .setNameLocalizations({
+                    "en-US": "early",
+                    "zh-TW": "早於"
+                })
+                .setDescription('Specify the latest time to include')
+                .setDescriptionLocalizations({
+                    "en-US": "Specify the latest time to include, format: YYYY-MM-DD HH:MM:SS or YYYY-MM-DD",
+                    "zh-TW": "時間需早於，格式為 YYYY-MM-DD HH:MM:SS 或 YYYY-MM-DD"
+                })
+        )
+        .addStringOption(option =>
+            option.setName('duration')
+                .setNameLocalizations({
+                    "en-US": "duration",
+                    "zh-TW": "期間"
+                })
+                .setDescription('Specify the time period to search')
+                .setDescriptionLocalizations({
+                    "en-US": "The time period to search, format: YYYY-MM-DD HH:MM:SS~YYYY-MM-DD HH:MM:SS or YYYY-MM-DD~YYYY-MM-DD",
+                    "zh-TW": "時間需在期間內，格式為 YYYY-MM-DD HH:MM:SS~YYYY-MM-DD HH:MM:SS 或 YYYY-MM-DD~YYYY-MM-DD"
+                })
+        )
+        .addIntegerOption(option =>
+            option.setName('amount-bigger-than')
+                .setNameLocalizations({
+                    "en-US": "amount-bigger-than",
+                    "zh-TW": "大於"
+                })
+                .setDescription('Minimum amount to filter')
+                .setDescriptionLocalizations({
+                    "en-US": "Minimum amount to filter",
+                    "zh-TW": "金額需大於"
+                })
+        )
+        .addIntegerOption(option =>
+            option.setName('amount-smaller-than')
+                .setNameLocalizations({
+                    "en-US": "amount-smaller-than",
+                    "zh-TW": "小於"
+                })
+                .setDescription('Maximum amount to filter')
+                .setDescriptionLocalizations({
+                    "en-US": "Maximum amount to filter",
+                    "zh-TW": "金額需小於"
+                })
+        )
+        .addIntegerOption(option =>
+            option.setName('amount-equal')
+                .setNameLocalizations({
+                    "en-US": "amount-equal",
+                    "zh-TW": "等於"
+                })
+                .setDescription('Exact amount to match')
+                .setDescriptionLocalizations({
+                    "en-US": "Exact amount to match",
+                    "zh-TW": "金額需等於"
+                })
+        )
+        .addBooleanOption(option =>
+            option.setName('public')
+                .setNameLocalizations({
+                    "en-US": "public",
+                    "zh-TW": "公開"
+                })
+                .setDescription('Make results visible to others')
+                .setDescriptionLocalizations({
+                    "en-US": "Make results visible to others",
+                    "zh-TW": "是否讓您的結果公開"
+                })
+        ),
     async autocomplete(interaction) {
         const configtoml = toml.parse(fs.readFileSync(`${process.cwd()}/config.toml`, 'utf8'));
-        let focused_value = ''
-        let results = []
-        let result = []
+        let focused_value = interaction.options.getFocused().toLowerCase();
+        let results = [];
+        let result = [];
 
         try {
-            focused_value = interaction.options.getFocused().toLowerCase()
-
             let roles = JSON.parse(fs.readFileSync(`${process.cwd()}/data/roles.json`, 'utf8'));
             const user_roles = roles[interaction.client.guilds.cache.get(configtoml.discord.guild_id).members.cache.get(interaction.member.id).roles.cache.map(role => role.id).filter((role) => {
                 if (Object.keys(roles).includes(role)) return true
@@ -133,11 +134,10 @@ module.exports = {
             })[0]]
 
             const user_player_uuid = await get_user_data(undefined, interaction.member.id)
-
             const user_player_name = await get_player_name(user_player_uuid.player_uuid)
 
             if ((!configtoml.minecraft.whitelist.includes(user_player_name.toLowerCase()) && !configtoml.minecraft.whitelist.includes(user_player_name)) && (!user_roles || !user_roles.record_settings.others)) {
-                if (user_player_name.toLowerCase() != 'undefined' && user_player_name != 'Unexpected Error' && (focused_value.startsWith(user_player_name.toLowerCase()) || focused_value == '')) {
+                if (user_player_name.toLowerCase() != 'undefined' && user_player_name != 'Unexpected Error' && (user_player_name.toLowerCase().startsWith(focused_value.toLowerCase()) || focused_value == '')) {
                     await interaction.respond([{ name: user_player_name, value: user_player_name }])
                     return
                 } else {
@@ -146,11 +146,7 @@ module.exports = {
                 }
             }
 
-            // 這個會返回一堆 Discord ID ，有個白癡以為這是玩家 ID
-            // 後來改成返回玩家 ID 了
             let players = await get_all_players()
-            // 轉成玩家 ID，希望不要被 Mojang 429
-
             players = players.filter(player => player && player != 'Not Found' && player != 'Unexpected Error')
 
             if (players == 'Not Found' || players == 'Unexpected Error' || players == undefined || players.length == 0) {
@@ -159,261 +155,256 @@ module.exports = {
             }
 
             if ((configtoml.minecraft.whitelist.includes(user_player_name.toLowerCase()) || configtoml.minecraft.whitelist.includes(user_player_name)) || user_roles.record_settings.others) {
-                results.push({
-                    name: '所有人',
-                    value: '所有人'
-                })
+                results.push({ name: '所有人', value: '所有人' })
             }
 
             result = players.filter(player => player.toLowerCase().startsWith(focused_value))
-            
-            results.push(...result.map(player => {
-                return {
-                    name: player,
-                    value: player
-                }   
-            }))
+            results.push(...result.map(player => { return { name: player, value: player } }))
 
-            interaction.respond(results.slice(0, 25)).catch((e) => {Logger.error(e)})
+            await interaction.respond(results.slice(0, 25)).catch((e) => { Logger.error(e) })
         } catch (e) {
             Logger.error(e)
-            interaction.respond([{ name: '查詢玩家資料時發生錯誤', value: '查詢玩家資料時發生錯誤' }]).catch(() => {})
+            interaction.respond([{ name: '查詢玩家資料時發生錯誤', value: '查詢玩家資料時發生錯誤' }]).catch(() => { })
         }
     },
-	async execute(interaction) {
-		await handleInteraction(interaction);
-	},
+    async execute(interaction) {
+        try {
+            await handleInteraction(interaction);
+        } catch (error) {
+            console.log(error);
+            Logger.error('Error executing record command:', error);
+            await interaction.editReply('指令執行時發生錯誤');
+        }
+    }
 };
 
-const configtoml = loadConfig();
-const roles = loadRoles();
-
 async function handleInteraction(interaction) {
-	const isPublic = interaction.options.getBoolean('public');
-	await interaction.deferReply({ ephemeral: !isPublic });
+    const isPublic = interaction.options.getBoolean('public');
+    await interaction.deferReply({ ephemeral: !isPublic });
 
-	if (!interaction.member) {
-		await interaction.editReply('請在伺服器中使用此指令');
-		return;
-	}
-
-	const playerId = interaction.options.getString('playerid');
-	const playerUuid = await getPlayerUuid(playerId);
-
-	if (playerId !== '所有人' && playerUuid === 'Not Found') {
-		await interaction.editReply('找不到玩家');
-		return;
-	}
-
-	const payHistory = await getPayHistory(playerId, playerUuid);
-	const playerData = await getUserData(playerUuid);
-	const playerDataDiscord = await getUserData(undefined, interaction.member.id);
-
-	if (payHistory.length === 0) {
-		await interaction.editReply('找不到紀錄');
-		return;
-	}
-
-	if (playerId !== '所有人' && (playerData === 'Not Found' || playerDataDiscord === 'Not Found')) {
-		await interaction.editReply('請先綁定您的帳號');
-		return;
-	}
-
-	const timeType = await getTimeType(interaction);
-	const { timeString, timeUnix, timeUnix2 } = await getTimeDetails(interaction, timeType);
-	const amountString = getAmountString(interaction);
-
-	const { totalBet, totalCoinBet, totalBetCount, totalCoinBetCount, totalWin, totalCoinWin } = calculateBetDetails(payHistory, interaction, timeType, timeUnix, timeUnix2);
-
-	const playerName = await getPlayerName(playerUuid);
-	const imageUrl = getImageUrl(playerId, playerUuid);
-	const embed = await createEmbed(interaction, playerName, playerUuid, timeString, amountString, totalBet, totalCoinBet, totalBetCount, totalCoinBetCount, totalWin, totalCoinWin, imageUrl);
-
-	await interaction.editReply({ embeds: [embed] });
-}
-
-function loadConfig() {
-    return toml.parse(fs.readFileSync(`${process.cwd()}/config.toml`, 'utf8'));
-}
-
-function loadRoles() {
-	return JSON.parse(fs.readFileSync(`${process.cwd()}/data/roles.json`, 'utf8'));
-}
-
-async function getPlayerUuid(playerId) {
-	if (playerId === '所有人') {
-		return '所有人';
-	}
-	return await get_player_uuid(playerId);
-}
-
-async function getPayHistory(playerId, playerUuid) {
-	if (playerId === '所有人') {
-		return await get_all_bet_record();
-	}
-	return await get_bet_record(playerUuid);
-}
-
-async function getUserData(playerUuid, discordId) {
-	return await get_user_data(playerUuid, discordId);
-}
-
-async function getTimeType(interaction) {
-	const timeTypes = ['late', 'early', 'duration'];
-	for (const type of timeTypes) {
-		if (interaction.options.getString(type)) {
-			return type;
-		}
-	}
-	return 'none';
-}
-
-async function getTimeDetails(interaction, timeType) {
-	let timeString = '無範圍限制';
-	let timeUnix, timeUnix2;
-
-	if (interaction.options.getString(timeType)) {
-		const time = interaction.options.getString(timeType).split('~');
-		timeString = getTimeString(timeType, time);
-		timeUnix = getTimeUnix(time[0]);
-		timeUnix2 = time[1] ? getTimeUnix(time[1]) : null;
-	}
-
-	return { timeString, timeUnix, timeUnix2 };
-}
-
-function getTimeString(timeType, time) {
-	if (timeType === 'late') {
-		return `晚於 ${time[0]}`;
-	} else if (timeType === 'early') {
-		return `早於 ${time[0]}`;
-	} else if (timeType === 'duration') {
-		return `${time[0]} ~ ${time[1]}`;
-	}
-	return '無範圍限制';
-}
-
-function getTimeUnix(time) {
-	if (/^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}$/.test(time)) {
-		return Math.round(new Date(`${time} UTC+8`) / 1000);
-	} else if (/^\d{4}-\d{2}-\d{2}$/.test(time)) {
-		return Math.round(new Date(`${time} UTC+8`) / 1000);
-	}
-	return null;
-}
-
-function getAmountString(interaction) {
-	let amount_string = '';
-	if (interaction.options.getInteger('amount-bigger-than')) {
-		if (amount_string != '') amount_string += ' 且\n'
-		amount_string += `大於 ${interaction.options.getInteger('amount-bigger-than')}`
-	};
-	if (interaction.options.getInteger('amount-smaller-than')) {
-		if (amount_string != '') amount_string += ' 且\n'
-		amount_string += `小於 ${interaction.options.getInteger('amount-smaller-than')}`
-	};
-	if (interaction.options.getInteger('amount-equal')) {
-		if (amount_string != '') amount_string += ' 且\n'
-		amount_string += `等於 ${interaction.options.getInteger('amount-equal')}`
-	};
-	if (amount_string == '') amount_string = '無金額限制'
-
-	return amount_string;
-}
-
-function calculateBetDetails(payHistory, interaction, timeType, timeUnix, timeUnix2) {
-	let totalBet = 0;
-	let totalCoinBet = 0;
-	let totalBetCount = 0;
-	let totalCoinBetCount = 0;
-	let totalWin = 0;
-	let totalCoinWin = 0;
-
-	for (const record of payHistory) {
-		if (shouldSkipRecord(record, interaction, timeType, timeUnix, timeUnix2)) {
-			continue;
-		}
-		if (record.bet_type === 'emerald' || record.bet_type === 'e') {
-			totalBet += record.amount;
-			totalWin += record.result_amount;
-			totalBetCount += 1;
-		} else if (record.bet_type === 'coin' || record.bet_type === 'c') {
-			totalCoinBet += record.amount;
-			totalCoinWin += record.result_amount;
-			totalCoinBetCount += 1;
-		}
-	}
-
-	return { totalBet, totalCoinBet, totalBetCount, totalCoinBetCount, totalWin, totalCoinWin };
-}
-
-function shouldSkipRecord(record, interaction, timeType, timeUnix, timeUnix2) {
-	if (timeType === 'late' && record.time < timeUnix) return true;
-	if (timeType === 'early' && record.time > timeUnix) return true;
-	if (timeType === 'duration' && (record.time < timeUnix || record.time > timeUnix2)) return true;
-	if (interaction.options.getInteger('amount-bigger-than') && record.amount <= interaction.options.getInteger('amount-bigger-than')) return true;
-	if (interaction.options.getInteger('amount-smaller-than') && record.amount >= interaction.options.getInteger('amount-smaller-than')) return true;
-	if (interaction.options.getInteger('amount-equal') && record.amount !== interaction.options.getInteger('amount-equal')) return true;
-	return false;
-}
-
-async function getPlayerName(playerUuid) {
-    if (playerUuid === '所有人') {
-        return '所有人';
+    if (!interaction.member) {
+        await interaction.editReply('請在伺服器中使用此指令');
+        return;
     }
-	return await get_player_name(playerUuid);
+
+    const { config, roles } = await loadConfigurations();
+    const playerInput = interaction.options.getString('playerid');
+    const { player_uuid, player_id } = await resolvePlayerIdentity(playerInput);
+
+    if (!await validatePlayerExistence(interaction, playerInput, player_uuid)) return;
+
+    const pay_history = await fetchBetHistory(playerInput, player_uuid);
+    if (!pay_history.length) {
+        await interaction.editReply('找不到紀錄');
+        return;
+    }
+
+    const { timeFilter, amountFilter } = parseFilters(interaction);
+    const stats = calculateStatistics(pay_history, timeFilter, amountFilter);
+    const userAccess = await checkUserAccess(interaction, config, roles, player_uuid);
+
+    if (!userAccess.hasAccess) {
+        await interaction.editReply(userAccess.message || '您無權限執行此操作');
+        return;
+    }
+
+    const embed = await buildEmbed(
+        interaction,
+        player_id,
+        player_uuid,
+        timeFilter.description,
+        amountFilter.description,
+        stats,
+        userAccess.showDetailedStats
+    );
+
+    await interaction.editReply({ embeds: [embed] });
 }
 
-function getImageUrl(playerId, playerUuid) {
-	if (playerId === '所有人') {
-		return 'https://media.discordapp.net/attachments/1204073077453885490/1204756380129427556/Rainbow_Wool_29.webp';
-	}
-	return `https://minotar.net/helm/${playerUuid}/64.png`;
+// 辅助函数区
+async function loadConfigurations() {
+    const config = toml.parse(fs.readFileSync(`${process.cwd()}/config.toml`, 'utf8'));
+    const roles = JSON.parse(fs.readFileSync(`${process.cwd()}/data/roles.json`, 'utf8'));
+    return { config, roles };
 }
 
-async function createEmbed(interaction, playerName, playerUuid, timeString, amountString, totalBet, totalCoinBet, totalBetCount, totalCoinBetCount, totalWin, totalCoinWin, imageUrl) {
-	const client = interaction.client;
-	const guild = await client.guilds.fetch(configtoml.discord.guild_id);
-	const member = await guild.members.fetch(interaction.member.id);
-	const userData = await getUserData(undefined, interaction.member.id);
-	const userRole = member.roles.cache.map(role => role.id).filter(role => Object.keys(roles).includes(role));
-
-	const discordUsername = await getDiscordUsername(userData, client);
-
-	const embed = await bet_record(
-		playerName,
-		discordUsername,
-		interaction.guild.name,
-		playerUuid,
-		timeString,
-		amountString,
-		formatBetDetails(totalBet, totalBetCount, totalWin),
-		formatBetDetails(totalCoinBet, totalCoinBetCount, totalCoinWin),
-		imageUrl
-	);
-
-	return embed;
+async function resolvePlayerIdentity(playerInput) {
+    const isAllPlayers = playerInput === '所有人';
+    const player_uuid = isAllPlayers ? '所有人' : await get_player_uuid(playerInput);
+    const player_id = isAllPlayers ? '所有人' : await get_player_name(player_uuid);
+    return { player_uuid, player_id };
 }
 
-async function getDiscordUsername(userData, client) {
-	if (!userData.discord_id || userData.discord_id === '0') {
-		return '尚未綁定';
-	}
-	try {
-		const user = await client.users.fetch(userData.discord_id);
-		return user.username;
-	} catch (err) {
-		return '擷取失敗';
-	}
+async function validatePlayerExistence(interaction, playerInput, player_uuid) {
+    const userData = await get_user_data(undefined, interaction.member.id);
+    if (!userData || userData === 'Not Found') {
+        await interaction.editReply('請先綁定您的帳號');
+        return false;
+    }
+
+    if (playerInput !== '所有人' && (player_uuid === 'Not Found' || player_uuid.startsWith('Unexpected Error'))) {
+        await interaction.editReply('找不到指定的玩家，請確認 ID 是否正確');
+        return false;
+    }
+    return true;
 }
 
-function formatBetDetails(totalBet, totalBetCount, totalWin) {
-	const betAmount = `下注金額: ${totalBet}`;
-	const betTimes = `下注次數: ${totalBetCount}`;
-	const winAmount = `贏得金額: ${totalWin}`;
-	const totalProfitLoss = `賭場盈虧: ${totalBet - totalWin}`;
+async function fetchBetHistory(playerInput, player_uuid) {
+    return playerInput === '所有人'
+        ? await get_all_bet_record()
+        : await get_bet_record(player_uuid);
+}
 
-	const maxLength = Math.max(betAmount.length, betTimes.length, winAmount.length, totalProfitLoss.length);
+function parseFilters(interaction) {
+    return {
+        timeFilter: parseTimeFilter(interaction),
+        amountFilter: parseAmountFilter(interaction)
+    };
+}
 
-	return `${betAmount.padStart(maxLength)} | ${betTimes.padStart(maxLength)} \n${winAmount.padStart(maxLength)} | ${totalProfitLoss.padStart(maxLength)}`;
+function parseTimeFilter(interaction) {
+    const timeTypes = ['late', 'early', 'duration'];
+    const activeType = timeTypes.find(type => interaction.options.getString(type));
+    const timeValue = interaction.options.getString(activeType);
+
+    let description = '無範圍限制';
+    let filterFunction = () => true;
+
+    if (timeValue) {
+        const [start, end] = timeValue.split('~');
+        const startUnix = parseDateTime(start);
+        const endUnix = parseDateTime(end);
+
+        switch (activeType) {
+            case 'late':
+                description = `晚於 ${start}`;
+                filterFunction = record => record.time >= startUnix;
+                break;
+            case 'early':
+                description = `早於 ${start}`;
+                filterFunction = record => record.time <= startUnix;
+                break;
+            case 'duration':
+                description = `${start} ~ ${end}`;
+                filterFunction = record => record.time >= startUnix && record.time <= endUnix;
+                break;
+        }
+    }
+
+    return { description, filterFunction };
+}
+
+function parseDateTime(datetime) {
+    if (!datetime) return null;
+    const date = new Date(datetime);
+    return Math.round(date.getTime() / 1000) - 54400;
+}
+
+function parseAmountFilter(interaction) {
+    const conditions = [];
+    let description = '無金額限制';
+
+    const biggerThan = interaction.options.getInteger('amount-bigger-than');
+    const smallerThan = interaction.options.getInteger('amount-smaller-than');
+    const equalTo = interaction.options.getInteger('amount-equal');
+
+    if (biggerThan !== null) conditions.push(amt => amt > biggerThan);
+    if (smallerThan !== null) conditions.push(amt => amt < smallerThan);
+    if (equalTo !== null) conditions.push(amt => amt === equalTo);
+
+    if (conditions.length > 0) {
+        description = [
+            biggerThan && `大於 ${biggerThan}`,
+            smallerThan && `小於 ${smallerThan}`,
+            equalTo && `等於 ${equalTo}`
+        ].filter(Boolean).join(' 且\n');
+    }
+
+    return {
+        description,
+        filterFunction: amount => conditions.every(condition => condition(amount))
+    };
+}
+
+function calculateStatistics(records, timeFilter, amountFilter) {
+    const stats = {
+        emerald: { bet: 0, win: 0, count: 0 },
+        coin: { bet: 0, win: 0, count: 0 }
+    };
+
+    records.forEach(record => {
+        if (!timeFilter.filterFunction(record)) return;
+        if (!amountFilter.filterFunction(record.amount)) return;
+
+        const type = record.bet_type;
+        stats[type].bet += record.amount;
+        stats[type].win += record.result_amount;
+        stats[type].count++;
+    });
+
+    return stats;
+}
+
+async function checkUserAccess(interaction, config, roles, targetUuid) {
+    const { member } = interaction;
+    const userData = await get_user_data(undefined, member.id);
+    const userRoles = member.roles.cache.map(role => role.id);
+
+    const isWhitelisted = config.minecraft.whitelist.some(async name =>
+        name.toLowerCase() === (await get_player_name(userData?.player_uuid))?.toLowerCase()
+    );
+
+    const isSelfQuery = await get_player_name(userData?.player_uuid) === await get_player_name(targetUuid) && await get_player_name(userData?.player_uuid) !== 'Not Found' && await get_player_name(userData?.player_uuid) !== 'Unexpected Error'
+
+    const rolePermissions = roles[userRoles.find(role => roles[role])]?.record_settings || {
+        advanced: false,
+        me: true,
+        others: false
+    };
+
+    return {
+        hasAccess: isWhitelisted || (rolePermissions.me && isSelfQuery) || (rolePermissions.others && !isSelfQuery),
+        showDetailedStats: isWhitelisted || rolePermissions.advanced
+    };
+}
+
+async function buildEmbed(interaction, playerId, playerUuid, timeDesc, amountDesc, stats, showDetailed) {
+    const imageUrl = playerId === '所有人'
+        ? 'https://example.com/all-players-image.png'
+        : `https://minotar.net/helm/${playerUuid}/64.png`;
+
+    await fetch(imageUrl); // 预加载图片
+
+    return bet_record(
+        playerId,
+        await resolveDiscordUsername(interaction, playerUuid),
+        interaction.guild.name,
+        playerUuid,
+        timeDesc,
+        amountDesc,
+        formatStats(stats.emerald, showDetailed),
+        formatStats(stats.coin, showDetailed),
+        imageUrl
+    );
+}
+
+async function resolveDiscordUsername(interaction, playerUuid) {
+    try {
+        const playerData = await get_user_data(playerUuid);
+        if (!playerData?.discord_id) return '尚未綁定';
+        const user = await interaction.client.users.fetch(playerData.discord_id);
+        return user.username;
+    } catch {
+        return '擷取失敗';
+    }
+}
+
+function formatStats({ bet, win, count }, showDetailed) {
+    if (showDetailed) {
+        return [
+            `下注金額: ${bet} | 下注次數: ${count}`,
+            `贏得金額: ${win} | 賭場盈虧: ${bet - win}`
+        ].join('\n');
+    }
+    return `下注金額: ${bet} | 下注次數: ${count}`;
 }

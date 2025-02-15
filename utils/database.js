@@ -418,31 +418,6 @@ async function update_player_id(player_uuid, player_id) {
     });
 }
 
-async function get_all_user_data() {
-    const selectSql = 'SELECT * FROM user_data';
-
-    return await new Promise((resolve, reject) => {
-        executeQuery(selectSql, [], (err, rows) => {
-            if (err) {
-                Logger.error(err);
-                reject('Unexpected Error');
-            } else if (rows === undefined || rows.length === 0) {
-                reject('Not Found');
-            } else {
-                resolve(rows);
-            }
-        });
-    })
-    .then(rows => {
-        Logger.debug(`[資料庫] 找到所有玩家資料: ${rows.length}`);
-        return rows;
-    })
-    .catch(err => {
-        Logger.warn(`[資料庫] 無法找到所有玩家資料: ${err}`);
-        return err
-    });
-}
-
 module.exports = {
     get_user_data,
     create_user_data,
@@ -455,7 +430,6 @@ module.exports = {
     set_player_wallet,
     write_pay_history,
     write_bet_record,
-    get_all_user_data,
     get_all_bet_record,
     get_bet_record,
     get_all_users,

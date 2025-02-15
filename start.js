@@ -85,7 +85,7 @@ function startApp() {
     function runNextFile() {
         if (currentIndex < filesToRun.length) {
             const file = filesToRun[currentIndex];
-            const process = spawn('node', [path.join(__dirname, file)]);
+            const process = spawn('node', [path.join(__dirname, file), '--spawned']);
 
             process.stdout.on('data', (data) => {
                 Logger.debug(`[${file}] 輸出: ${String(data).replace(/\n$/, '')}`);
@@ -100,7 +100,7 @@ function startApp() {
                 runNextFile();
             });
         } else {
-            appProcess = spawn('node', [path.join(__dirname, 'main.js')]);
+            appProcess = spawn('node', [path.join(__dirname, 'main.js'), '--spawned']);
 
             const sendMessage = (message) => {
                 const config = JSON.parse(fs.readFileSync(`${process.cwd()}/data/config.json`, 'utf8'));

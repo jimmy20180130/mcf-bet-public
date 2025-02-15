@@ -16,7 +16,7 @@ cmax = 10 # 最大村民錠下注金額
 cmin = 1 # 最小村民錠下注金額
 eodds = 2 # 綠寶石的賠率
 codds = 1.85 # 村民錠的賠率
-bet_position = [] # 對賭的位置，以 [x, y, z] 的形式填入，例如 [0, 0, 0]
+bet_position = [] # 紅石粉的位置，若附近只有一個紅石粉可不填，以 [x, y, z] 的形式填入，例如 [0, 0, 0]
 
 [discord]
 # discord bot 的設定

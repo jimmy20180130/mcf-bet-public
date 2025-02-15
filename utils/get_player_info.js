@@ -7,6 +7,9 @@ const { update_player_id } = require('./database');
 let uuids = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8')).player_names;
 
 async function get_player_uuid(playerid) {
+    // check if playerid is UNESCAPED_CHARACTERS
+    if (/[^\w\-]/.test(playerid)) return 'Not Found';
+
     for (const item of uuids) {
         if (item['playerid'] == playerid && item['time'] + 900000 > Date.now()) {
             Logger.debug(`[玩家資料] 從快取取得玩家 ${playerid} 的 UUID: ${item['uuid']}`)

@@ -3,20 +3,21 @@
     "bin": "start.js",
     "dependencies": {
         "axios": "^0.27.2",
-        "bignumber.js": "^4.0.4",
+        "bignumber.js": "^9.1.2",
         "crypto-js": "^4.2.0",
-        "decimal.js": "10.4.3",
-        "discord.js": "^14.16.3",
-        "form-data": "^4.0.1",
-        "minecraft-data": "^3.48.0",
-        "minecraft-protocol": "^1.44.0",
-        "mineflayer": "git+https://github.com/jimmy20180130/mineflayer.git",
-        "moment-timezone": "^0.5.44",
-        "prismarine-entity": "^2.3.1",
+        "decimal.js": "10.5.0",
+        "discord.js": "^14.18.0",
+        "esbuild": "^0.25.0",
+        "form-data": "^4.0.2",
+        "minecraft-data": "^3.84.1",
+        "minecraft-protocol": "^1.54.0",
+        "mineflayer": "github:jimmy20180130/mineflayer",
+        "moment-timezone": "^0.5.47",
+        "prismarine-entity": "^2.5.0",
         "readline": "^1.3.0",
         "readline-sync": "^1.4.10",
         "silly-datetime": "^0.1.2",
-        "socket.io-client": "^4.7.5",
+        "socket.io-client": "^4.8.1",
         "sqlite3": "5.1.7",
         "toml": "^3.0.0"
     },
@@ -71,5 +72,8 @@
             "start.js",
             "fixData.js"
         ]
+    },
+    "devDependencies": {
+        "bytenode": "^1.5.7"
     }
 }
