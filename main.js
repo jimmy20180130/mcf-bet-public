@@ -10,13 +10,13 @@ if (process.argv.includes('--spawned')) {
     const { start_rl, stop_rl } = require(`./utils/readline.js`);
     const { process_msg } = require(`./utils/process_msg.js`);
     const { mc_error_handler } = require(`./error/mc_handler.js`)
+    const { notified_blacklist, get_blacklist } = require('./utils/database.js');
     const { start_msg, stop_msg } = require(`./utils/chat.js`);
     const { add_msg, discord_console, clear_last_msg, discord_console_2 } = require(`./discord/log.js`);
     const { Client, GatewayIntentBits, Collection, Events, Partials, REST, Routes } = require('discord.js');
     const { check_codes } = require(`./utils/link_handler.js`);
     const { command_records, dc_command_records } = require(`./discord/command_record.js`);
     const { bot_on, bot_off, bot_kicked } = require(`./discord/embed.js`);
-    const { get_user_data, get_all_players } = require(`./utils/database.js`);
     const { canUseCommand } = require(`./utils/permissions.js`);
     const { check_token } = require(`./auth/auth.js`);
     const moment = require('moment-timezone');
@@ -33,7 +33,7 @@ if (process.argv.includes('--spawned')) {
         username: configtoml.minecraft.username,
         auth: 'microsoft',
         version: '1.20.1',
-        checkTimeoutInterval:360000
+        checkTimeoutInterval: 360000
     };
 
     let is_on_timeout;
@@ -87,7 +87,7 @@ if (process.argv.includes('--spawned')) {
             };
 
             if (shouldSkipMessage(textMessage)) return
-            
+
             Logger.log(jsonMsg.toAnsi())
             add_msg(jsonMsg.json)
         });
@@ -97,6 +97,23 @@ if (process.argv.includes('--spawned')) {
             const e_regex = /\[系統\] 您收到了\s+(\w+)\s+轉帳的 (\d{1,3}(,\d{3})*)( 綠寶石 \(目前擁有 (\d{1,3}(,\d{3})*)) 綠寶石\)/;
             const ematch = e_regex.exec(matches);
             const playerid = ematch[1];
+            const player_uuid = await get_player_uuid(playerid);
+            const blacklist = await get_blacklist();
+
+            for (let item of blacklist) {
+                if (item.player_uuid === player_uuid && item.notified == 'true') {
+                    return
+                } else if (item.player_uuid === player_uuid && item.notified == 'false') {
+                    await notified_blacklist(player_uuid)
+                    // change timestamp to date (utc+8)
+                    let date = new Date(item.time * 1000 + item.last*1000)
+                    date = date.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })
+                    await chat(bot, `/m ${playerid} &c&l您已被列入黑名單，處分直到 ${date} 結束，原因為 ${item.reason}，請勿在期間內轉帳或使用指令，否則將視同捐款給 BOT`)
+                    await pay_handler(bot, playerid, parseInt(ematch[2].split(',').join('')), 'emerald', client);
+                    return
+                }
+            }
+
             const amountStr = ematch[2];
             const amount = parseInt(amountStr.split(',').join(''));
             const configtoml = toml.parse(fs.readFileSync(`${process.cwd()}/config.toml`, 'utf8'));
@@ -124,6 +141,24 @@ if (process.argv.includes('--spawned')) {
             const c_regex = /\[系統\] 您收到了 (\S+) 送來的 (\d{1,3}(,\d{3})*|\d+) 村民錠\. \(目前擁有 (\d{1,3}(,\d{3})*|\d+) 村民錠\)/
             const cmatch = c_regex.exec(matches);
             const playerid = cmatch[1];
+
+            const player_uuid = await get_player_uuid(playerid);
+            const blacklist = await get_blacklist();
+
+            for (let item of blacklist) {
+                if (item.player_uuid === player_uuid && item.notified == 'true') {
+                    return
+                } else if (item.player_uuid === player_uuid && item.notified == 'false') {
+                    await notified_blacklist(player_uuid)
+                    // change timestamp to date (utc+8)
+                    let date = new Date(item.time * 1000 + item.last*1000)
+                    date = date.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })
+                    await chat(bot, `/m ${playerid} &c&l您已被列入黑名單，處分直到 ${date} 結束，原因為 ${item.reason}，請勿在期間內轉帳或使用指令，否則將視同捐款給 BOT`)
+                    await pay_handler(bot, playerid, parseInt(cmatch[2].split(',').join('')), 'coin', client);
+                    return
+                }
+            }
+
             const amountStr = cmatch[2];
             const amount = parseInt(amountStr.split(',').join(''));
             const configtoml = toml.parse(fs.readFileSync(`${process.cwd()}/config.toml`, 'utf8'));
@@ -170,6 +205,23 @@ if (process.argv.includes('--spawned')) {
             const args = messagestr.slice(8 + match[1].length);
             let playerid = match[1];
             await command_records(client, playerid, args)
+
+            const player_uuid = await get_player_uuid(playerid);
+            const blacklist = await get_blacklist();
+
+            for (let item of blacklist) {
+                if (item.player_uuid === player_uuid && item.notified == 'true') {
+                    return
+                } else if (item.player_uuid === player_uuid && item.notified == 'false') {
+                    await notified_blacklist(player_uuid)
+                    // change timestamp to date (utc+8)
+                    let date = new Date(item.time * 1000 + item.last*1000)
+                    date = date.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })
+                    await chat(bot, `/m ${playerid} &c&l您已被列入黑名單，處分直到 ${date} 結束，原因為 ${item.reason}，請勿在期間內轉帳或使用指令，否則將視同捐款給 BOT`)
+                    return
+                }
+            }
+
             if (playerid === bot.username) return;
             if (donate_list.includes(playerid)) {
                 donate_list.shift()
@@ -204,7 +256,7 @@ if (process.argv.includes('--spawned')) {
                         let donator = ematch[1];
                         if (donate_list.includes(donator)) {
                             let amount = parseInt(ematch[2].split(',').join(''))
-                            if (donator === bot.username) {return};
+                            if (donator === bot.username) { return };
                             await chat(bot, `/m ${playerid} ${messages.commands.donate.donate_e_success.replaceAll('%amount%', amount)}`)
                             donate_list.shift()
                         }
@@ -213,7 +265,7 @@ if (process.argv.includes('--spawned')) {
                         let donator = cmatch[1];
                         if (donate_list.includes(donator)) {
                             let amount = parseInt(cmatch[2].split(',').join(''))
-                            if (donator === bot.username) {return};
+                            if (donator === bot.username) { return };
                             await chat(bot, `/m ${playerid} ${messages.commands.donate.donate_c_success.replaceAll('%amount%', amount)}`)
                             donate_list.shift()
                         }
@@ -271,9 +323,26 @@ if (process.argv.includes('--spawned')) {
             const args = messagestr.slice(8 + match[1].length);
             let playerid = match[1];
             await command_records(client, playerid, args)
+
+            const player_uuid = await get_player_uuid(playerid);
+            const blacklist = await get_blacklist();
+
+            for (let item of blacklist) {
+                if (item.player_uuid === player_uuid && item.notified == 'true') {
+                    return
+                } else if (item.player_uuid === player_uuid && item.notified == 'false') {
+                    await notified_blacklist(player_uuid)
+                    // change timestamp to date (utc+8)
+                    let date = new Date(item.time * 1000 + item.last*1000)
+                    date = date.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })
+                    await chat(bot, `/m ${playerid} &c&l您已被列入黑名單，處分直到 ${date} 結束，原因為 ${item.reason}，請勿在期間內轉帳或使用指令，否則將視同捐款給 BOT`)
+                    return
+                }
+            }
+
             if (playerid === bot.username) return;
             // if includes stop, reload, donate, debug, and aliasis of them then skip
-            if (['stop', 'reload', 'donate', 'jimmy'].some(item => require(`./commands/${item}.js`)?.aliases?.includes(args.split(' ')[0]))) return 
+            if (['stop', 'reload', 'donate', 'jimmy'].some(item => require(`./commands/${item}.js`)?.aliases?.includes(args.split(' ')[0]))) return
             if (['stop', 'reload', 'donate', 'debug'].includes(args.split(' ')[0])) return
             if (!cooldown[playerid]) {
                 cooldown[playerid] = []
@@ -284,7 +353,7 @@ if (process.argv.includes('--spawned')) {
                 // remove all cooldowns that are expired
                 cooldown[playerid] = cooldown[playerid].filter(item => item.time > Date.now())
 
-                cooldown[playerid].push({"command": args.split(' ')[0], "time": Date.now() + 2000})
+                cooldown[playerid].push({ "command": args.split(' ')[0], "time": Date.now() + 2000 })
                 // find the command the alias is for 
                 for (let item of Object.keys(JSON.parse(fs.readFileSync(`${process.cwd()}/data/commands.json`)))) {
                     if (require(`./commands/${item}.js`).aliases.includes(args.split(' ')[0]) || require(`./commands/${item}.js`).name == args.split(' ')[0]) {
@@ -294,7 +363,7 @@ if (process.argv.includes('--spawned')) {
                 }
             }
         })
-        
+
         bot.once('spawn', async () => {
             Logger.log('Minecraft 機器人已上線!');
 
@@ -320,7 +389,7 @@ if (process.argv.includes('--spawned')) {
             bot.addChatPattern('payment', /^\[系統\] 您收到了\s+(\w+)\s+轉帳的 (\d{1,3}(,\d{3})*)( 綠寶石 \(目前擁有 (\d{1,3}(,\d{3})*)) 綠寶石\)/);
             bot.addChatPattern('payment_coin', /^\[系統\] 您收到了 (\S+) 送來的 (\d{1,3}(,\d{3})*|\d+) 村民錠\. \(目前擁有 (\d{1,3}(,\d{3})*|\d+) 村民錠\)/);
             bot.addChatPattern('teleport_request', /^\[系統\] (\w+) 想要你傳送到 該玩家 的位置|^\[系統\] (\w+) 想要傳送到 你 的位置/);
-            
+
             if (configtoml.discord.enabled) {
                 Logger.debug('Discord 機器人已啟用')
                 init_dc()
@@ -355,7 +424,7 @@ if (process.argv.includes('--spawned')) {
                 for (const item of cache.msg) {
                     await chat(bot, item);
                 }
-        
+
                 cache.msg = []
                 fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
             }
@@ -369,26 +438,31 @@ if (process.argv.includes('--spawned')) {
 
                 new Promise(async (resolve) => {
                     let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'));
-                    
+
                     if (cache.bet.length > 0) {
                         let cache_bet = cache.bet
-                
+
                         for (const item of cache_bet) {
                             if (item.added == true) continue
-                            
+
                             const playerid = item.player_id
                             const amount = item.amount
                             const type = item.type
                             await add_bet_task(bot, playerid, amount, type);
                         }
-                
+
                         cache.bet = []
                         fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
                     }
-                
+
                     resolve()
                 })
             }, 1000);
+
+            config.advertisement.forEach(async item => {
+                await chat(bot, item.text);
+                await new Promise(r => setTimeout(r, 1000));
+            });
 
             ad();
         });
@@ -397,9 +471,9 @@ if (process.argv.includes('--spawned')) {
             intervals.forEach(clearInterval);
             intervals = [];
             let ads = [];
-        
+
             const config = JSON.parse(fs.readFileSync(`${process.cwd()}/data/config.json`, 'utf8'));
-        
+
             config.advertisement.forEach(item => {
                 const intervalId = setInterval(async () => {
                     try {
@@ -412,7 +486,7 @@ if (process.argv.includes('--spawned')) {
                 intervals.push(intervalId);
                 ads.push(item);
             });
-        
+
             // 設定配置檢查定時器（如果尚未設定）
             if (!auto_check_ad) {
                 auto_check_ad = setInterval(async () => {
@@ -527,7 +601,7 @@ if (process.argv.includes('--spawned')) {
             const commandFiles = fs.readdirSync(path.join(__dirname, 'discord')).filter(file => file.endsWith('.js'));
             for (const file of commandFiles) {
                 const command = require(path.join(__dirname, `discord/${file}`));
-                
+
                 if ('data' in command && 'execute' in command) {
                     client.commands.set(command.data.name, command);
                     dc_commands.push(command.data.toJSON());
@@ -602,12 +676,12 @@ if (process.argv.includes('--spawned')) {
                 }
 
                 await dc_command_records(client, `<@${interaction.user.id}>`, logMessage)
-            
+
                 if (!command) {
                     Logger.warn(`Discord 機器人的指令 ${interaction.commandName} 並不存在`);
                     return;
                 }
-            
+
                 try {
                     await command.execute(interaction);
                 } catch (error) {
@@ -633,7 +707,7 @@ if (process.argv.includes('--spawned')) {
                         await interaction.client.commands.get(interaction.commandName).autocomplete(interaction);
                         break
                 }
-            }) 
+            })
 
             client.on('error', async (error) => {
                 Logger.error(error.stack)
@@ -659,6 +733,7 @@ if (process.argv.includes('--spawned')) {
 
     process.on("uncaughtException", async (error) => {
         Logger.error(error)
+        console.log(error)
         is_on = false;
         closeDB()
         process.exit(1)
@@ -674,22 +749,22 @@ if (process.argv.includes('--spawned')) {
 
     async function start_bot() {
         Logger.log('正在開始驗證您的金鑰')
-        if (await check_token() == true) {
+
+        try {
+            await check_token();
             Logger.log('金鑰驗證成功，正在啟動機器人...')
             init_bot()
+            
+        } catch (err) {
+            let match = undefined || JSON.parse(String(err).replace('Error: ', '')).remaining
 
-            let check_bot_token = setInterval(async () => {
-                if (!await check_token()) {
-                    Logger.error('無法連線至驗證伺服器，機器人將於 10 秒後下線')
-                    await new Promise(resolve => setTimeout(resolve, 10000));
-                    clearInterval(check_bot_token)
-                    process.exit(1)
-                }
-            }, 600000);
-
-        } else {
-            Logger.warn('驗證失敗，機器人將於 30 秒後重新連線至驗證伺服器')
-            await new Promise(resolve => setTimeout(resolve, 30000));
+            if (match) {
+                Logger.warn(`金鑰驗證失敗，將於 ${match} 秒後重試`);
+                await new Promise(resolve => setTimeout(resolve, Number(match) * 1000 + 1000));
+            } else {
+                Logger.warn('驗證失敗，將於 60 秒後重試\n', err);
+                await new Promise(resolve => setTimeout(resolve, 60000));
+            }
             start_bot()
         }
     }
