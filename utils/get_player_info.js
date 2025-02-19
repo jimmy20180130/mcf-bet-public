@@ -83,7 +83,9 @@ async function get_player_name(uuid) {
         }
     }
 
-    await axios.get(`https://sessionserver.mojang.com/session/minecraft/profile/${uuid}`)
+    await axios.get(`https://sessionserver.mojang.com/session/minecraft/profile/${uuid}`, {
+        family: 4 // 強制使用 IPv4
+    })
         .then(response => {
             if (response.data) {
                 result = response.data.name
@@ -99,7 +101,9 @@ async function get_player_name(uuid) {
         });
 
     if (!result || result == 'Not Found' || result == 'Unexpected Error') {
-        await axios.get(`https://playerdb.co/api/player/minecraft/${uuid}`)
+        await axios.get(`https://playerdb.co/api/player/minecraft/${uuid}`, {
+            family: 4 // 強制使用 IPv4
+        })
             .then(response => {
                 if (response.data) {
                     result = response.data.data.player.username
