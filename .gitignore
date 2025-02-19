@@ -2,3 +2,4 @@ node_modules
 mcf-bet-public.exe
 migrate.exe
 release
+config1.toml
