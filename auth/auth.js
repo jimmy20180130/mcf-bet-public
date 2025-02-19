@@ -1,155 +1,126 @@
-const crypto = require('crypto');
-const axios = require('axios')
-const fs = require('fs')
-const toml = require('toml')
+const fs = require('fs');
+const toml = require('toml');
+const WebSocket = require('ws');
+const Logger = require('../utils/logger');
 
-async function decryptMessage(encryptedMessage) {
-    let resultt = ''
-    let configtoml = toml.parse(fs.readFileSync(`${process.cwd()}/config.toml`, 'utf8'));
-
-    const headers = {
-        Authorization: `Bearer ${configtoml.basic.key}`,
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-    };
-
-    const data = {
-        "time": Math.round(new Date() / 1000)
-    }
-
-    await axios.default.post('http://uwu.freeserver.tw:21097/get_key', { data }, { headers }).then(async response => {
-        if (response.data.error != undefined) {
-            console.log('[WARN] 請確認您的金鑰是否正確，如果您認為這是個錯誤，請聯絡管理員')
-
-        } else {
+/**
+ * 初次驗證：連線建立後發送 auth 訊息，等待 auth_success 回應
+ * @param {WebSocket} ws - WebSocket 連線
+ * @param {string} token - 要驗證的 token
+ * @returns {Promise<WebSocket>} 驗證成功後回傳 ws
+ */
+async function checkInitialToken(ws, token) {
+    return new Promise((resolve, reject) => {
+        const handleMessage = (message) => {
             try {
-                const secretKey = response.data.secret_key;
-                const encrypted = Uint8Array.from(atob(encryptedMessage), c => c.charCodeAt(0))
-                
-                const iv = encrypted.slice(0, 16);
-                const ciphertext = encrypted.slice(16);
-                
-                const key = await crypto.subtle.importKey(
-                    'raw', 
-                    Uint8Array.from(atob(secretKey), c => c.charCodeAt(0)),
-                    {name: 'AES-CBC'},
-                    false, 
-                    ['decrypt']
-                );
-                
-                const decrypted = await crypto.subtle.decrypt(
-                    {
-                        name: 'AES-CBC',
-                        iv: iv
-                    },
-                    key,
-                    ciphertext
-                );
+                const data = JSON.parse(message);
 
-                var uint8Array = new Uint8Array(decrypted);
-
-                var textDecoder = new TextDecoder('utf-8');
-                var resultString = textDecoder.decode(uint8Array);
-                resultt = resultString
-                return resultString
-
-            } catch (e) {}
-        }
-    })
-    .catch(async error => {
-        const response = error.response;
-        if (response.data.error == 'unauthorized') {
-            console.log('[WARN] 請確認您的金鑰是否正確，如果您認為這是個錯誤，請聯絡管理員')
-        } else if (response.data.error == 'forbidden') {
-            console.log('[WARN] 您的 IP 已被列入黑名單，如果您認為這是個錯誤，請聯絡管理員')
-        } else {
-            console.log('[ERROR] 驗證伺服器無回應或發生錯誤，請稍後再試')
-        }
-    });
-    return resultt
-}
-
-async function check_token() {
-    return true
-    return await new Promise(resolve => {
-        const config = JSON.parse(fs.readFileSync(`${process.cwd()}/config/config.json`, 'utf-8'));
-        const url = 'http://uwu.freeserver.tw:21097/verify';
-        const headers = {
-            Authorization: `Bearer ${config.key}`,
-            Accept: 'application/json',
-            'Content-Type': 'application/json'
+                // 若收到 auth_success，表示初次認證成功
+                if (data.type === 'auth_success') {
+                    Logger.log('認證成功');
+                    ws.removeListener('message', handleMessage);
+                    resolve(ws);
+                } else if (data.type === 'error') {
+                    Logger.error('認證錯誤');
+                    ws.removeListener('message', handleMessage);
+                    reject(new Error(JSON.stringify(data) || 'Authentication failed'));
+                }
+                // 若在初次認證前收到 challenge，也先回應
+                else if (data.type === 'challenge') {
+                    ws.send(JSON.stringify({
+                        type: 'challenge_response',
+                        data: { token }
+                    }));
+                }
+            } catch (err) {
+                Logger.error('驗證過程中出現了無法預期的錯誤，請回報給管理員', err);
+            }
         };
 
-        axios.post(url, {}, { headers })
-            .then(async response => {
-                const decryptedMessage = await decryptMessage(response.data);
-                if (decryptedMessage.includes('{') && JSON.parse(decryptedMessage.replaceAll('\'', '"')).status == 'success') {
-                    resolve(true)
-                } else if (decryptedMessage.startsWith('錯誤')) {
-                    if (decryptedMessage == '錯誤，已有ip在使用此金鑰') {
-                        console.log('[ERROR] 來自驗證伺服器的訊息: 已有ip在使用此金鑰，請稍後再試，如果您認為這是個錯誤，請私訊管理員\n[ERROR] 來自 XiaoXi_TW 的話: 好爛喔，一組序號居然只能同時間一個 IP 用，那麼就試試『再買一組序號』吧! 心動不如行動，立刻前往伺服器開啟客服單購買!');
-                    
-                    } else if (decryptedMessage == '錯誤，金鑰不存在') {
-                        console.log(`[ERROR] 來自驗證伺服器的訊息: 無效的金鑰，如果您認為這是個錯誤，請私訊管理員\n[ERROR] 來自 XiaoXi_TW 的話: 好爛喔，這組序號居然沒用，千萬不要隨便使用陌生人給的序號，他給你的可能是別人被盜用的序號!\n[ERROR] 還不快試試『買一組序號』吧! 心動不如行動，立刻前往伺服器開啟客服單購買!`);
-                    
-                    } else if (decryptedMessage == '錯誤，金鑰已過期') {
-                        console.log('[ERROR] 來自驗證伺服器的訊息: 您的金鑰已過期，如果您認為這是個錯誤，請私訊管理員\n[ERROR] 來自 XiaoXi_TW 的話: 好爛喔，金鑰居然會過期! 還不快試試『買一組永久版序號』吧! 心動不如行動，立刻前往伺服器開啟客服單購買!');
-    
-                    } else if (decryptedMessage == '錯誤，您的金鑰已被停用') {
-                        console.log('[ERROR] 來自驗證伺服器的訊息: 您的金鑰已被停用，如果您認為這是個錯誤，請私訊管理員\n[ERROR] 來自 XiaoXi_TW 的話: 你的金鑰因某些原因被停用，請私訊管理員，並提供你的金鑰，以便我們確認是否為誤判，如果是誤判，我們會立刻恢復你的金鑰!');
-                    
-                    } else if (decryptedMessage == '錯誤，ip 使用量達上限') {
-                        console.log('[ERROR] 來自驗證伺服器的訊息: ip 使用量達上限，如果您認為這是個錯誤，請私訊管理員\n[ERROR] 來自 XiaoXi_TW 的話: 你的 IP 使用量達上限，請私訊管理員，並提供你的金鑰，以便我們確認是否為誤判，如果是誤判，我們會立刻恢復你的金鑰!');
+        ws.on('open', () => {
+            Logger.debug('已連線至伺服器');
+            ws.send(JSON.stringify({
+                type: 'auth',
+                data: { token: token }
+            }));
+        });
 
-                    } else {
-                        if (String(error).startsWith('Error: connect ETIMEDOUT')) {
-                            console.log('[ERROR] 連線到驗證伺服器時發生錯誤，無法連線至驗證伺服器，請確保您的網路連線正常，或是去Discord查看是否在維修中\n[ERROR] 來自 XiaoXi_TW 的話: 假設你被亞洲父母斷網的話，為什麼不要試試看『更改 mac 位址』呢?')
-                        } else {
-                            console.log('[ERROR] 發生意外的錯誤，可能為無法連線至驗證伺服器，請稍後再試\n[ERROR] 來自 XiaoXi_TW 的話: 這次我救不了你，自求多福吧')
-                        }
-                    }
+        ws.on('message', handleMessage);
 
-                    resolve(false)
-                } else {
-                    console.log('[ERROR] 發生意外的錯誤，伺服器回應: d2#9$32@34*320x (這是什麼? 我也不知道)，請檢查您的檔案是否為最新版，如果您認為這是個錯誤，請私訊管理員');
-                    resolve(false)
-                }
-            })
-            .catch(async error => {
-                resolve(true)
-                console.log(`[ERROR] 發生錯誤: ${error.message}`)
-                if (error.response) {
-                    const decryptedMessage = await decryptMessage(error.response.data);
+        ws.on('error', (err) => {
+            reject(err);
+        });
 
-                    if (decryptedMessage == '錯誤，已有ip在使用此金鑰') {
-                        console.log('[ERROR] 來自驗證伺服器的訊息: 已有ip在使用此金鑰，請稍後再試，如果您認為這是個錯誤，請私訊管理員\n[ERROR] 來自 XiaoXi_TW 的話: 好爛喔，一組序號居然只能同時間一個 IP 用，那麼就試試『再買一組序號』吧! 心動不如行動，立刻前往伺服器開啟客服單購買!');
-                    
-                    } else if (decryptedMessage == '錯誤，金鑰不存在') {
-                        console.log(`[ERROR] 來自驗證伺服器的訊息: 無效的金鑰，如果您認為這是個錯誤，請私訊管理員\n[ERROR] 來自 XiaoXi_TW 的話: 好爛喔，這組序號居然沒用，千萬不要隨便使用陌生人給的序號，他給你的可能是別人被盜用的序號!\n[ERROR] 還不快試試『買一組序號』吧! 心動不如行動，立刻前往伺服器開啟客服單購買!`);
-                    
-                    } else if (decryptedMessage == '錯誤，金鑰已過期') {
-                        console.log('[ERROR] 來自驗證伺服器的訊息: 您的金鑰已過期，如果您認為這是個錯誤，請私訊管理員\n[ERROR] 來自 XiaoXi_TW 的話: 好爛喔，金鑰居然會過期! 還不快試試『買一組永久版序號』吧! 心動不如行動，立刻前往伺服器開啟客服單購買!');
+        ws.on('close', () => {
+            reject(new Error('連線已關閉'));
+        });
+    });
+}
 
-                    } else if (decryptedMessage == '錯誤，您的金鑰已被停用') {
-                        console.log('[ERROR] 來自驗證伺服器的訊息: 您的金鑰已被停用，如果您認為這是個錯誤，請私訊管理員\n[ERROR] 來自 XiaoXi_TW 的話: 你的金鑰因某些原因被停用，請私訊管理員，並提供你的金鑰，以便我們確認是否為誤判，如果是誤判，我們會立刻恢復你的金鑰!');
-                    } else if (decryptedMessage == '錯誤，ip 使用量達上限') {
-                        console.log('[ERROR] 來自驗證伺服器的訊息: ip 使用量達上限，如果您認為這是個錯誤，請私訊管理員\n[ERROR] 來自 XiaoXi_TW 的話: 你的 IP 使用量達上限，請私訊管理員，並提供你的金鑰，以便我們確認是否為誤判，如果是誤判，我們會立刻恢復你的金鑰!');
+/**
+ * 持續監聽並回應伺服器每一分鐘的挑戰
+ * @param {WebSocket} ws - 已認證的 WebSocket 連線
+ * @param {string} token - 用於回應挑戰的 token
+ */
+function setupChallengeHandler(ws, token) {
+    ws.on('message', (message) => {
+        try {
+            const data = JSON.parse(message);
+            if (data.type === 'challenge') {
+                Logger.debug('challenge_id:', data.challenge_id);
+                ws.send(JSON.stringify({
+                    type: 'challenge_response',
+                    data: { token }
+                }));
+            } else if (data.type === 'challenge_success') {
+                Logger.debug('challenge_success');
+            } else if (data.type === 'challenge_fail') {
+                Logger.debug('challenge_fail');
+            }
+            // 其他類型的訊息根據需要自行處理……
+        } catch (err) {
+            Logger.error('驗證過程中出現了無法預期的錯誤，請回報給管理員', err);
+        }
+    });
+}
 
-                    }
+/**
+ * check_token: 建立 WebSocket 連線，進行初次認證後設定挑戰回應處理程序
+ * @returns {Promise<WebSocket>} 返回已認證且持續處理挑戰的 WebSocket 連線
+ */
+async function check_token() {
+    return true
+    // 從設定檔讀取 token 與 server 設定
+    let config;
+    try {
+        const data = fs.readFileSync(`${process.cwd()}/config.toml`, 'utf-8');
+        config = toml.parse(data);
+    } catch (err) {
+        Logger.error('讀取設定檔失敗:', err);
+        throw err;
+    }
 
-                } else {
-                    if (String(error).startsWith('Error: connect ETIMEDOUT')) {
-                        console.log('[ERROR] 連線到驗證伺服器時發生錯誤，無法連線至驗證伺服器，請確保您的網路連線正常，或是去Discord查看是否在維修中\n[ERROR] 來自 XiaoXi_TW 的話: 假設你被亞洲父母斷網的話，為什麼不要試試看『更改 mac 位址』呢?')
-                    } else {
-                        console.log('[ERROR] 發生意外的錯誤，可能為無法連線至驗證伺服器，請稍後再試\n[ERROR] 來自 XiaoXi_TW 的話: 這次我救不了你，自求多福吧')
-                    }
-                }
+    const token = config.basic.key;
+    const serverUrl = 'ws://localhost:3000'; // 伺服器 WebSocket 位址
 
-                resolve(false)
-            });
-    })
+    // 建立 WebSocket 連線
+    const ws = new WebSocket(serverUrl);
+
+    // 初次驗證
+    await checkInitialToken(ws, token);
+    // 驗證成功後，啟動挑戰回應
+    setupChallengeHandler(ws, token);
+
+    return ws;
+}
+
+async function uploadBetRecord(ws, record) {
+    ws.send(JSON.stringify({
+        type: 'bet_record',
+        data: record
+    }));
 }
 
 module.exports = {
     check_token
-}
+};

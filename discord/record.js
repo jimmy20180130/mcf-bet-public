@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, InteractionContextType, MessageFlags } = require('discord.js');
 const { get_user_data, get_all_bet_record, get_all_players, get_bet_record } = require(`../utils/database.js`);
 const { get_player_uuid, get_player_name } = require(`../utils/get_player_info.js`);
 const { bet_record } = require(`../discord/embed.js`);
@@ -21,7 +21,7 @@ module.exports = {
             "en-US": "Check betting records",
             "zh-TW": "查詢資料"
         })
-        .setDMPermission(false)
+        .setContexts(InteractionContextType.Guild)
         .addStringOption(option =>
             option.setName('playerid')
                 .setAutocomplete(true)
@@ -180,7 +180,13 @@ module.exports = {
 
 async function handleInteraction(interaction) {
     const isPublic = interaction.options.getBoolean('public');
-    await interaction.deferReply({ ephemeral: !isPublic });
+    if (!isPublic) {
+        await interaction.deferReply({
+            flags: MessageFlags.Ephemeral
+        });
+    } else {
+        await interaction.deferReply();
+    }
 
     if (!interaction.member) {
         await interaction.editReply('請在伺服器中使用此指令');
@@ -296,8 +302,8 @@ function parseTimeFilter(interaction) {
 
 function parseDateTime(datetime) {
     if (!datetime) return null;
-    const date = new Date(datetime);
-    return Math.round(date.getTime() / 1000) - 54400;
+    const date = new Date(datetime + ' UTC+8');
+    return Math.round(date.getTime() / 1000)
 }
 
 function parseAmountFilter(interaction) {

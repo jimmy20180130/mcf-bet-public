@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, InteractionContextType, MessageFlags } = require('discord.js');
 const { get_user_data, get_all_user_data, get_all_bet_record } = require(`../utils/database.js`);
 const { get_player_name } = require(`../utils/get_player_info.js`);
 const fs = require('fs')
@@ -16,7 +16,7 @@ module.exports = {
             "en-US": "check bet record",
             "zh-TW": "查詢排名"
         })
-        .setDMPermission(false)
+        .setContexts(InteractionContextType.Guild)
         .addStringOption(option =>
             option.setName('coin_type')
                 .setNameLocalizations({
@@ -182,7 +182,9 @@ module.exports = {
         if (interaction.options.getBoolean('public')) {
             await interaction.deferReply()
         } else {
-            await interaction.deferReply({ ephemeral: true })
+            await interaction.deferReply({
+                flags: MessageFlags.Ephemeral
+            });
         }
 
         if (!interaction.member) {
@@ -207,7 +209,7 @@ module.exports = {
             if (Object.keys(roles).includes(role)) return true
             else return false
         })
-        
+
         if ((!configtoml.minecraft.whitelist.includes((await get_player_name(user_uuid)).toLowerCase()) && !configtoml.minecraft.whitelist.includes(await get_player_name(user_uuid))) && (!roles[player_roles[0]] || (!roles[player_roles[0]].record_settings.others && !roles[player_roles[0]].record_settings.advanced))) {
             await interaction.editReply('您沒有權限使用此指令');
             return;
@@ -303,7 +305,7 @@ module.exports = {
         const top10Groups = groupedRankings.slice(0, 10);
 
         const rank_type_name = {
-            'bet_amount': '下注金額',  
+            'bet_amount': '下注金額',
             'win_amount': '贏得金額',
             'profit_loss': '盈虧',
             'bet_count': '下注次數'
@@ -321,11 +323,11 @@ module.exports = {
             const sortedPlayers = group.players.sort((a, b) => b.isQueryUser - a.isQueryUser);
             const playerNames = await Promise.all(sortedPlayers.map(player => get_player_name(player.uuid)));
             const playerCount = playerNames.length;
-            
-            const playerDisplay = playerCount > 1 
+
+            const playerDisplay = playerCount > 1
                 ? `${playerNames[0]} 等 ${playerCount} 位玩家`
                 : playerNames[0];
-                
+
             return `${index + 1}. ${playerDisplay}: ${group.value}`;
         });
 

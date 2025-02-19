@@ -1,5 +1,5 @@
 const fs = require('fs');
-const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
+const { SlashCommandBuilder, PermissionFlagsBits, InteractionContextType, MessageFlags } = require("discord.js");
 const { get_user_data } = require(`../utils/database.js`);
 const { get_player_name } = require(`../utils/get_player_info.js`);
 const toml = require('toml');
@@ -9,7 +9,7 @@ module.exports = {
         .setName('身份組')
         .setDescription('身份組相關')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-        .setDMPermission(false)
+        .setContexts(InteractionContextType.Guild)
         .addSubcommandGroup(SubcommandGroup =>
             SubcommandGroup
                 .setName('設定')
@@ -74,7 +74,9 @@ module.exports = {
         ),
 
     async execute(interaction) {
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({
+            flags: MessageFlags.Ephemeral
+        });
         const configtoml = toml.parse(fs.readFileSync(`${process.cwd()}/config.toml`, 'utf8'));
         const player_uuid = (await get_user_data(undefined, interaction.user.id)).player_uuid
         
