@@ -176,6 +176,31 @@ async function create_player_wallet(player_uuid) {
     });
 }
 
+async function get_all_player_wallet() {
+    const selectSql = 'SELECT * FROM wallet';
+
+    return await new Promise((resolve, reject) => {
+        executeQuery(selectSql, [], (err, rows) => {
+            if (err) {
+                Logger.error(err);
+                reject('Unexpected Error');
+            } else if (rows === undefined || rows.length === 0) {
+                reject('Not Found');
+            } else {
+                resolve(rows);
+            }
+        });
+    })
+    .then(rows => {
+        Logger.debug(`[資料庫] 找到所有玩家錢包: ${rows.length}`);
+        return rows;
+    })
+    .catch(err => {
+        Logger.warn(`[資料庫] 無法找到所有玩家錢包: ${err}`);
+        return err
+    });
+}
+
 async function get_player_wallet(player_uuid, type) {
     const selectSql = `SELECT ${type}_amount FROM wallet WHERE player_uuid = ?`;
 
@@ -418,6 +443,94 @@ async function update_player_id(player_uuid, player_id) {
     });
 }
 
+async function get_blacklist() {
+    const selectSql = 'SELECT * FROM blacklist';
+
+    return await new Promise((resolve, reject) => {
+        executeQuery(selectSql, [], (err, rows) => {
+            if (err) {
+                Logger.error(err);
+                reject('Unexpected Error');
+            } else if (rows === undefined || rows.length === 0) {
+                reject('Not Found');
+            } else {
+                resolve(rows);
+            }
+        });
+    })
+    .then(rows => {
+        Logger.debug(`[資料庫] 找到黑名單: ${rows.length}`);
+        return rows;
+    })
+    .catch(err => {
+        Logger.warn(`[資料庫] 無法找到黑名單: ${err}`);
+        return err
+    });
+}
+
+async function add_blacklist(player_uuid, last, reason) {
+    const insertSql = 'INSERT INTO blacklist (player_uuid, time, last, reason, notified) VALUES (?, ?, ?, ?, ?)';
+
+    return await new Promise((resolve, reject) => {
+        executeQuery(insertSql, [player_uuid, Math.round(new Date() / 1000), last, reason, 'false'], (err) => {
+            if (err) {
+                Logger.error(err);
+                reject('Unexpected Error');
+            } else {
+                resolve();
+            }
+        });
+    })
+    .then(() => {
+        Logger.debug(`[資料庫] 新增黑名單: ${player_uuid} (${last})`);
+    })
+    .catch(err => {
+        Logger.warn(`[資料庫] 無法新增黑名單: ${err}`);
+    });
+}
+
+async function remove_blacklist(player_uuid) {
+    const deleteSql = 'DELETE FROM blacklist WHERE player_uuid = ?';
+
+    return await new Promise((resolve, reject) => {
+        executeQuery(deleteSql, [player_uuid], (err) => {
+            if (err) {
+                Logger.error(err);
+                reject('Unexpected Error');
+            } else {
+                resolve();
+            }
+        });
+    })
+    .then(() => {
+        Logger.debug(`[資料庫] 刪除黑名單: ${player_uuid}`);
+    })
+    .catch(err => {
+        Logger.warn(`[資料庫] 無法刪除黑名單: ${err}`);
+    });
+}
+
+async function notified_blacklist(player_uuid) {
+    const updateSql = 'UPDATE blacklist SET notified = ? WHERE player_uuid = ?';
+
+    return await new Promise((resolve, reject) => {
+        executeQuery(updateSql, ['true', player_uuid], (err) => {
+            if (err) {
+                Logger.error(err);
+                reject('Unexpected Error');
+            } else {
+                resolve();
+            }
+        });
+    })
+    .then(() => {
+        Logger.debug(`[資料庫] 更新黑名單通知: ${player_uuid}`);
+    })
+    .catch(err => {
+        Logger.warn(`[資料庫] 無法更新黑名單通知: ${err}`);
+    });
+}
+
 module.exports = {
     get_user_data,
     create_user_data,
@@ -435,5 +548,10 @@ module.exports = {
     get_all_users,
     get_all_players,
     update_player_id,
-    get_all_user_data
+    get_all_user_data,
+    get_blacklist,
+    add_blacklist,
+    remove_blacklist,
+    notified_blacklist,
+    get_all_player_wallet
 };

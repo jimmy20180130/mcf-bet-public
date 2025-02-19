@@ -2,13 +2,14 @@ const {
     get_player_wallet,
     create_player_wallet,
     set_player_wallet,
-    get_user_data
+    get_user_data,
+    get_all_player_wallet
 } = require(`../utils/database.js`);
 const { get_player_name } = require(`../utils/get_player_info.js`);
 const fs = require('fs')
 const toml = require('toml')
 
-const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags, InteractionContextType, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -102,17 +103,80 @@ module.exports = {
                             { name: '村民錠', value: 'coin' }
                         )
                 )
+        )
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('查詢所有')
+                .setDescription('查詢所有使用者的餘額')
         ),
 
     async execute(interaction) {
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({
+            flags: MessageFlags.Ephemeral
+        });
         const configtoml = toml.parse(fs.readFileSync(`${process.cwd()}/config.toml`, 'utf8'));
         let user_data = await get_user_data(undefined, interaction.user.id);
 				
 		if (!configtoml.minecraft.whitelist || !user_data || user_data == 'Not Found' || user_data == 'Unexpected Error' || (!configtoml.minecraft.whitelist.includes((await get_player_name(user_data.player_uuid)).toLowerCase()) && !configtoml.minecraft.whitelist.includes(await get_player_name(user_data.player_uuid)))) {
-            await interaction.editReply({ content: '你沒有權限使用這個指令', ephemeral: true });
+            await interaction.editReply('您並未綁定 Minecraft 帳號，或您的 Minecraft 帳號不在白名單中');
             return;
         }
+
+        if (interaction.options.getSubcommand() === '查詢所有') {
+            let all_wallet = await get_all_player_wallet();
+
+            if (all_wallet === 'error') {
+                await interaction.editReply('發生錯誤，請稍後再試');
+                return;
+            }
+
+            const walletsPerPage = 10;
+            let page = 0;
+
+            const generateEmbed = async (page) => {
+                const start = page * walletsPerPage;
+                const end = start + walletsPerPage;
+                const wallets = all_wallet.slice(start, end);
+
+                const embed = new EmbedBuilder()
+                    .setTitle('所有玩家錢包')
+                    .setDescription('顯示所有玩家的錢包餘額')
+                    .setColor(0x00AE86);
+
+                wallets.forEach(async wallet => {
+                    embed.addFields({ name: `玩家ID: ${await get_player_name(wallet.player_uuid)}`, value: `綠寶石: ${wallet.emerald_amount} 村民錠: ${wallet.coin_amount}`, inline: false });
+                });
+
+                return embed;
+            };
+
+            const embedMessage = await interaction.editReply({ embeds: [await generateEmbed(page)], components: [new ActionRowBuilder().addComponents(
+                new ButtonBuilder().setCustomId('previous').setLabel('上一頁').setStyle(ButtonStyle.Primary).setDisabled(page === 0),
+                new ButtonBuilder().setCustomId('next').setLabel('下一頁').setStyle(ButtonStyle.Primary).setDisabled(all_wallet.length <= walletsPerPage)
+            )] });
+
+            const collector = embedMessage.createMessageComponentCollector({ time: 60000 });
+
+            collector.on('collect', async i => {
+                if (i.customId === 'previous') {
+                    page--;
+                } else if (i.customId === 'next') {
+                    page++;
+                }
+
+                await i.update({ embeds: [await generateEmbed(page)], components: [new ActionRowBuilder().addComponents(
+                    new ButtonBuilder().setCustomId('previous').setLabel('上一頁').setStyle(ButtonStyle.Primary).setDisabled(page === 0),
+                    new ButtonBuilder().setCustomId('next').setLabel('下一頁').setStyle(ButtonStyle.Primary).setDisabled((page + 1) * walletsPerPage >= all_wallet.length)
+                )] });
+            });
+
+            collector.on('end', collected => {
+                //embedMessage.edit({ components: [] });
+            });
+
+            return;
+        }
+
 
         const user = interaction.options.getUser('使用者')
         const player_uuid = (await get_user_data(undefined, user.id)).player_uuid
