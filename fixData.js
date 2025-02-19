@@ -53,6 +53,20 @@ if (process.argv.includes('--spawned')) {
         });   
     }
 
+    async function add_blacklist() {
+        const createSql = 'CREATE TABLE IF NOT EXISTS blacklist (player_uuid TEXT, time INTEGER, last INTEGER, reason TEXT, notified TEXT)';
+        return await new Promise((resolve, reject) => {
+            executeQuery(createSql, [], (err) => {
+                if (err) {
+                    console.error(err);
+                    reject('Unexpected Error');
+                } else {
+                    resolve();
+                }
+            });
+        })
+    }
+
     async function get_player_name(uuid) {
         if (uuid == '所有人' || uuid == 'Unexpected Error') return 'Unexpected Error';
 
@@ -259,6 +273,7 @@ if (process.argv.includes('--spawned')) {
             });
 
         try {
+            await add_blacklist();
             await removeHyphensFromPlayerUuid('bet_history');
             await removeHyphensFromPlayerUuid('pay_history');
             await removeHyphensFromPlayerUuid('user_data');
