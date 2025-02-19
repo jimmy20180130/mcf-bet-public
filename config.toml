@@ -1,6 +1,6 @@
 # 廢土對賭機器人的設定檔
 [basic]
-key = "key" # 用來驗證的金鑰，若無則留空
+key = "" # 用來驗證的金鑰，若無則留空
 
 [minecraft]
 # minecraft bot 的設定
