@@ -23,7 +23,9 @@ async function get_player_uuid(playerid) {
 
     let result;
 
-    await axios.get(`https://api.mojang.com/users/profiles/minecraft/${playerid}`)
+    await axios.get(`https://api.mojang.com/users/profiles/minecraft/${playerid}`, {
+        family: 4 // 強制使用 IPv4
+    })
         .then(response => {
             if (response.data && response.data.id) {
                 result = response.data.id
@@ -39,7 +41,9 @@ async function get_player_uuid(playerid) {
         });
 
     if (!result || result == 'Not Found' || result == 'Unexpected Error') {
-        await axios.get(`https://playerdb.co/api/player/minecraft/${playerid}`)
+        await axios.get(`https://playerdb.co/api/player/minecraft/${playerid}`, {
+            family: 4 // 強制使用 IPv4
+        })
             .then(response => {
                 if (response.data) {
                     result = response.data.data.player.raw_id
