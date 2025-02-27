@@ -20,7 +20,7 @@ if (process.argv.includes('--spawned')) {
     const { canUseCommand } = require(`./utils/permissions.js`);
     const { check_token } = require(`./auth/auth.js`);
     const moment = require('moment-timezone');
-    const { initDB, closeDB } = require(`./utils/db_write.js`);
+    const { initDB, closeDB, backup } = require(`./utils/db_write.js`);
     const path = require('path');
     const Logger = require(`./utils/logger.js`);
     const { pay_handler } = require('./utils/pay_handler.js');
@@ -97,6 +97,7 @@ if (process.argv.includes('--spawned')) {
             const e_regex = /\[系統\] 您收到了\s+(\w+)\s+轉帳的 (\d{1,3}(,\d{3})*)( 綠寶石 \(目前擁有 (\d{1,3}(,\d{3})*)) 綠寶石\)/;
             const ematch = e_regex.exec(matches);
             const playerid = ematch[1];
+            if (donate_list.includes(playerid) || playerid === bot.username) return;
             const player_uuid = await get_player_uuid(playerid);
             const blacklist = await get_blacklist();
 
@@ -109,7 +110,7 @@ if (process.argv.includes('--spawned')) {
                     let date = new Date(item.time * 1000 + item.last*1000)
                     date = date.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })
                     await chat(bot, `/m ${playerid} &c&l您已被列入黑名單，處分直到 ${date} 結束，原因為 ${item.reason}，請勿在期間內轉帳或使用指令，否則將視同捐款給 BOT`)
-                    await pay_handler(bot, playerid, parseInt(ematch[2].split(',').join('')), 'emerald', client);
+                    await pay_handler(bot, playerid, parseInt(ematch[2].split(',').join('')), 'emerald', client, false, `ebetblacklist ${playerid}`);
                     return
                 }
             }
@@ -118,11 +119,10 @@ if (process.argv.includes('--spawned')) {
             const amount = parseInt(amountStr.split(',').join(''));
             const configtoml = toml.parse(fs.readFileSync(`${process.cwd()}/config.toml`, 'utf8'));
             const messages = JSON.parse(fs.readFileSync(`${process.cwd()}/data/messages.json`, 'utf-8'));
-            if (donate_list.includes(playerid) || playerid === bot.username) return;
 
             if (amount > configtoml.bet.emax || amount < configtoml.bet.emin) {
                 await chat(bot, `/m ${playerid} ${messages.errors.bet.e_over_limit.replaceAll('%emin%', configtoml.bet.emin).replaceAll('%emax%', configtoml.bet.emax)}`);
-                await pay_handler(bot, playerid, amount, 'emerald', client);
+                await pay_handler(bot, playerid, amount, 'emerald', client, false, `ebetoverlimit ${playerid}`);
                 return;
             }
 
@@ -154,7 +154,7 @@ if (process.argv.includes('--spawned')) {
                     let date = new Date(item.time * 1000 + item.last*1000)
                     date = date.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })
                     await chat(bot, `/m ${playerid} &c&l您已被列入黑名單，處分直到 ${date} 結束，原因為 ${item.reason}，請勿在期間內轉帳或使用指令，否則將視同捐款給 BOT`)
-                    await pay_handler(bot, playerid, parseInt(cmatch[2].split(',').join('')), 'coin', client);
+                    await pay_handler(bot, playerid, parseInt(cmatch[2].split(',').join('')), 'coin', client, false, `cbetblacklist ${playerid}`);
                     return
                 }
             }
@@ -168,7 +168,7 @@ if (process.argv.includes('--spawned')) {
 
             if (amount > configtoml.bet.cmax || amount < configtoml.bet.cmin) {
                 await chat(bot, `/m ${playerid} ${messages.errors.bet.c_over_limit.replaceAll('%cmin%', configtoml.bet.cmin).replaceAll('%cmax%', configtoml.bet.cmax)}`);
-                await pay_handler(bot, playerid, amount, 'coin', client);
+                await pay_handler(bot, playerid, amount, 'coin', client, false, `ebetoverlimit ${playerid}`);
                 return;
             }
 
@@ -294,6 +294,9 @@ if (process.argv.includes('--spawned')) {
             if (await canUseCommand(await get_player_uuid(playerid), args.split(' ')[0])) {
                 await chat(bot, `/m ${playerid} ${await process_msg(bot, messages.commands.stop['default'], playerid)}`)
                 await new Promise(r => setTimeout(r, 5000))
+                await backup()
+                closeDB()
+                await new Promise(r => setTimeout(r, 1000))
                 process.exit(135)
             } else {
                 await mc_error_handler(bot, 'general', 'no_permission', playerid)
@@ -367,23 +370,10 @@ if (process.argv.includes('--spawned')) {
         bot.once('spawn', async () => {
             Logger.log('Minecraft 機器人已上線!');
 
-            bot.addChatPatternSet('donate', [
-                // [XiaoXi_YT -> 您] donate
-                new RegExp(`^\\[([A-Za-z0-9_]+) -> 您\\] ${require('./commands/donate.js').name}`),
-                ...require(`./commands/donate.js`).aliases.map(alias => new RegExp(`^\\[([A-Za-z0-9_]+) -> 您\\] ${alias}`))
-            ]);
-
+            bot.addChatPattern('donate', new RegExp(`^\\[([A-Za-z0-9_]+) -> 您\\] (${[require("./commands/donate.js").name, ...require("./commands/donate.js").aliases].join("|")})`))
             bot.addChatPattern('debug', new RegExp(`^\\[([A-Za-z0-9_]+) -> 您\\] debug.*`)) // [XiaoXi_YT -> 您] debug <args>
-            bot.addChatPatternSet('stop', [
-                // [XiaoXi_YT -> 您] stop
-                new RegExp(`^\\[([A-Za-z0-9_]+) -> 您\\] ${require(`./commands/stop.js`).name}`),
-                ...require(`./commands/stop.js`).aliases.map(alias => new RegExp(`^\\[([A-Za-z0-9_]+) -> 您\\] ${alias}`))
-            ]);
-            bot.addChatPatternSet('reload', [
-                // [XiaoXi_YT -> 您] reload
-                new RegExp(`^\\[([A-Za-z0-9_]+) -> 您\\] ${require(`./commands/reload.js`).name}`),
-                ...require(`./commands/reload.js`).aliases.map(alias => new RegExp(`^\\[([A-Za-z0-9_]+) -> 您\\] ${alias}`))
-            ]);
+            bot.addChatPattern('stop', new RegExp(`^\\[([A-Za-z0-9_]+) -> 您\\] (${[require("./commands/stop.js").name, ...require("./commands/stop.js").aliases].join("|")})`))
+            bot.addChatPattern('reload', new RegExp(`^\\[([A-Za-z0-9_]+) -> 您\\] (${[require("./commands/reload.js").name, ...require("./commands/reload.js").aliases].join("|")})`))
 
             bot.addChatPattern('command', new RegExp(`^\\[([A-Za-z0-9_]+) -> 您\\] .+`)) // [XiaoXi_YT -> 您] <command> <args>
             bot.addChatPattern('payment', /^\[系統\] 您收到了\s+(\w+)\s+轉帳的 (\d{1,3}(,\d{3})*)( 綠寶石 \(目前擁有 (\d{1,3}(,\d{3})*)) 綠寶石\)/);
@@ -520,6 +510,7 @@ if (process.argv.includes('--spawned')) {
             } else {
                 Logger.error(`Minecraft 機器人發生錯誤，原因如下: ${err.message}`)
                 is_on = false;
+                await backup()
                 closeDB()
                 process.exit(1000)
             }
@@ -550,6 +541,8 @@ if (process.argv.includes('--spawned')) {
             stop_rl()
             stop_msg()
             clear_interval()
+            await backup()
+            closeDB()
 
             for (let item of intervals) {
                 clearInterval(item)
@@ -558,7 +551,7 @@ if (process.argv.includes('--spawned')) {
             Logger.warn('Minecraft 機器人下線了!');
             let time = moment(new Date()).tz('Asia/Taipei').format('YYYY-MM-DD HH:mm:ss');
             const string = `【下線時間】${time}`
-            if (is_on == true) {
+            if (is_on == true && client) {
                 const embed = await bot_off(string)
                 const channel = await client.channels.fetch(configtoml.discord_channels.status);
                 await channel.send({ embeds: [embed] });
@@ -718,6 +711,7 @@ if (process.argv.includes('--spawned')) {
         } catch (e) {
             Logger.error(`Discord 機器人發生錯誤，錯誤如下 ${e.message}`)
             is_on = false;
+            await backup()
             closeDB()
             process.exit(1)
         }
@@ -727,6 +721,7 @@ if (process.argv.includes('--spawned')) {
         Logger.error(error)
         console.log(error)
         is_on = false;
+        await backup()
         closeDB()
         process.exit(1)
     });
@@ -735,6 +730,7 @@ if (process.argv.includes('--spawned')) {
         Logger.error(error)
         console.log(error)
         is_on = false;
+        await backup()
         closeDB()
         process.exit(1)
     });
@@ -743,6 +739,7 @@ if (process.argv.includes('--spawned')) {
         console.log(error)
         Logger.error(error)
         is_on = false;
+        await backup()
         closeDB()
         process.exit(1)
     });
