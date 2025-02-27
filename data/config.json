@@ -1,6 +1,6 @@
 {
-    "version": "v.3.0.0-beta-17",
-    "debug": false,
+    "version": "v.3.0.0-beta-18",
+    "debug": true,
     "bot": {
         "server": 61,
         "home": "play"
