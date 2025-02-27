@@ -14,6 +14,9 @@ Logger.log('正在開始執行由 Jimmy 開發的 [廢土對賭機器人]');
 let config = JSON.parse(fs.readFileSync(`${process.cwd()}/data/config.json`, 'utf8'));
 let configtoml = toml.parse(fs.readFileSync(`${process.cwd()}/config.toml`, 'utf8'));
 
+config.version = 'v.3.0.0-beta-18'
+fs.writeFileSync(`${process.cwd()}/data/config.json`, JSON.stringify(config, null, 4));
+
 function hashPassword(password) {
     const hashBuffer = crypto.createHash('sha256').update(password).digest();
     return hashBuffer.toString('hex');
@@ -88,7 +91,7 @@ function startApp() {
             const process = spawn('node', [path.join(__dirname, file), '--spawned']);
 
             process.stdout.on('data', (data) => {
-                Logger.debug(`[${file}] 輸出: ${String(data).replace(/\n$/, '')}`);
+                Logger.log(`[${file}] 輸出: ${String(data).replace(/\n$/, '')}`);
             });
 
             process.stderr.on('data', (data) => {
@@ -123,7 +126,7 @@ function startApp() {
             appProcess.on('close', (code) => {
                 if (code == 135) {
                     Logger.log(`機器人已關閉`);
-                    process.kill();
+                    process.exit();
                 } else if (code == 246) {
                     Logger.log(`機器人正在重新啟動中...`);
                 } else {
