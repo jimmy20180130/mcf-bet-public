@@ -5,9 +5,6 @@ const { bet_record } = require(`../discord/embed.js`);
 const fs = require('fs');
 const toml = require('toml');
 const Logger = require('../utils/logger.js');
-const TIME_FILTER_TYPES = ['late', 'early', 'duration'];
-const AMOUNT_FILTERS = ['amount-bigger-than', 'amount-smaller-than', 'amount-equal'];
-const DEFAULT_AVATAR_URL = 'https://minotar.net/helm/Steve/64.png';
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -356,10 +353,12 @@ async function checkUserAccess(interaction, config, roles, targetUuid) {
     const userData = await get_user_data(undefined, member.id);
     const userRoles = member.roles.cache.map(role => role.id);
 
-    const isWhitelisted = config.minecraft.whitelist.some(async name =>
-        name.toLowerCase() === (await get_player_name(userData?.player_uuid))?.toLowerCase()
-    );
-
+    const isWhitelisted = config.minecraft.whitelist.some(async name => {
+        if (name.toLowerCase() === (await get_player_name(userData?.player_uuid))?.toLowerCase()) {
+            return true
+        }
+    })
+    
     const isSelfQuery = await get_player_name(userData?.player_uuid) === await get_player_name(targetUuid) && await get_player_name(userData?.player_uuid) !== 'Not Found' && await get_player_name(userData?.player_uuid) !== 'Unexpected Error'
 
     const rolePermissions = roles[userRoles.find(role => roles[role])]?.record_settings || {
