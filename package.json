@@ -3,6 +3,7 @@
     "bin": "start.js",
     "dependencies": {
         "axios": "^0.27.2",
+        "better-sqlite3": "^11.8.1",
         "bignumber.js": "^9.1.2",
         "crypto-js": "^4.2.0",
         "decimal.js": "10.5.0",
