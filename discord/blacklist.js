@@ -218,6 +218,9 @@ module.exports = {
                 if (blacklist == 'Unexpected Error') {
                     await interaction.editReply({ content: '無法列出黑名單中的玩家' });
                     return;
+                } else if (blacklist.length == 0 || blacklist == 'Not Found') {
+                    await interaction.editReply({ content: '黑名單中沒有玩家' });
+                    return;
                 }
 
                 let currentPage = 0;
