@@ -7,7 +7,7 @@ const fs = require('fs');
 const { pay_error } = require(`../discord/embed.js`)
 const Logger = require('../utils/logger.js');
 
-async function pay_handler(bot, player_id, amount, type, client, isDaily=false) {
+async function pay_handler(bot, player_id, amount, type, client, isDaily=false, data) {
     const pay_uuid = generateUUID()
 
     Logger.log(`[轉帳] 轉帳 ${amount} 個 ${type} 給 ${player_id} (UUID: ${pay_uuid})`)
@@ -49,10 +49,12 @@ async function pay_handler(bot, player_id, amount, type, client, isDaily=false) 
                 can_not_send_msg_Promise.cancel()
 
                 clearTimeout(timeout);
+
+                // if 
                 
                 if (string.startsWith('[系統] 成功轉帳')) {
                     Logger.log(`[轉帳] 成功轉帳 ${amount} 個 ${type} 給 ${player_id} (UUID: ${pay_uuid})`)
-                    await write_pay_history(pay_uuid, await get_player_uuid(player_id), amount, 'success', Math.floor((new Date()).getTime() / 1000), type)
+                    await write_pay_history(pay_uuid, await get_player_uuid(player_id), amount, 'success', Math.floor((new Date()).getTime() / 1000), type, data)
                     resolve('success')
 
                 } else if (string.startsWith('[系統] 綠寶石不足, 尚需')) {
@@ -61,7 +63,7 @@ async function pay_handler(bot, player_id, amount, type, client, isDaily=false) 
 
                     await set_player_wallet(await get_player_uuid(player_id), player_wallet + amount, 'emerald')
                     if (client) await pay_error(client, pay_uuid, player_id, amount, 'emerald', 'no_money')
-                    await write_pay_history(pay_uuid, await get_player_uuid(player_id), amount, 'no_money', Math.floor((new Date()).getTime() / 1000), type)
+                    await write_pay_history(pay_uuid, await get_player_uuid(player_id), amount, 'no_money', Math.floor((new Date()).getTime() / 1000), type, data)
                     resolve('bot_no_money')
 
                 } else if (string.startsWith('[系統] 只能轉帳給同一分流的線上玩家. 請檢查對方的ID與所在分流')) {
@@ -70,7 +72,7 @@ async function pay_handler(bot, player_id, amount, type, client, isDaily=false) 
                         await mc_error_handler(bot, 'pay', 'dailyNotSamePlace', player_id, '', pay_uuid)
 
                         if (client) await pay_error(client, pay_uuid, player_id, amount, 'emerald', 'dailyNotSamePlace')
-                        await write_pay_history(pay_uuid, await get_player_uuid(player_id), amount, 'dailyNotSamePlace', Math.floor((new Date()).getTime() / 1000), type)
+                        await write_pay_history(pay_uuid, await get_player_uuid(player_id), amount, 'dailyNotSamePlace', Math.floor((new Date()).getTime() / 1000), type, data)
                         
                         resolve('dailyNotSamePlace')
                     } else {
@@ -79,7 +81,7 @@ async function pay_handler(bot, player_id, amount, type, client, isDaily=false) 
 
                         await set_player_wallet(await get_player_uuid(player_id), player_wallet + amount, 'emerald')
                         if (client) await pay_error(client, pay_uuid, player_id, amount, 'emerald', 'not_same_place')
-                        await write_pay_history(pay_uuid, await get_player_uuid(player_id), amount, 'not_same_place', Math.floor((new Date()).getTime() / 1000), type)
+                        await write_pay_history(pay_uuid, await get_player_uuid(player_id), amount, 'not_same_place', Math.floor((new Date()).getTime() / 1000), type, data)
 
                         resolve('not_same_place')
                     }
@@ -90,7 +92,7 @@ async function pay_handler(bot, player_id, amount, type, client, isDaily=false) 
 
                     await set_player_wallet(await get_player_uuid(player_id), player_wallet + amount, 'emerald')
                     if (client) await pay_error(client, pay_uuid, player_id, amount, type, 'busy')
-                    await write_pay_history(pay_uuid, await get_player_uuid(player_id), amount, 'busy', Math.floor((new Date()).getTime() / 1000), type)
+                    await write_pay_history(pay_uuid, await get_player_uuid(player_id), amount, 'busy', Math.floor((new Date()).getTime() / 1000), type, data)
 
                     resolve('busy')
 
@@ -100,7 +102,7 @@ async function pay_handler(bot, player_id, amount, type, client, isDaily=false) 
 
                     await set_player_wallet(await get_player_uuid(player_id), player_wallet + amount, 'emerald')
                     if (client) await pay_error(client, pay_uuid, player_id, amount, type, 'negative')
-                    await write_pay_history(pay_uuid, await get_player_uuid(player_id), amount, 'negative', Math.floor((new Date()).getTime() / 1000), type)
+                    await write_pay_history(pay_uuid, await get_player_uuid(player_id), amount, 'negative', Math.floor((new Date()).getTime() / 1000), type, data)
 
                     resolve('negative')
 
@@ -108,7 +110,7 @@ async function pay_handler(bot, player_id, amount, type, client, isDaily=false) 
                     Logger.warn(`[轉帳] 轉帳 ${amount} 個 ${type} 給 ${player_id} 時發生錯誤: 逾時 (UUID: ${pay_uuid})`)
                     await mc_error_handler(bot, 'pay', 'timeout', player_id, '', pay_uuid)
                     if (client) await pay_error(client, pay_uuid, player_id, amount, type, 'timeout')
-                    await write_pay_history(pay_uuid, await get_player_uuid(player_id), amount, 'timeout', Math.floor((new Date()).getTime() / 1000), type)
+                    await write_pay_history(pay_uuid, await get_player_uuid(player_id), amount, 'timeout', Math.floor((new Date()).getTime() / 1000), type, data)
 
                     resolve('timeout')
 
@@ -118,7 +120,7 @@ async function pay_handler(bot, player_id, amount, type, client, isDaily=false) 
 
                     await set_player_wallet(await get_player_uuid(player_id), player_wallet + amount, 'emerald')
                     if (client) await pay_error(client, pay_uuid, player_id, amount, type, 'can\'t send msg')
-                    await write_pay_history(pay_uuid, await get_player_uuid(player_id), amount, 'can\'t send msg', Math.floor((new Date()).getTime() / 1000), type)
+                    await write_pay_history(pay_uuid, await get_player_uuid(player_id), amount, 'can\'t send msg', Math.floor((new Date()).getTime() / 1000), type, data)
 
                     resolve('can\'t send msg')
                 }

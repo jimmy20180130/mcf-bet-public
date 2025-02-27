@@ -97,14 +97,16 @@ async function executeCommand(bot, playerid, args, client) {
             const first_role = await guild.roles.fetch(player_roles[0]).then(role => { return role.name })
 
             let amount = 0
+            let combinedRoles = []
 
             for (let role of player_roles) {
                 amount += roles[role].daily
+                combinedRoles.push(roles[role].name)
             }
 
             await write_daily_data(await get_player_uuid(playerid), first_role, amount)
 
-            await pay_handler(bot, playerid, amount, 'emerald', client, true)
+            await pay_handler(bot, playerid, amount, 'emerald', client, true, `daily ${playerid} ${combinedRoles.join(', ')}`)
 
             await chat(bot, `/m ${playerid} ${await process_msg(bot, messages.commands.daily.success.replaceAll('%amount%', amount).replaceAll('%time%', moment(new Date()).tz('Asia/Taipei').format('YYYY-MM-DD HH:mm:ss')).replaceAll('%role%', first_role), playerid)}`)
             await chat(bot, `&b&l${playerid} &6&l領取了身份組 ${first_role} 的每日簽到 &a&l${amount} &6&l元`)

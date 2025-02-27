@@ -4,7 +4,7 @@ const { mc_error_handler } = require(`../error/mc_handler.js`)
 const { process_msg, add_comma_to_number } = require(`../utils/process_msg.js`)
 const { pay_handler } = require(`../utils/pay_handler.js`)
 const { activateBlock } = require(`../utils/better-mineflayer.js`)
-const { write_bet_record } = require(`../utils/database.js`)
+const { write_bet_record, customsql } = require(`../utils/database.js`)
 const { get_player_uuid } = require(`../utils/get_player_info.js`);
 const { bet_win, bet_lose, error_embed } = require(`../discord/embed.js`);
 const { generateUUID } = require(`../utils/uuid.js`)
@@ -60,7 +60,7 @@ async function process_bet_task() {
             const coin = bot.tablist.header.toString().match(coinRegex)[1].replaceAll(',', '');
             if (task.type == 'emerald' && emerald < task.amount*configtoml.bet.eodds) {
                 await mc_error_handler(bot, 'bet', 'no_money', task.player_id)
-                await pay_handler(bot, task.player_id, task.amount, task.type, client)
+                await pay_handler(bot, task.player_id, task.amount, task.type, client, false, task_uuid)
                 let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'))
                 cache.bet.shift()
                 fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
@@ -70,7 +70,7 @@ async function process_bet_task() {
                 resolve()
             } else if (task.type == 'coin' && coin < task.amount*configtoml.bet.codds) {
                 await mc_error_handler(bot, 'bet', 'no_money', task.player_id)
-                await pay_handler(bot, task.player_id, task.amount, task.type, client)
+                await pay_handler(bot, task.player_id, task.amount, task.type, client, false, task_uuid)
                 let cache = JSON.parse(fs.readFileSync(`${process.cwd()}/cache/cache.json`, 'utf8'))
                 cache.bet.shift()
                 fs.writeFileSync(`${process.cwd()}/cache/cache.json`, JSON.stringify(cache, null, 4))
@@ -204,7 +204,7 @@ async function active_redstone(bot, playerid, amount, type, task_uuid) {
 
                 if (value.startsWith('[領地]')) {
                     await mc_error_handler(bot, 'bet', 'no_permission', playerid)
-                    await pay_handler(bot, playerid, amount, type, client)
+                    await pay_handler(bot, playerid, amount, type, client, false, task_uuid)
 
                     if (client) await error_embed(client, task_uuid, 'Bot 沒有領地的建造權限，請於遊戲內輸入 /tt bot_id 以給予 bot 建造權限', playerid, amount, type)
 
@@ -212,13 +212,13 @@ async function active_redstone(bot, playerid, amount, type, task_uuid) {
 
                 } else if (value == 'timeout') {
                     await mc_error_handler(bot, 'bet', 'timeout', playerid)
-                    await pay_handler(bot, playerid, amount, type, client)
+                    await pay_handler(bot, playerid, amount, type, client, false, task_uuid)
                     
                     if (client) await error_embed(client, task_uuid, '等待羊毛超時', playerid, amount, type)
                     await write_bet_record(task_uuid, await get_player_uuid(playerid), amount, configtoml.bet[`${bet_type}odds`], amount, type, 'timeout', Math.floor((new Date()).getTime() / 1000))
 
                 } else if (value == 'error') {
-                    await pay_handler(bot, playerid, amount, type, client)
+                    await pay_handler(bot, playerid, amount, type, client, false, task_uuid)
                     await write_bet_record(task_uuid, await get_player_uuid(playerid), amount, configtoml.bet[`${bet_type}odds`], amount, type, 'error', Math.floor((new Date()).getTime() / 1000))
                 
                 } else {
@@ -227,17 +227,19 @@ async function active_redstone(bot, playerid, amount, type, task_uuid) {
             });
         } else {
             await mc_error_handler(bot, 'bet', 'redstone_not_found', playerid)
-            await pay_handler(bot, playerid, amount, type, client)
+            await pay_handler(bot, playerid, amount, type, client, false, task_uuid)
             
-            if (client) await error_embed(client, task_uuid, 'Bot 找不到附近的紅石粉', playerid, amount, type)
             await write_bet_record(task_uuid, await get_player_uuid(playerid), amount, configtoml.bet[`${bet_type}odds`], amount, type, 'redstone_not_found', Math.floor((new Date()).getTime() / 1000))
+            if (client) await error_embed(client, task_uuid, 'Bot 找不到附近的紅石粉', playerid, amount, type)
         }
     } catch (error) {
+        const hasWritten = await customsql('SELECT bet_uuid FROM bet_history WHERE bet_uuid = ?', [task_uuid])
+        if (!hasWritten[0]['bet_uuid']) {
+            await write_bet_record(task_uuid, await get_player_uuid(playerid), amount, configtoml.bet[`${bet_type}odds`], amount, type, 'unexpected_err', Math.floor((new Date()).getTime() / 1000))
+        }
+        
         await mc_error_handler(bot, 'bet', 'unexpected_err', playerid, error)
-
         if (client) await error_embed(client, task_uuid, error.message, playerid, amount, type)
-
-        await write_bet_record(task_uuid, await get_player_uuid(playerid), amount, configtoml.bet[`${bet_type}odds`], amount, type, 'unexpected_err', Math.floor((new Date()).getTime() / 1000))
     }
 }
 
@@ -247,7 +249,7 @@ async function process_bet_result(bot, wool, amount, player_id, type, task_uuid)
 
     if (wool == 'yes') {
         if (type == 'emerald') {
-            const pay_result = await pay_handler(bot, player_id, Math.floor(new Decimal(amount).mul(new Decimal(configtoml.bet.eodds)).toNumber()), 'e', client)
+            const pay_result = await pay_handler(bot, player_id, Math.floor(new Decimal(amount).mul(new Decimal(configtoml.bet.eodds)).toNumber()), 'e', client, false, task_uuid)
             await chat(bot, `${await process_msg(bot, messages.bet.ewin.replaceAll('%multiply%', configtoml.bet.eodds).replaceAll('%amount%', add_comma_to_number(amount)).replaceAll('%after_amount%', add_comma_to_number(Math.floor(new Decimal(amount).mul(new Decimal(configtoml.bet.eodds)).toNumber()))), player_id)}`)
             //await write_pay_history(amount, Math.floor(new Decimal(amount).mul(new Decimal(config.bet.eodds)).toNumber()), config.bet.eodds, pay_result, await get_player_uuid(player_id), type)
             await write_bet_record(task_uuid, await get_player_uuid(player_id), amount, configtoml.bet.eodds, Math.floor(new Decimal(amount).mul(new Decimal(configtoml.bet.eodds)).toNumber()), type, 'success', Math.floor((new Date()).getTime() / 1000))
@@ -259,7 +261,7 @@ async function process_bet_result(bot, wool, amount, player_id, type, task_uuid)
             }
             Logger.log(`下注任務 (${task_uuid}) 完成，支付玩家 ${player_id} ${add_comma_to_number(Math.floor(new Decimal(amount).mul(new Decimal(configtoml.bet.eodds)).toNumber()))} 個綠寶石，賠率為 ${configtoml.bet.eodds} ，支付狀態為 ${pay_result}`)
         } else if (type == 'coin') {
-            const pay_result = await pay_handler(bot, player_id, Math.floor(new Decimal(amount).mul(new Decimal(configtoml.bet.codds)).toNumber()), 'c', client)
+            const pay_result = await pay_handler(bot, player_id, Math.floor(new Decimal(amount).mul(new Decimal(configtoml.bet.codds)).toNumber()), 'c', client, false, task_uuid)
             await chat(bot, `${await process_msg(bot, messages.bet.cwin.replaceAll('%multiply%', configtoml.bet.codds).replaceAll('%amount%', add_comma_to_number(amount)).replaceAll('%after_amount%', add_comma_to_number(Math.floor(new Decimal(amount).mul(new Decimal(configtoml.bet.codds)).toNumber()))), player_id)}`)
             //await write_pay_history(amount, Math.floor(new Decimal(amount).mul(new Decimal(config.bet.codds)).toNumber()), config.bet.codds, 'success', await get_player_uuid(player_id), type)
             await write_bet_record(task_uuid, await get_player_uuid(player_id), amount, configtoml.bet.codds, Math.floor(new Decimal(amount).mul(new Decimal(configtoml.bet.codds)).toNumber()), type, 'success', Math.floor((new Date()).getTime() / 1000))
@@ -301,11 +303,11 @@ async function process_bet_result(bot, wool, amount, player_id, type, task_uuid)
         
     } else if (wool == 'error') {
         if (type == 'emerald') {
-            await pay_handler(bot, player_id, amount, 'e', client)
+            await pay_handler(bot, player_id, amount, 'e', client, false, task_uuid)
             await write_bet_record(task_uuid, await get_player_uuid(player_id), amount, configtoml.bet.eodds, amount, type, 'error', Math.floor((new Date()).getTime() / 1000))
             Logger.warn(`下注任務 (${task_uuid}) 失敗，退還玩家 ${player_id} ${add_comma_to_number(amount)} 個綠寶石，賠率為 ${configtoml.bet.eodds} ，支付狀態為 ${pay_result}`)
         } else if (type == 'coin') {
-            await pay_handler(bot, player_id, amount, 'c', client)
+            await pay_handler(bot, player_id, amount, 'c', client, false, task_uuid)
             await write_bet_record(task_uuid, await get_player_uuid(player_id), amount, configtoml.bet.codds, amount, type, 'error', Math.floor((new Date()).getTime() / 1000))
             Logger.warn(`下注任務 (${task_uuid}) 失敗，退還玩家 ${player_id} ${add_comma_to_number(amount)} 個村民錠，賠率為 ${configtoml.bet.codds} ，支付狀態為 ${pay_result}`)
         }
