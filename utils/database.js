@@ -247,13 +247,13 @@ async function set_player_wallet(player_uuid, amount, type) {
     });
 }
 
-async function write_pay_history(pay_uuid, player_uuid, amount, result, time, type) {
+async function write_pay_history(pay_uuid, player_uuid, amount, result, time, type, data) {
     if (player_uuid == 'Unexpected Error') return 'Unexpected Error'
 
-    const insertSql = 'INSERT INTO pay_history (amount, type, result, time, player_uuid, pay_uuid) VALUES (?, ?, ?, ?, ?, ?)';
+    const insertSql = 'INSERT INTO pay_history (amount, type, result, time, player_uuid, pay_uuid, data) VALUES (?, ?, ?, ?, ?, ?, ?)';
 
     return await new Promise((resolve, reject) => {
-        executeQuery(insertSql, [amount, type, result, time, player_uuid, pay_uuid], (err) => {
+        executeQuery(insertSql, [amount, type, result, time, player_uuid, pay_uuid, data], (err) => {
             if (err) {
                 Logger.error(err);
                 reject('Unexpected Error');
@@ -290,6 +290,29 @@ async function write_bet_record(bet_uuid, player_uuid, amount, odds, return_amou
     })
     .catch(err => {
         Logger.warn(`[資料庫] 無法新增下注紀錄: ${err}`);
+    });
+}
+
+async function customsql(sql, params) {
+    return await new Promise((resolve, reject) => {
+        executeQuery(sql, params, (err, rows) => {
+            if (err) {
+                Logger.error(err);
+                reject('Unexpected Error');
+            } else if (rows === undefined || rows.length === 0) {
+                reject('Not Found');
+            } else {
+                resolve(rows);
+            }
+        })
+    })
+    .then(rows => {
+        Logger.debug(`[資料庫] 自定義SQL查詢完成`);
+        return rows;
+    })
+    .catch(err => {
+        Logger.warn(`[資料庫] 定義SQL查詢失敗: ${err}`);
+        return err
     });
 }
 
@@ -553,5 +576,6 @@ module.exports = {
     add_blacklist,
     remove_blacklist,
     notified_blacklist,
-    get_all_player_wallet
+    get_all_player_wallet,
+    customsql
 };
