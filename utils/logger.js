@@ -41,11 +41,12 @@ class Logger {
         console.log(`[${timestamp}] \x1b[33m[WARN]\x1b[0m \x1b[43m${message}\x1b[0m ${fileInfo}`);
     }
 
-    error(message) {
-        // https://blog.darkthread.net/blog/js-date-yyyymmdd-hhmmss/
+    error(...args) {  // 支援多個參數
         const timestamp = new Date().toLocaleString('sv');
+        const message = args.map(arg => (typeof arg === 'object' ? JSON.stringify(arg) : arg)).join(' ');
+    
         this.logs.push({ message, timestamp });
-
+    
         const fileInfo = ((stack) => {
             const match = stack.split('\n')[2].match(/\((.+?):(\d+):\d+\)$/);
             if (match) {
@@ -54,7 +55,7 @@ class Logger {
             }
             return '';
         })(new Error().stack || '');
-
+    
         console.log(`[${timestamp}] \x1b[31m[ERROR]\x1b[0m \x1b[41m${message}\x1b[0m ${fileInfo}`);
     }
 
