@@ -39,6 +39,7 @@ function executeQuery(query, params = [], callback) {
 function backup() {
     if (!db) {
         Logger.error('[資料庫] 無法進行備份，資料庫未連接');
+        process.exit(1)
         return Promise.reject(new Error('資料庫未連接'));
     }
 
