@@ -24,6 +24,7 @@ if (process.argv.includes('--spawned')) {
     const path = require('path');
     const Logger = require(`./utils/logger.js`);
     const { pay_handler } = require('./utils/pay_handler.js');
+    const AuthClient = require('./auth/test.js');
 
     initDB()
 
@@ -728,7 +729,6 @@ if (process.argv.includes('--spawned')) {
 
     process.on("uncaughtException", async (error) => {
         Logger.error(error)
-        console.log(error)
         is_on = false;
         await backup()
         closeDB()
@@ -736,7 +736,6 @@ if (process.argv.includes('--spawned')) {
     });
 
     process.on("uncaughtExceptionMonitor", async (error) => {
-        console.log(error)
         Logger.error(error)
         is_on = false;
         await backup()
@@ -744,26 +743,15 @@ if (process.argv.includes('--spawned')) {
         process.exit(1)
     });
 
+    async function start_challenge() {
+        AuthClient.on('challenge', async () => {
+            await challenge()
+        })
+    }
+
     async function start_bot() {
-        Logger.log('正在開始驗證您的金鑰')
-
-        try {
-            await check_token();
-            Logger.log('金鑰驗證成功，正在啟動機器人...')
-            init_bot()
-            
-        } catch (err) {
-            let match = undefined || JSON.parse(String(err).replace('Error: ', '')).remaining
-
-            if (match) {
-                Logger.warn(`金鑰驗證失敗，將於 ${match} 秒後重試`);
-                await new Promise(resolve => setTimeout(resolve, Number(match) * 1000 + 1000));
-            } else {
-                Logger.warn('驗證失敗，將於 60 秒後重試\n', err);
-                await new Promise(resolve => setTimeout(resolve, 60000));
-            }
-            start_bot()
-        }
+        Logger.log('正在啟動機器人...')
+        init_bot()
     }
 
     start_bot()
