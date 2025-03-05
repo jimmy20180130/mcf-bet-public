@@ -191,6 +191,7 @@ module.exports = {
         let config = JSON.parse(fs.readFileSync(`${process.cwd()}/data/config.json`, 'utf8'));
         let configtoml = toml.parse(fs.readFileSync(`${process.cwd()}/config.toml`, 'utf8'));
         let user_data = await get_user_data(undefined, interaction.user.id);
+        let tomlStr = '';
 
         if (!configtoml.minecraft.whitelist || !user_data || user_data == 'Not Found' || user_data == 'Unexpected Error' || (!configtoml.minecraft.whitelist.includes((await get_player_name(user_data.player_uuid)).toLowerCase()) && !configtoml.minecraft.whitelist.includes(await get_player_name(user_data.player_uuid)))) {
             await interaction.reply({
@@ -227,7 +228,25 @@ module.exports = {
                     configtoml.bet.codds = interaction.options.getNumber('村民錠賠率');
                 }
 
-                fs.writeFileSync(`${process.cwd()}/config.toml`, toml.stringify(configtoml));
+                // Convert configtoml object to TOML format string
+                tomlStr = '';
+                for (const [key, value] of Object.entries(configtoml)) {
+                    if (typeof value === 'object') {
+                        tomlStr += `[${key}]\n`;
+                        for (const [k, v] of Object.entries(value)) {
+                            if (Array.isArray(v)) {
+                                tomlStr += `${k} = [${v.map(x => `"${x}"`).join(', ')}]\n`;
+                            } else {
+                                tomlStr += `${k} = ${JSON.stringify(v)}\n`;
+                            }
+                        }
+                        tomlStr += '\n';
+                    } else {
+                        tomlStr += `${key} = ${JSON.stringify(value)}\n`;
+                    }
+                }
+
+                fs.writeFileSync(`${process.cwd()}/config.toml`, tomlStr);
                 await interaction.reply({
                     content: '設定完成',
                     flags: MessageFlags.Ephemeral
@@ -269,7 +288,25 @@ module.exports = {
                     configtoml.discord_channels.errors = interaction.options.getChannel('錯誤紀錄').id;
                 }
 
-                fs.writeFileSync(`${process.cwd()}/config.toml`, toml.stringify(configtoml));
+                // Convert configtoml object to TOML format string
+                tomlStr = '';
+                for (const [key, value] of Object.entries(configtoml)) {
+                    if (typeof value === 'object') {
+                        tomlStr += `[${key}]\n`;
+                        for (const [k, v] of Object.entries(value)) {
+                            if (Array.isArray(v)) {
+                                tomlStr += `${k} = [${v.map(x => `"${x}"`).join(', ')}]\n`;
+                            } else {
+                                tomlStr += `${k} = ${JSON.stringify(v)}\n`;
+                            }
+                        }
+                        tomlStr += '\n';
+                    } else {    
+                        tomlStr += `${key} = ${JSON.stringify(value)}\n`;
+                    }
+                }
+
+                fs.writeFileSync(`${process.cwd()}/config.toml`, tomlStr);
                 await interaction.reply({
                     content: '設定完成',
                     flags: MessageFlags.Ephemeral
@@ -329,9 +366,27 @@ module.exports = {
                     configtoml.minecraft.whitelist.push(interaction.options.getString('使用者'));
                 }
 
-                fs.writeFileSync(`${process.cwd()}/config.toml`, toml.stringify(configtoml));
+                // Convert configtoml object to TOML format string
+                tomlStr = '';
+                for (const [key, value] of Object.entries(configtoml)) {
+                    if (typeof value === 'object') {
+                        tomlStr += `[${key}]\n`;
+                        for (const [k, v] of Object.entries(value)) {
+                            if (Array.isArray(v)) {
+                                tomlStr += `${k} = [${v.map(x => `"${x}"`).join(', ')}]\n`;
+                            } else {
+                                tomlStr += `${k} = ${JSON.stringify(v)}\n`;
+                            }
+                        }
+                        tomlStr += '\n';
+                    } else {
+                        tomlStr += `${key} = ${JSON.stringify(value)}\n`;
+                    }
+                }
+
+                fs.writeFileSync(`${process.cwd()}/config.toml`, tomlStr);
                 await interaction.reply({
-                    content: '設定完成',
+                    content: '設定完成', 
                     flags: MessageFlags.Ephemeral
                 })
                 break;
@@ -349,7 +404,24 @@ module.exports = {
                     }
                 }
 
-                fs.writeFileSync(`${process.cwd()}/config.toml`, toml.stringify(configtoml));
+                tomlStr = '';
+                for (const [key, value] of Object.entries(configtoml)) {
+                    if (typeof value === 'object') {
+                        tomlStr += `[${key}]\n`;
+                        for (const [k, v] of Object.entries(value)) {
+                            if (Array.isArray(v)) {
+                                tomlStr += `${k} = [${v.map(x => `"${x}"`).join(', ')}]\n`;
+                            } else {
+                                tomlStr += `${k} = ${JSON.stringify(v)}\n`;
+                            }
+                        }
+                        tomlStr += '\n';
+                    } else {
+                        tomlStr += `${key} = ${JSON.stringify(value)}\n`;
+                    }
+                }
+
+                fs.writeFileSync(`${process.cwd()}/config.toml`, tomlStr);
                 await interaction.reply({
                     content: '設定完成',
                     flags: MessageFlags.Ephemeral
