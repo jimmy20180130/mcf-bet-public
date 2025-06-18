@@ -3,13 +3,29 @@ const Logger = require('./logger.js');
 
 let db = null;
 
+let checkpointInterval = null;
+
 function initDB() {
     db = new Database(`${process.cwd()}/data/data.db`);
     db.pragma('journal_mode = WAL');
     Logger.debug(`[資料庫] 已連接至資料庫 ${process.cwd()}/data/data.db`);
+
+    // 每 5 分鐘做一次 checkpoint
+    checkpointInterval = setInterval(() => {
+        try {
+            db.pragma('wal_checkpoint(FULL)');
+            Logger.debug('[資料庫] 執行自動 WAL checkpoint');
+        } catch (err) {
+            Logger.error(`[資料庫] 自動 checkpoint 失敗：${err.message}`);
+        }
+    }, 5 * 60 * 1000); // 5 分鐘
 }
 
 function closeDB() {
+    if (checkpointInterval) {
+        clearInterval(checkpointInterval);
+        checkpointInterval = null;
+    }
     if (db) {
         db.close();
         Logger.debug(`[資料庫] 已關閉資料庫`);
@@ -39,8 +55,16 @@ function executeQuery(query, params = [], callback) {
 function backup() {
     if (!db) {
         Logger.error('[資料庫] 無法進行備份，資料庫未連接');
-        process.exit(1)
+        process.exit(1);
         return Promise.reject(new Error('資料庫未連接'));
+    }
+
+    try {
+        // 先做 checkpoint，確保 .db 是最新狀態
+        db.pragma('wal_checkpoint(FULL)');
+        Logger.debug('[資料庫] 備份前執行 WAL checkpoint 完成');
+    } catch (err) {
+        Logger.error(`[資料庫] 備份前 WAL checkpoint 失敗：${err.message}`);
     }
 
     const backupPath = `${process.cwd()}/data/backup-${Date.now()}.db`;
@@ -48,11 +72,10 @@ function backup() {
 
     let paused = false;
 
-    // 備份並回傳 Promise
     return db.backup(backupPath, {
         progress({ totalPages: t, remainingPages: r }) {
             const completedPages = t - r;
-            Logger.log(`備份進度：${((t - r) / t * 100).toFixed(1)}% (${completedPages}/${t} 頁)`);
+            Logger.log(`備份進度：${((completedPages / t) * 100).toFixed(1)}% (${completedPages}/${t} 頁)`);
             return paused ? 0 : 200;
         }
     })
@@ -64,6 +87,7 @@ function backup() {
             throw err;
         });
 }
+
 
 
 module.exports = {

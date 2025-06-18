@@ -22,11 +22,14 @@ async function executeCommand(bot, playerid, args) {
     const messages = JSON.parse(fs.readFileSync(`${process.cwd()}/data/messages.json`, 'utf8'));
 
     if (await canUseCommand(await get_player_uuid(playerid), args.split(' ')[0])) {
-        const emeraldRegex = /綠寶石餘額 : (\d[\d,]*)/;
-        const coinRegex = /村民錠餘額 : (\d[\d,]*)/;
-        const emerald = bot.tablist.header.toString().match(emeraldRegex)[1].replaceAll(',', '');
-        const coin = bot.tablist.header.toString().match(coinRegex)[1].replaceAll(',', '');
-        await chat(bot, `/m ${playerid} ${await process_msg(bot, messages.commands.money['default'].replaceAll("%emerald%", emerald).replaceAll("%coin%", coin), playerid)}`)
+        const map = bot.scoreboards?.["TAB-Scoreboard"]?.itemsMap;
+
+        let emerald = map?.["§2§r"]?.displayName?.text?.match(/＄.*?([\d,]+)元/)?.[1] || "0";
+        emerald = parseInt(emerald.replace(/,/g, "")) || 0;
+
+        let villager = map?.["§3§r"]?.displayName?.text?.match(/§f([\d,]+)個/)?.[1] || "0";
+        villager = parseInt(villager.replace(/,/g, "")) || 0;
+        await chat(bot, `/m ${playerid} ${await process_msg(bot, messages.commands.money['default'].replaceAll("%emerald%", emerald).replaceAll("%coin%", villager), playerid)}`)
     } else {
         await mc_error_handler(bot, 'general', 'no_permission', playerid)
     }

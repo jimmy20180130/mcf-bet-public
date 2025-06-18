@@ -14,7 +14,7 @@ Logger.log('正在開始執行由 Jimmy 開發的 [廢土對賭機器人]');
 let config = JSON.parse(fs.readFileSync(`${process.cwd()}/data/config.json`, 'utf8'));
 let configtoml = toml.parse(fs.readFileSync(`${process.cwd()}/config.toml`, 'utf8'));
 
-config.version = 'v.3.0.0-beta-18'
+config.version = 'v.3.0.0'
 fs.writeFileSync(`${process.cwd()}/data/config.json`, JSON.stringify(config, null, 4));
 
 function hashPassword(password) {

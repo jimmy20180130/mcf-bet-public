@@ -205,6 +205,7 @@ async function handleInteraction(interaction) {
     const { timeFilter, amountFilter } = parseFilters(interaction);
     const stats = calculateStatistics(pay_history, timeFilter, amountFilter);
     const userAccess = await checkUserAccess(interaction, config, roles, player_uuid);
+    console.log(userAccess)
 
     if (!userAccess.hasAccess) {
         await interaction.editReply(userAccess.message || '您無權限執行此操作');
@@ -353,11 +354,21 @@ async function checkUserAccess(interaction, config, roles, targetUuid) {
     const userData = await get_user_data(undefined, member.id);
     const userRoles = member.roles.cache.map(role => role.id);
 
-    const isWhitelisted = config.minecraft.whitelist.some(async name => {
-        if (name.toLowerCase() === (await get_player_name(userData?.player_uuid))?.toLowerCase()) {
-            return true
+    // const isWhitelisted = config.minecraft.whitelist.some(async name => {
+    //     if (name.toLowerCase() === (await get_player_name(userData?.player_uuid))?.toLowerCase()) {
+    //         return true
+    //     }
+    // })
+
+    const playerName = (await get_player_name(userData?.player_uuid))?.toLowerCase();
+
+    let isWhitelisted = false;
+    for (const name of config.minecraft.whitelist) {
+        if (name.toLowerCase() === playerName) {
+            isWhitelisted = true;
+            break;
         }
-    })
+    }
     
     const isSelfQuery = await get_player_name(userData?.player_uuid) === await get_player_name(targetUuid) && await get_player_name(userData?.player_uuid) !== 'Not Found' && await get_player_name(userData?.player_uuid) !== 'Unexpected Error'
 
@@ -367,6 +378,8 @@ async function checkUserAccess(interaction, config, roles, targetUuid) {
         others: false
     };
 
+    Logger.debug(`User ${member.id}, wlist: ${JSON.stringify(config.minecraft.whitelist)}, playerid: ${(await get_player_name(userData?.player_uuid))?.toLowerCase()}, has access: ${isWhitelisted}, isSelfQuery: ${isSelfQuery}, rolePermissions: ${JSON.stringify(rolePermissions)}`);
+
     return {
         hasAccess: isWhitelisted || (rolePermissions.me && isSelfQuery) || (rolePermissions.others && !isSelfQuery),
         showDetailedStats: isWhitelisted || rolePermissions.advanced
@@ -375,10 +388,10 @@ async function checkUserAccess(interaction, config, roles, targetUuid) {
 
 async function buildEmbed(interaction, playerId, playerUuid, timeDesc, amountDesc, stats, showDetailed) {
     const imageUrl = playerId === '所有人'
-        ? 'https://example.com/all-players-image.png'
+        ? 'https://files.xi11.cc/azw9m'
         : `https://minotar.net/helm/${playerUuid}/64.png`;
 
-    await fetch(imageUrl); // 预加载图片
+    await fetch(imageUrl);
 
     return bet_record(
         playerId,

@@ -484,6 +484,7 @@ if (process.argv.includes('--spawned')) {
                     const newConfig = JSON.parse(fs.readFileSync(`${process.cwd()}/data/config.json`, 'utf8'));
                     if (JSON.stringify(newConfig.advertisement) !== JSON.stringify(ads)) {
                         Logger.debug('偵測到廣告配置更新，重新載入中...');
+                        clearInterval(auto_check_ad);
                         await ad();
                     }
                 }, 5000);

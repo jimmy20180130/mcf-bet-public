@@ -23,7 +23,7 @@ async function get_player_uuid(playerid) {
 
     let result;
 
-    await axios.get(`https://api.mojang.com/users/profiles/minecraft/${playerid}`, {
+    await axios.get(`https://api.minecraftservices.com/minecraft/profile/lookup/name/${playerid}`, {
         family: 4 // 強制使用 IPv4
     })
         .then(response => {

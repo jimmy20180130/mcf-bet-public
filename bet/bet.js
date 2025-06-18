@@ -51,13 +51,17 @@ async function process_bet_task() {
 
         const process_task_promise = new Promise(async resolve => {
             const configtoml = toml.parse(fs.readFileSync(`${process.cwd()}/config.toml`, 'utf8'));
-            const emeraldRegex = /綠寶石餘額 : (\d[\d,]*)/;
-            const coinRegex = /村民錠餘額 : (\d[\d,]*)/;
             let task = bet_task.shift();
             task_uuid = task.uuid
-            
-            const emerald = bot.tablist.header.toString().match(emeraldRegex)[1].replaceAll(',', '');
-            const coin = bot.tablist.header.toString().match(coinRegex)[1].replaceAll(',', '');
+
+            const map = bot.scoreboards?.["TAB-Scoreboard"]?.itemsMap;
+
+            let emerald = map?.["§2§r"]?.displayName?.text?.match(/＄.*?([\d,]+)元/)?.[1] || "0";
+            emerald = parseInt(emerald.replace(/,/g, "")) || 0;
+
+            let villager = map?.["§3§r"]?.displayName?.text?.match(/§f([\d,]+)個/)?.[1] || "0";
+            villager = parseInt(villager.replace(/,/g, "")) || 0;
+
             if (task.type == 'emerald' && emerald < task.amount*configtoml.bet.eodds) {
                 await mc_error_handler(bot, 'bet', 'no_money', task.player_id)
                 await pay_handler(bot, task.player_id, task.amount, task.type, client, false, task_uuid)
