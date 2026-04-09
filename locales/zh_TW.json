@@ -1,0 +1,230 @@
+{
+	"dc": {
+		"link": {
+			"invalidCode": "驗證碼無效或已過期",
+			"success": "成功綁定 Minecraft 帳號 {playerId} ({playerUuid})",
+			"linkFailed": "綁定時發生錯誤，請稍後再試"
+		},
+		"ping": {
+			"pinging": "Pinging...",
+			"result": "Pong！機器人延遲為 {latency}ms，API 延遲為 {apiLatency}ms"
+		},
+		"rank": {
+			"notImplemented": "排行榜功能尚未實作"
+		},
+		"settings": {
+			"betUpdated": "已成功更新下注設定",
+			"betUpdateFailed": "更新下注設定時發生錯誤",
+			"channelUpdated": "已成功更新頻道設定",
+			"channelUpdateFailed": "更新頻道設定時發生錯誤",
+			"autoMessageNeedAddFields": "新增自動發話需要提供 message 與 wait",
+			"autoMessageAdded": "已新增自動發話 #[{index}]\n等待秒數: {waitSeconds}\n內容: {message}",
+			"autoMessageNeedEditIndex": "編輯自動發話需要提供 index",
+			"autoMessageNeedEditFields": "編輯自動發話至少要提供 message 或 wait 其中一項",
+			"autoMessageIndexNotFound": "找不到自動發話編號 #{index}",
+			"autoMessageEdited": "已更新自動發話 #[{index}]\n等待秒數: {waitSeconds}\n內容: {message}",
+			"autoMessageEmpty": "目前尚未設定任何自動發話",
+			"autoMessageSingle": "自動發話 #[{index}]\n等待秒數: {waitSeconds}\n內容: {message}",
+			"autoMessageList": "自動發話列表:\n{list}",
+			"autoMessageUpdateFailed": "更新自動發話設定時發生錯誤",
+			"whitelistNeedAddPlayer": "請提供要加入白名單的玩家名稱",
+			"whitelistAlreadyExists": "玩家 {playerName} 已在白名單中",
+			"whitelistAdded": "已成功將玩家 {playerName} 加入白名單",
+			"whitelistNeedRemovePlayer": "請提供要從白名單移除的玩家名稱",
+			"whitelistNotExists": "玩家 {playerName} 不在白名單中",
+			"whitelistRemoved": "已成功將玩家 {playerName} 從白名單移除",
+			"whitelistBotList": "機器人 {botName} 的白名單: {list}",
+			"whitelistGlobalList": "全域白名單: {list}",
+			"whitelistUpdateFailed": "更新白名單設定時發生錯誤"
+		},
+		"roles": {
+			"noPermission": "你沒有權限執行此操作",
+			"nameRequired": "請提供身份組名稱",
+			"duplicateName": "身份組名稱 {name} 已存在",
+			"added": "已新增身份組 #[{id}] {name}\nDiscord 綁定: {discordRole}\n加成賠率: {bonusodds}\n每日簽到: 綠寶石 {dailyEmerald} / 村民錠 {dailyCoin}",
+			"notFound": "找不到指定的身份組",
+			"rankNotInBot": "該身份組不屬於你指定的 BOT",
+			"cannotRemoveDefault": "不能移除預設身份組（未綁定）",
+			"removed": "已移除身份組 #[{id}] {name}",
+			"noChanges": "未提供任何要修改的內容",
+			"edited": "已更新身份組 #[{id}] {name}\nBOT: {bot}\nDiscord 綁定: {discordRole}\n加成賠率: {bonusodds}\n每日簽到: 綠寶石 {dailyEmerald} / 村民錠 {dailyCoin}",
+			"empty": "目前沒有任何身份組",
+			"detail": "身份組詳細資料\nID: #[{id}]\n名稱: {name}\nBOT: {botName} ({botKey})\nDiscord 綁定: {discordRole}\n加成賠率: {bonusodds}\n每日簽到: 綠寶石 {dailyEmerald} / 村民錠 {dailyCoin}",
+			"listHeader": "身份組列表:\n{content}"
+		},
+		"wallet": {
+			"selfNotLinked": "您尚未綁定 Minecraft 帳號",
+			"targetNotFound": "找不到該玩家或該玩家尚未綁定",
+			"noPermission": "你沒有權限執行此錢包操作",
+			"invalidPlayer": "找不到玩家，請確認玩家名稱或 UUID",
+			"needAmount": "請至少提供 eamount 或 camount",
+			"addAmountInvalid": "增加金額必須大於 0",
+			"removeAmountInvalid": "減少金額必須大於 0",
+			"balanceCannotNegative": "操作後錢包餘額不能小於 0",
+			"setAmountInvalid": "設定金額不能小於 0",
+			"querySummary": "玩家: {playerId}\nBOT: {botName}\n綠寶石錢包: {emerald}\n村民錠錢包: {coin}",
+			"addSummary": "已增加 {playerId} 在 {botName} 的錢包\n綠寶石: {emerald}\n村民錠: {coin}",
+			"removeSummary": "已減少 {playerId} 在 {botName} 的錢包\n綠寶石: {emerald}\n村民錠: {coin}",
+			"setSummary": "已設定 {playerId} 在 {botName} 的錢包\n綠寶石: {emerald}\n村民錠: {coin}"
+		},
+		"template": {
+			"nameEmpty": "模板名稱不可為空",
+			"nameExists": "你已經有名稱為 {templateName} 的模板，請先刪除或改用其他名稱",
+			"filterError": "模板條件錯誤: {error}",
+			"added": "已新增模板: {templateName}",
+			"notFound": "找不到你建立的模板: {templateName}",
+			"removed": "已刪除模板: {templateName}",
+			"emptyList": "目前沒有可用模板",
+			"listHeader": "我的模板列表:\n{lines}",
+			"infoName": "模板名稱: {name}",
+			"infoCreator": "建立者: <@{userId}>",
+			"unknownSubcommand": "未知子指令: {subcommand}",
+			"handleError": "處理模板時發生錯誤: {error}",
+			"validationStartAfterEnd": "{currencyName} 的開始時間不能晚於結束時間",
+			"validationMinGreaterThanMax": "{currencyName} 的最小金額不能大於最大金額",
+			"currencyNoCondition": "{label}: 無條件",
+			"currencyTimeRange": "時間 {start} ~ {end}",
+			"currencyAmountRange": "金額 {min} <= x <= {max}",
+			"botLine": "BOT: {bot}",
+			"currencyLine": "{label}: {content}"
+		},
+		"record": {
+			"autocompleteNoMatch": "無符合玩家",
+			"requesterNotLinked": "您尚未綁定 Minecraft 帳號",
+			"targetNotFound": "找不到該玩家或該玩家尚未綁定帳號",
+			"templateNotFound": "找不到你建立的模板",
+			"allBots": "所有機器人",
+			"unknownBot": "未知機器人",
+			"statsSimple": "下注金額: {bet} | 下注次數: {count}",
+			"statsDetailed": "下注金額: {bet} | 下注次數: {count}\n贏得金額: {win} | 賭場盈虧: {profit}",
+			"fieldPlayerId": "玩家 ID",
+			"fieldDiscord": "Discord",
+			"fieldQueryBot": "查詢 BOT",
+			"fieldPlayerUuid": "玩家 UUID",
+			"fieldEmeraldPeriod": "綠寶石查詢期間",
+			"fieldEmerald": "綠寶石",
+			"fieldCoinPeriod": "村民錠查詢期間",
+			"fieldCoin": "村民錠",
+			"fieldTemplate": "使用模板",
+			"unbound": "尚未綁定",
+			"rangeStart": "始",
+			"rangeEnd": "末",
+			"embedTitle": "流水查詢",
+			"embedFooter": "Jimmy Bot"
+		},
+		"interaction": {
+			"minecraftData": {
+				"notLinked": "使用者 <@{userId}> 尚未綁定 Minecraft 帳號",
+				"summary": "使用者: <@{userId}>\nMinecraft ID: {playerId}\nUUID: {uuid}"
+			},
+			"template": {
+				"requesterNotLinked": "您尚未綁定 Minecraft 帳號",
+				"targetNotLinked": "使用者 <@{userId}> 尚未綁定 Minecraft 帳號",
+				"emptyTemplate": "你尚未建立模板，請先用 /template add 新增至少一個模板",
+				"allBots": "所有機器人",
+				"unknownBot": "未知機器人",
+				"stats": "下注金額: {bet} | 下注次數: {count}",
+				"fieldPlayerId": "玩家 ID",
+				"fieldDiscord": "Discord",
+				"fieldQueryBot": "查詢 BOT",
+				"fieldPlayerUuid": "玩家 UUID",
+				"fieldEmeraldPeriod": "綠寶石查詢期間",
+				"fieldEmerald": "綠寶石",
+				"fieldCoinPeriod": "村民錠查詢期間",
+				"fieldCoin": "村民錠",
+				"fieldTemplate": "使用模板",
+				"unbound": "尚未綁定",
+				"rangeStart": "始",
+				"rangeEnd": "末",
+				"embedTitle": "固定條件查詢",
+				"embedDesc": "查詢對象: <@{userId}>",
+				"embedFooter": "Jimmy Bot"
+			}
+		}
+	},
+	"core": {
+		"dcBot": {
+			"commandExecuteError": "執行指令時發生錯誤！",
+			"interactionHandleError": "處理互動時發生錯誤！",
+			"betWinTitle": "{currencyIcon} [中獎] {playerId}",
+			"betWinDescription": "下注{currency} `{amount}` -> `{returnAmount}` (賠率=`{odds}`)",
+			"betLoseTitle": "{currencyIcon} [未中獎] {playerId}",
+			"betLoseDescription": "下注{currency} `{amount}` -> `0` (賠率=`{odds}`)",
+			"betEmbedFooter": "Jimmy Bot"
+		}
+	},
+	"mc": {
+		"cpay": {
+			"usage": "/m {sender} {command} 玩家ID 金額",
+			"success": "/m {sender} 已成功轉帳 {amount} &6&l村民錠&r&f給 {target}",
+			"failed": "/m {sender} &c&l轉帳失敗: {error}"
+		},
+		"deposit": {
+			"cancel": "/m {sender} 已取消存放模式",
+			"instruction": "/m {sender} 請在 &c20 秒&r內將欲存放之資金轉給我，&c再次輸入&r指令可&c取消&r存放模式",
+			"receivedEmerald": "/m {sender} 已收到您存放的 {amount} &a&l綠寶石&r&f，已退出存放模式",
+			"receivedCoin": "/m {sender} 已收到您存放的 {amount} &6&l村民錠&r&f，已退出存放模式"
+		},
+		"epay": {
+			"usage": "/m {sender} {command} 玩家ID 金額",
+			"success": "/msg {sender} 已成功轉帳 {amount} &a&l綠寶石&r&f給 {target}",
+			"failed": "/msg {sender} &c&l轉帳失敗: {error}"
+		},
+		"command": {
+			"unexpectedError": "/m {sender} &c&l執行指令時發生不可預期的錯誤，請聯繫開發者",
+			"internalError": "/msg {sender} &c&l執行指令 {command} 時發生內部錯誤"
+		},
+		"money": {
+			"unavailable": "無法取得",
+			"summary": "/m {sender} &a&l綠寶石&r&7: &b{emerald} &f個，&6&l村民錠&r&7: &b{coin} &f個"
+		},
+		"restart": {
+			"notice": "/m {sender} Bot 將在五秒後重新啟動..."
+		},
+		"signin": {
+			"alreadySigned": "/m {sender} 你今天在 {botName} 已經簽到過了",
+			"noReward": "/m {sender} 你在此 Bot 沒有簽到獎勵可領取",
+			"streak": "連續簽到 {streak} 天，共簽到 {total} 天",
+			"success": "/m {sender} 簽到成功！你已{streakMsg}",
+			"emeraldFail": "&c&l綠寶石失敗: {error}",
+			"coinFail": "&c&l村民錠失敗: {error}",
+			"partialError": "/m {sender} 你已{streakMsg}，但&c&l轉帳出錯: {errors}"
+		},
+		"stop": {
+			"notice": "/m {sender} Bot 將在五秒後關閉..."
+		},
+		"wallet": {
+			"noBalance": "/m {sender} 你的錢包目前沒有可領取的餘額",
+			"emeraldFailed": "/m {sender} &c&l領取綠寶石失敗: {error}",
+			"coinFailed": "/m {sender} &c&l領取村民錠失敗: {error}"
+		},
+		"link": {
+			"alreadyLinked": "/m {sender} &c&l你已經綁定過了",
+			"getCode": "/m {sender} 您的驗證碼是 &6&l{code}&r&f，請在 1 小時內在 Discord 伺服器中使用 /link 指令綁定帳號"
+		}
+	},
+	"service": {
+		"betService": {
+			"spawnTimeout": "等待結果逾時",
+			"spawnFailed": "等待結果失敗: {reason}",
+			"winCommand": "{target} win {payout} {currency}",
+            "cwinCommand": "&3[{time}]&r &f&l{target} &r&f贏得了 &6&l{payout} &f個&6{currency} &7(&f賠率: &e{odds}&7)",
+            "ewinCommand": "&3[{time}]&r &f&l{target} &r&f贏得了 &6&l{payout} &f個&a{currency} &7(&f賠率: &e{odds}&7)",
+            "eloseCommand": "&3[{time}]&r &b&l{target} &c&l未中獎",
+            "closeCommand": "&3[{time}]&r &b&l{target} &c&l未中獎",
+			"redstoneNotFound": "找不到紅石粉",
+			"unsupportedVersion": "不支援的 Minecraft 版本"
+		},
+		"errorHandler": {
+			"refunded": "/m {target} {amount} {currency} 已退回 ({reason})",
+			"refundFailed": "/m {target} {amount} {currency} &c&l退回失敗，請聯繫管理員 ({reason})",
+			"payTimeout": "/m {target} {amount} {currency} &c&l轉帳逾時，請聯繫管理員 (原因: {reason})",
+			"refundedReason": "/m {target} {amount} {currency} 已退回 (reason: {reason})",
+			"refundFailedReason": "/m {target} {amount} {currency} &c&l退回失敗，請聯繫管理員 (reason: {reason})"
+		}
+	},
+	"common": {
+		"unknownError": "未知錯誤",
+		"none": "無"
+	}
+}

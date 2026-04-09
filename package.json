@@ -1,80 +1,17 @@
 {
-    "name": "mcf-bet-public",
-    "bin": "start.js",
-    "dependencies": {
-        "axios": "^0.27.2",
-        "better-sqlite3": "^11.8.1",
-        "bignumber.js": "^9.1.2",
-        "crypto-js": "^4.2.0",
-        "decimal.js": "10.5.0",
-        "discord.js": "^14.18.0",
-        "esbuild": "^0.25.0",
-        "form-data": "^4.0.2",
-        "minecraft-data": "^3.84.1",
-        "minecraft-protocol": "^1.54.0",
-        "mineflayer": "github:jimmy20180130/mineflayer",
-        "moment-timezone": "^0.5.47",
-        "prismarine-entity": "^2.5.0",
-        "readline": "^1.3.0",
-        "readline-sync": "^1.4.10",
-        "silly-datetime": "^0.1.2",
-        "socket.io-client": "^4.8.1",
-        "sqlite3": "5.1.7",
-        "toml": "^3.0.0"
-    },
-    "version": "2.0.0",
-    "description": "A minecraft gambling bot (Only can use in mcfallout.net)",
-    "main": "start.js",
-    "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1",
-        "build": "pkg start.js -t node18-win-x64 -c package.json --assets main.js"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/jimmy20180130/mcf-bet-public.git"
-    },
-    "keywords": [
-        "mcfallout",
-        "mineflayer",
-        "minecraft",
-        "gambling",
-        "bet",
-        "bot"
-    ],
-    "author": "jimmy20180130",
-    "license": "ISC",
-    "bugs": {
-        "url": "https://github.com/jimmy20180130/mcf-bet-public/issues"
-    },
-    "homepage": "https://github.com/jimmy20180130/mcf-bet-public#readme",
-    "pkg": {
-        "assets": [
-            "node_modules/**/*",
-            "main.js",
-            "check_config.js",
-            "fixData.js",
-            "auth/auth.js",
-            "commands/*.js",
-            "bet/*.js",
-            "discord/*.js",
-            "error/*.js",
-            "utils/*.js",
-            "main.txt"
-        ],
-        "scripts": [
-            "auth/auth.js",
-            "commands/*.js",
-            "bet/*.js",
-            "discord/*.js",
-            "error/*.js",
-            "utils/*.js",
-            "main.js",
-            "check_config.js",
-            "start.js",
-            "fixData.js"
-        ]
-    },
-    "devDependencies": {
-        "bytenode": "^1.5.7"
-    }
+  "name": "mcf-bet-bot",
+  "module": "index.js",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest",
+    "rcedit": "^4.0.1"
+  },
+  "dependencies": {
+    "decimal.js": "^10.6.0",
+    "discord.js": "^14.25.1",
+    "mineflayer": "^4.35.0",
+    "moment-timezone": "^0.6.1",
+    "smol-toml": "^1.6.0",
+    "ws": "^8.20.0"
+  }
 }

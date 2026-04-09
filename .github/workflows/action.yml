@@ -1,0 +1,31 @@
+name: build
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: build
+    runs-on: windows-latest
+    env:
+      APP_EXE: dist/mcf-bet-bot.exe
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+
+      - run: bun install
+      # - name: Install UPX
+      #   run: choco install upx -y
+      - run: bun scripts/build.js
+
+      # - name: Pack with UPX
+      #   run: upx --best --lzma ${{ env.APP_EXE }}
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ github.run_number }}
+          path: dist/
+          if-no-files-found: error

@@ -1,0 +1,40 @@
+flowchart TD
+    Start([程式開始 index.js]) --> Init[初始化模組 & 讀取 config.toml]
+    Init --> CreateInterface[建立 Console 輸入介面]
+    Init --> StartAsync{執行 start 異步函式}
+
+    subgraph "啟動流程"
+        StartAsync --> StartDC["啟動 Discord Bot (dcBot.start)"]
+        StartDC --> LoopBots[遍歷 config.bots 設定]
+        LoopBots -->|每一個 Bot| CreateMC[建立 mcBot 實例]
+        CreateMC --> CreateAuth[建立 AuthService]
+        CreateAuth --> Auth{驗證 authenticate}
+        
+        Auth -->|成功| PushBot[加入 mcBots 列表]
+        PushBot --> StartMC["啟動 MC Bot (mcClient.start)"]
+        StartMC --> LoopBots
+        
+        Auth -->|失敗| LogWarn[記錄警告: auth failed]
+        LogWarn --> LoopBots
+    end
+
+    LoopBots -->|完成所有 Bot| ListenConsole[開始監聽 Console 輸入]
+
+    subgraph "Console 指令處理"
+        ListenConsole -->|收到輸入| CheckPrefix{輸入內容開頭?}
+        
+        CheckPrefix -->|"'>' (控制指令)"| CheckCmd{檢查指令}
+        CheckCmd -->|"stop [id]"| StopOne[停止指定 Bot]
+        CheckCmd -->|"stop (無參數)"| StopAll["停止所有 Bot & 結束程式"]
+        CheckCmd -->|其他| LogUnknown[記錄未知指令]
+
+        CheckPrefix -->|"一般文字 (聊天)"| CheckFormat{檢查格式 ID: 訊息}
+        CheckFormat -->|"包含 :"| SendSpecific[發送訊息給指定 Bot]
+        CheckFormat -->|"不含 :"| Broadcast[廣播訊息給所有 Bot]
+    end
+
+    StopOne --> ListenConsole
+    LogUnknown --> ListenConsole
+    SendSpecific --> ListenConsole
+    Broadcast --> ListenConsole
+    StopAll --> End([結束程式])

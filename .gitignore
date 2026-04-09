@@ -1,5 +1,9 @@
 node_modules
-mcf-bet-public.exe
-migrate.exe
-release
-config1.toml
+bun.lock
+
+dist
+
+.env
+.env.local
+
+config.local.toml
