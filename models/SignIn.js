@@ -2,25 +2,14 @@ const db = require('../database/index');
 
 class signIn {
     static hasSignedInToday(playeruuid, bot) {
-        // utc+8 的一天算簽到一次，例如 2026/03/08 23:59:59 簽到則視為 2026/03/08 簽到，2026/03/09 00:00:01 簽到則視為 2026/03/09 簽到
-        const fmt = new Intl.DateTimeFormat('en-GB', {
-            timeZone: 'Asia/Taipei',
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-        });
-        const [{ value: day }, , { value: month }, , { value: year }] = fmt.formatToParts(new Date());
-
-        const startOfDay = new Date(`${year}-${month}-${day}T00:00:00+08:00`);
-        const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+        // utc+8 的一天算簽到一次
         const result = db.query(`
             SELECT COUNT(*) as count 
             FROM signInRecords
             WHERE playeruuid = ?
-            AND createdAt >= ?
-            AND createdAt < ?
+            AND DATE(datetime(createdAt, '+8 hours')) = DATE(datetime('now', '+8 hours'))
             AND bot = ?
-        `).get(playeruuid, startOfDay.toISOString(), endOfDay.toISOString(), bot);
+        `).get(playeruuid, bot);
         return result.count > 0;
     }
 

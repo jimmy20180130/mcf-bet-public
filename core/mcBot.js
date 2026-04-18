@@ -7,12 +7,13 @@ const mcCommandHandler = require('../commands/minecraft/index');
 const MinecraftDataService = require('../services/minecraftDataService');
 const { readConfig } = require('../services/configService');
 const { t } = require('../utils/i18n');
+const { getBotKeyFromConfigBot, findConfigBotByKey } = require('../utils/botKey');
 
 class mcBot {
-    constructor(options, index, dcBot) {
+    constructor(options, dcBot) {
         this.bot = null;
         this.dcBot = dcBot;
-        this.index = index;
+        this.botKey = getBotKeyFromConfigBot(options);
         this.options = {
             username: options.username || 'mcf-bet-bot',
             host: options.host || 'mcfallout.net',
@@ -26,7 +27,7 @@ class mcBot {
 
     _getCurrentBotConfig() {
         const config = readConfig();
-        return config?.bots?.[this.index] || null;
+        return findConfigBotByKey(config?.bots || [], this.botKey);
     }
 
     _getCurrentBetConfig() {
@@ -56,6 +57,7 @@ class mcBot {
 
     start() {
         this.bot = mineflayer.createBot(this.options);
+        this.bot.botKey = this.botKey;
         this.bot.logger = new Logger(`${this.options.username}`, true);
         this.bot.nick = this.options.username;
         this.bot.PayService = new PayService(this.bot);

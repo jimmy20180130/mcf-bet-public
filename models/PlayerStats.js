@@ -1,9 +1,10 @@
 const db = require('../database/index');
 const Rank = require('./Rank');
+const { normalizeBotKey } = require('../utils/botKey');
 
 class PlayerStats {
     static get(playeruuid, bot) {
-        const normalizedBot = String(bot || '').replace(/-/g, '').toLowerCase();
+        const normalizedBot = normalizeBotKey(bot);
         let stats = db.query(`
             SELECT ps.*, r.displayName as rankName, r.daily, r.bonusodds, r.discordid
             FROM playerStats ps

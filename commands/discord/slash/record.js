@@ -2,9 +2,9 @@ const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js'
 const BetRecord = require('../../../models/BetRecord');
 const RecordTemplate = require('../../../models/RecordTemplate');
 const User = require('../../../models/User');
-const minecraftDataService = require('../../../services/minecraftDataService');
 const { readConfig } = require('../../../services/configService');
 const { tForInteraction } = require('../../../utils/i18n');
+const { getBotKeyFromConfigBot, normalizeBotKey, findConfigBotByKey } = require('../../../utils/botKey');
 
 function parseDate(dateStr) {
     if (!dateStr) return null;
@@ -324,11 +324,11 @@ module.exports = {
         if (focusedOption.name === 'bot') {
             const config = readConfig();
             const choices = await Promise.all(config.bots.map(async bot => ({
-                botid: await minecraftDataService.getPlayerId(bot.uuid) || bot.username,
-                botuuid: bot.uuid
+                botid: bot.username,
+                botkey: getBotKeyFromConfigBot(bot)
             }))).then(results => results.filter(bot => bot.botid.includes(focusedValue)));
 
-            await interaction.respond(choices.map(choice => ({ name: choice.botid, value: choice.botuuid })));
+            await interaction.respond(choices.map(choice => ({ name: choice.botid, value: choice.botkey })));
         }
     },
     execute
@@ -343,7 +343,7 @@ async function execute(interaction) {
         await interaction.deferReply({ flags: [] });
     }
 
-    let botUuid = interaction.options.getString('bot');
+    let botKey = normalizeBotKey(interaction.options.getString('bot'));
     const playerOpt = interaction.options.getString('player');
     const discordUserOpt = interaction.options.getMentionable('discorduser');
     const advancedOption = interaction.options.getBoolean('advanced') ?? false;
@@ -357,13 +357,13 @@ async function execute(interaction) {
     const isDiscordAdmin = interaction.member.permissions.has('Administrator');
 
     let hasPermission = false;
-    if (!botUuid) {
+    if (!botKey) {
         const isInGeneralWhitelist = config.general?.whitelist?.includes(requestingUser.playerid);
         if (isDiscordAdmin || isInGeneralWhitelist) {
             hasPermission = true;
         }
     } else {
-        const targetBotConfig = config.bots.find(b => b.uuid === botUuid);
+        const targetBotConfig = findConfigBotByKey(config.bots, botKey);
         if (targetBotConfig && targetBotConfig.whitelist?.includes(requestingUser.playerid)) {
             hasPermission = true;
         }
@@ -394,14 +394,13 @@ async function execute(interaction) {
             return interaction.editReply({ content: tForInteraction(interaction, 'dc.record.templateNotFound') });
         }
 
-        botUuid = template.filters?.bot || null;
+        botKey = normalizeBotKey(template.filters?.bot || null);
     }
 
     let botDisplayName = tForInteraction(interaction, 'dc.record.allBots');
-    if (botUuid) {
-        const botData = await minecraftDataService.getPlayerId(botUuid);
-        const botConfig = config.bots.find(b => b.uuid === botUuid);
-        botDisplayName = botData || botConfig?.username || tForInteraction(interaction, 'dc.record.unknownBot');
+    if (botKey) {
+        const botConfig = findConfigBotByKey(config.bots, botKey);
+        botDisplayName = botConfig?.username || tForInteraction(interaction, 'dc.record.unknownBot');
     }
 
     const emRange = parseAmountRange(interaction.options.getString('amount_range'));
@@ -409,7 +408,7 @@ async function execute(interaction) {
     const emDateRange = interaction.options.getString('date_range')?.split('~') || [];
     const emFilters = {
         playeruuid: targetUser.playeruuid,
-        bot: botUuid,
+        bot: botKey || null,
         currency: 'emerald',
         startTime: parseDate(interaction.options.getString('later_than')) || parseDate(emDateRange[0]) || templateEm.startTime,
         endTime: parseDate(interaction.options.getString('earlier_than')) || parseDate(emDateRange[1]) || templateEm.endTime,
@@ -422,7 +421,7 @@ async function execute(interaction) {
     const coinDateRange = interaction.options.getString('coin_date_range')?.split('~') || [];
     const coinFilters = {
         playeruuid: targetUser.playeruuid,
-        bot: botUuid,
+        bot: botKey || null,
         currency: 'coin',
         startTime: parseDate(interaction.options.getString('coin_later_than')) || parseDate(coinDateRange[0]) || templateCoin.startTime,
         endTime: parseDate(interaction.options.getString('coin_earlier_than')) || parseDate(coinDateRange[1]) || templateCoin.endTime,

@@ -3,6 +3,7 @@ const Logger = require('../utils/logger');
 const { readConfig } = require('../services/configService');
 const RoleSyncService = require('../services/roleSyncService');
 const { t } = require('../utils/i18n');
+const { getBotKeyFromConfigBot } = require('../utils/botKey');
 const {
     slashEntries,
     interactionEntries,
@@ -161,15 +162,16 @@ class DcBot {
         const botConfigs = Array.isArray(config?.bots) ? config.bots : [];
         const authorName = message.member?.displayName || message.author?.username || 'DiscordUser';
 
-        botConfigs.forEach((botConfig, index) => {
+        botConfigs.forEach((botConfig) => {
             if (String(botConfig?.consoleChannelID || '') !== message.channelId) {
                 return;
             }
 
+            const botKey = getBotKeyFromConfigBot(botConfig);
             try {
-                this.consoleMessageHandler?.(index, content, authorName);
+                this.consoleMessageHandler?.(botKey, content, authorName);
             } catch (error) {
-                this.logger.warn(`轉發 Discord 訊息到 Minecraft 失敗 (bot #${index + 1}):`, error);
+                this.logger.warn(`轉發 Discord 訊息到 Minecraft 失敗 (bot key=${botKey}):`, error);
             }
         });
     }

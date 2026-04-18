@@ -1,8 +1,8 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const User = require('../../../models/User');
-const minecraftDataService = require('../../../services/minecraftDataService');
 const { readConfig, writeConfig } = require('../../../services/configService');
 const { tForInteraction } = require('../../../utils/i18n');
+const { getBotKeyFromConfigBot, normalizeBotKey } = require('../../../utils/botKey');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -277,14 +277,14 @@ module.exports = {
             const config = readConfig();
 
             const choices = await Promise.all(config.bots.map(async bot => ({
-                botid: await minecraftDataService.getPlayerId(bot.uuid) || bot.username,
-                botuuid: bot.uuid
+                botid: bot.username,
+                botkey: getBotKeyFromConfigBot(bot)
             }))).then(results => results.filter(bot => bot.botid.includes(focusedValue)));
 
             await interaction.respond(
                 choices.map(choice => ({
                     name: choice.botid,
-                    value: choice.botuuid
+                    value: choice.botkey
                 }))
             );
         }
@@ -334,10 +334,10 @@ module.exports = {
 };
 
 function getBot(config, botIdentifier) {
-    if (typeof botIdentifier === 'number') return config.bots[botIdentifier];
+    const normalizedIdentifier = normalizeBotKey(botIdentifier);
     const bot = config.bots.find(b =>
-        b.uuid === botIdentifier
-        || b.username === botIdentifier
+        getBotKeyFromConfigBot(b) === normalizedIdentifier
+        || normalizeBotKey(b.username) === normalizedIdentifier
         || b.key === botIdentifier
     );
     return bot || config.bots[0];

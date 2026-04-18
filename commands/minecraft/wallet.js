@@ -2,6 +2,7 @@
 const User = require('../../models/User');
 const PlayerStats = require('../../models/PlayerStats');
 const { t } = require('../../utils/i18n');
+const { getBotKeyFromRuntimeBot } = require('../../utils/botKey');
 
 async function execute(bot, command, sender, args) {
     const user = User.getByPlayerId(sender);
@@ -11,7 +12,7 @@ async function execute(bot, command, sender, args) {
         return;
     }
 
-    const botName = bot._client.uuid.replace(/-/g, '').toLowerCase();
+    const botName = getBotKeyFromRuntimeBot(bot);
     const stats = PlayerStats.get(user.playeruuid, botName);
 
     if (!stats) {
