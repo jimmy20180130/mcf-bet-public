@@ -16,6 +16,11 @@ jobs:
       - uses: oven-sh/setup-bun@v2
 
       - run: bun install
+      - name: Overwrite minecraft-data
+        run: |
+          Remove-Item -Recurse -Force -ErrorAction SilentlyContinue node_modules\minecraft-data
+          Copy-Item -Recurse -Force minecraft-data node_modules\minecraft-data
+
       # - name: Install UPX
       #   run: choco install upx -y
       - run: bun scripts/build.js
