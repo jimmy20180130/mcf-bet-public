@@ -1,10 +1,8 @@
 {
   "name": "mcf-bet-bot",
-  "module": "index.js",
-  "private": true,
+  "description": "an opensource gambling bot made for mcFallout.net",
   "devDependencies": {
-    "@types/bun": "latest",
-    "rcedit": "^4.0.1"
+    "@types/bun": "latest"
   },
   "dependencies": {
     "decimal.js": "^10.6.0",
@@ -13,5 +11,31 @@
     "moment-timezone": "^0.6.1",
     "smol-toml": "^1.6.0",
     "ws": "^8.20.0"
-  }
+  },
+  "version": "3.0.0",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "bun run index.js",
+    "build": "bun run scripts/build.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jimmy20180130/mcf-bet-public.git"
+  },
+  "keywords": [
+    "minecraft",
+    "mineflayer",
+    "bot",
+    "gamble"
+  ],
+  "author": "jimmy20180130",
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/jimmy20180130/mcf-bet-public/issues"
+  },
+  "homepage": "https://github.com/jimmy20180130/mcf-bet-public#readme"
 }
