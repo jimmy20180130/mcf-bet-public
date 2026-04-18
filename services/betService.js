@@ -5,6 +5,7 @@ const User = require('../models/User');
 const PlayerStats = require('../models/PlayerStats');
 const Decimal = require('decimal.js');
 const { t } = require('../utils/i18n');
+const { getBotKeyFromRuntimeBot } = require('../utils/botKey');
 
 class BetService {
     /**
@@ -74,7 +75,8 @@ class BetService {
             // create user if not exist
             User.create({ playeruuid, playerid });
 
-            const stats = PlayerStats.get(playeruuid, this.bot._client.uuid.replace(/-/g, '').toLowerCase());
+            const botKey = getBotKeyFromRuntimeBot(this.bot);
+            const stats = PlayerStats.get(playeruuid, botKey);
             const betConfig = this._getCurrentBetConfig();
             let odds = currency == 'emerald' ? new Decimal(betConfig.eodds) : new Decimal(betConfig.codds);
             let bonusodds = new Decimal(stats?.bonusodds || 0);
@@ -86,7 +88,7 @@ class BetService {
 
             const betRecordUuid = BetRecord.create({
                 playeruuid,
-                bot: this.bot._client.uuid.replace(/-/g, '').toLowerCase(),
+                bot: botKey,
                 playerid,
                 currency,
                 amount,

@@ -6,6 +6,7 @@ const { readConfig } = require('./services/configService');
 const logger = new Logger('Core', true);
 const WsClient = require('./services/authService');
 const { version } = require('os');
+const { getBotKeyFromConfigBot } = require('./utils/botKey');
 
 const consoleInterface = rl.createInterface({
     input: process.stdin,
@@ -15,10 +16,12 @@ const consoleInterface = rl.createInterface({
 const mcBots = [];
 const dcBot = new DcBot();
 
-dcBot.setConsoleRelayHandler((botIndex, content, authorName) => {
-    const target = mcBots[botIndex]?.mcClient?.bot;
+dcBot.setConsoleRelayHandler((botKey, content, authorName) => {
+    const targetAuth = mcBots.find(mc => getBotKeyFromConfigBot(mc.mcClient.options) === botKey);
+    const target = targetAuth?.mcClient?.bot;
+
     if (!target) {
-        logger.warn(`Discord 訊息轉發失敗: 找不到 bot #${botIndex + 1}`);
+        logger.warn(`Discord 訊息轉發失敗: 找不到 bot key=${botKey}`);
         return;
     }
 
@@ -31,8 +34,9 @@ async function start() {
     await dcBot.start();
 
     for (let i = 0; i < config.bots.length; i++) {
-        const mc = new mcBot(config.bots[i], i, dcBot);
-        const token = config.bots[i].key || '';
+        const botConfig = config.bots[i];
+        const mc = new mcBot(botConfig, dcBot);
+        const token = botConfig.key || '';
         const authService = new WsClient({
             type: 'bet',
             version: '1.0.0.0',

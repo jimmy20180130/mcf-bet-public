@@ -4,6 +4,7 @@ const PlayerStats = require('../../../models/PlayerStats');
 const minecraftDataService = require('../../../services/minecraftDataService');
 const { readConfig } = require('../../../services/configService');
 const { tForInteraction } = require('../../../utils/i18n');
+const { getBotKeyFromConfigBot, normalizeBotKey, findConfigBotByKey } = require('../../../utils/botKey');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -248,14 +249,14 @@ async function autocomplete(interaction) {
         const config = readConfig();
 
         const choices = await Promise.all(config.bots.map(async bot => ({
-            botid: await minecraftDataService.getPlayerId(bot.uuid) || bot.username,
-            botuuid: bot.uuid
+            botid: bot.username,
+            botkey: getBotKeyFromConfigBot(bot)
         }))).then(results => results.filter(bot => bot.botid.includes(focusedValue)));
 
         await interaction.respond(
             choices.map(choice => ({
                 name: choice.botid,
-                value: choice.botuuid
+                value: choice.botkey
             }))
         );
     }
@@ -265,12 +266,11 @@ async function execute(interaction) {
     await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
     const subcommand = interaction.options.getSubcommand();
-    const botUuid = interaction.options.getString('bot');
-    const botKey = botUuid.replace(/-/g, '').toLowerCase();
+    const botKey = normalizeBotKey(interaction.options.getString('bot'));
 
     const config = readConfig();
-    const botConfig = config.bots?.find(bot => bot.uuid === botUuid);
-    const botName = await minecraftDataService.getPlayerId(botUuid) || botConfig?.username || botUuid;
+    const botConfig = findConfigBotByKey(config.bots, botKey);
+    const botName = botConfig?.username || botKey;
 
     if (subcommand === 'query') {
         const playerInput = interaction.options.getString('player');

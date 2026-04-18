@@ -2,6 +2,7 @@ const User = require('../../models/User');
 const PlayerStats = require('../../models/PlayerStats');
 const { t } = require('../../utils/i18n');
 const { readConfig } = require('../../services/configService');
+const { getBotKeyFromConfigBot, getBotKeyFromRuntimeBot } = require('../../utils/botKey');
 const { entries } = require('./manifest');
 
 const commands = new Map();
@@ -20,6 +21,11 @@ async function executeCommand(bot, sender, command, args) {
     const cmd = commands.get(command);
     if (!cmd) return;
 
+    const botKey = getBotKeyFromRuntimeBot(bot);
+    if (sender.toLowerCase() === botKey) {
+        return;
+    }
+
     let user = User.getByPlayerId(sender);
     if (!user) {
         const playeruuid = await bot.MinecraftDataService.getPlayerId(sender);
@@ -35,18 +41,13 @@ async function executeCommand(bot, sender, command, args) {
         return;
     }
 
-    const botName = bot._client.uuid.replace(/-/g, '').toLowerCase();
-    PlayerStats.get(user.playeruuid, botName); 
-
-    if (sender == botName) {
-        return;
-    }
+    PlayerStats.get(user.playeruuid, botKey);
 
     const config = readConfig();
 
     let isAdmin = false;
     config.bots.forEach(botConfig => {
-        if (botConfig.uuid === bot._client.uuid) {
+        if (getBotKeyFromConfigBot(botConfig) === botKey) {
             if (botConfig.whitelist.includes(sender)) {
                 isAdmin = true;
             }

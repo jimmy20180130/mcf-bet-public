@@ -1,10 +1,10 @@
-const { ApplicationCommandType, ContextMenuCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
+const { ApplicationCommandType, ContextMenuCommandBuilder, EmbedBuilder, MessageFlags, ActionRowBuilder, StringSelectMenuBuilder } = require('discord.js');
 const BetRecord = require('../../../models/BetRecord');
 const RecordTemplate = require('../../../models/RecordTemplate');
 const User = require('../../../models/User');
-const minecraftDataService = require('../../../services/minecraftDataService');
 const { readConfig } = require('../../../services/configService');
 const { tForInteraction } = require('../../../utils/i18n');
+const { normalizeBotKey, findConfigBotByKey } = require('../../../utils/botKey');
 
 function parseDate(dateStr) {
     if (!dateStr) return null;
@@ -32,6 +32,14 @@ module.exports = {
     name: 'recordTemplate',
 
     async execute(interaction) {
+        if (interaction.isContextMenuCommand()) {
+            await this.handleContextMenu(interaction);
+        } else if (interaction.isStringSelectMenu()) {
+            await this.handleSelectMenu(interaction);
+        }
+    },
+
+    async handleContextMenu(interaction) {
         await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
         const requester = User.getByDiscordId(interaction.user.id);
@@ -50,23 +58,68 @@ module.exports = {
             return;
         }
 
-        // 簡陋版：直接使用你最新建立的模板
-        const template = RecordTemplate.listOwn(interaction.user.id, 1)[0];
-        if (!template) {
+        const templates = RecordTemplate.listOwn(interaction.user.id, 25);
+        if (!templates || templates.length === 0) {
             await interaction.editReply({
                 content: tForInteraction(interaction, 'dc.interaction.template.emptyTemplate')
             });
             return;
         }
 
+        const selectMenu = new StringSelectMenuBuilder()
+            .setCustomId(`recordTemplate_${targetDiscordUser.id}`)
+            .setPlaceholder(tForInteraction(interaction, 'dc.interaction.template.selectPlaceholder') || '請選擇一個查詢模板')
+            .addOptions(templates.map(t => ({
+                label: t.name,
+                value: String(t.name)
+            })));
+
+        const row = new ActionRowBuilder().addComponents(selectMenu);
+
+        await interaction.editReply({
+            content: tForInteraction(interaction, 'dc.interaction.template.selectPrompt') || '請選擇您想使用的查詢模板：',
+            components: [row]
+        });
+    },
+
+    async handleSelectMenu(interaction) {
+        await interaction.deferUpdate();
+
+        const requester = User.getByDiscordId(interaction.user.id);
+        if (!requester) {
+            await interaction.editReply({ content: tForInteraction(interaction, 'dc.interaction.template.requesterNotLinked'), components: [] });
+            return;
+        }
+
+        const targetDiscordId = interaction.customId.split('_')[1];
+        const targetUser = User.getByDiscordId(targetDiscordId);
+
+        if (!targetUser) {
+            await interaction.editReply({
+                content: tForInteraction(interaction, 'dc.interaction.template.targetNotLinked', { userId: targetDiscordId }),
+                components: []
+            });
+            return;
+        }
+
+        const templateName = interaction.values[0];
+        const template = RecordTemplate.getByOwnerAndName(interaction.user.id, templateName);
+        
+        if (!template) {
+            await interaction.editReply({
+                content: tForInteraction(interaction, 'dc.interaction.template.notFound') || '找不到指定的模板。',
+                components: []
+            });
+            return;
+        }
+
         const config = readConfig();
-        const botUuid = template.filters?.bot || null;
+        const botKey = normalizeBotKey(template.filters?.bot || null);
 
         let botDisplayName = tForInteraction(interaction, 'dc.interaction.template.allBots');
-        if (botUuid) {
-            const botData = await minecraftDataService.getPlayerId(botUuid);
-            const botConfig = config.bots.find(b => b.uuid === botUuid);
-            botDisplayName = botData || botConfig?.username || tForInteraction(interaction, 'dc.interaction.template.unknownBot');
+        if (botKey) {
+            const botConfig = findConfigBotByKey(config.bots, botKey);
+            botDisplayName = botConfig?.username || tForInteraction(interaction, 'dc.interaction.template.unknownBot');
         }
 
         const templateEm = normalizeTemplateCurrencyFilters(template.filters?.emerald);
@@ -74,7 +127,7 @@ module.exports = {
 
         const emFilters = {
             playeruuid: targetUser.playeruuid,
-            bot: botUuid,
+            bot: botKey || null,
             currency: 'emerald',
             startTime: templateEm.startTime,
             endTime: templateEm.endTime,
@@ -84,7 +137,7 @@ module.exports = {
 
         const coinFilters = {
             playeruuid: targetUser.playeruuid,
-            bot: botUuid,
+            bot: botKey || null,
             currency: 'coin',
             startTime: templateCoin.startTime,
             endTime: templateCoin.endTime,
@@ -134,13 +187,13 @@ module.exports = {
         const imageUrl = `https://minotar.net/helm/${targetUser.playeruuid}/64.png`;
         const embed = new EmbedBuilder()
             .setTitle(tForInteraction(interaction, 'dc.interaction.template.embedTitle'))
-            .setDescription(tForInteraction(interaction, 'dc.interaction.template.embedDesc', { userId: targetDiscordUser.id }))
+            .setDescription(tForInteraction(interaction, 'dc.interaction.template.embedDesc', { userId: targetDiscordId }))
             .addFields(fields)
             .setColor('#313338')
             .setThumbnail(imageUrl)
             .setFooter({ text: tForInteraction(interaction, 'dc.interaction.template.embedFooter'), iconURL: 'https://cdn.discordapp.com/icons/1173075041030787233/bbf79773eab98fb335edc9282241f9fe.webp?size=1024&format=webp&width=0&height=256' })
             .setTimestamp();
 
-        await interaction.editReply({ embeds: [embed] });
+        await interaction.editReply({ content: '', embeds: [embed], components: [] });
     },
 };

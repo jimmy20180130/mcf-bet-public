@@ -1,8 +1,9 @@
 const db = require('../database/index');
+const { normalizeBotKey } = require('../utils/botKey');
 
 class Rank {
     static _normalizeBot(bot) {
-        return String(bot || '').replace(/-/g, '').toLowerCase();
+        return normalizeBotKey(bot);
     }
 
     static _parseDaily(daily) {
@@ -24,6 +25,7 @@ class Rank {
     }
 
     static create({ displayName, bot, discordid = '', daily = {}, bonusodds = 0 }) {
+        const normalizedBot = this._normalizeBot(bot);
         const stmt = db.query(`
             INSERT INTO ranks (displayName, discordid, daily, bonusodds, bot)
             VALUES (?, ?, ?, ?, ?)
@@ -33,7 +35,7 @@ class Rank {
             String(discordid || '').trim(),
             JSON.stringify(daily || {}),
             Number(bonusodds || 0),
-            bot
+            normalizedBot
         );
     }
 
@@ -42,16 +44,18 @@ class Rank {
     }
 
     static getByBot(bot) {
+        const normalizedBot = this._normalizeBot(bot);
         const rows = db.query(`
             SELECT *
             FROM ranks
             WHERE bot = ?
             ORDER BY id ASC
-        `).all(bot);
+        `).all(normalizedBot);
         return rows.map(row => this._mapRow(row));
     }
 
     static searchByBotAndName(bot, keyword = '', limit = 25) {
+        const normalizedBot = this._normalizeBot(bot);
         const rows = db.query(`
             SELECT *
             FROM ranks
@@ -59,18 +63,19 @@ class Rank {
                 AND displayName LIKE ?
             ORDER BY id ASC
             LIMIT ?
-        `).all(bot, `%${keyword}%`, Number(limit));
+        `).all(normalizedBot, `%${keyword}%`, Number(limit));
         return rows.map(row => this._mapRow(row));
     }
 
     static getMappedByDiscordRole(bot, discordRoleId) {
+        const normalizedBot = this._normalizeBot(bot);
         return this._mapRow(db.query(`
             SELECT *
             FROM ranks
             WHERE bot = ?
               AND discordid = ?
             LIMIT 1
-        `).get(bot, String(discordRoleId || '').trim()));
+        `).get(normalizedBot, String(discordRoleId || '').trim()));
     }
 
     static update(id, updates = {}) {
@@ -89,7 +94,7 @@ class Rank {
             ? Number(updates.bonusodds || 0)
             : Number(current.bonusodds || 0);
         const nextBot = updates.bot !== undefined
-            ? String(updates.bot || '').trim()
+            ? this._normalizeBot(updates.bot)
             : current.bot;
         const nextDaily = updates.daily !== undefined
             ? updates.daily
@@ -118,6 +123,7 @@ class Rank {
     }
 
     static getDefaultForBot(bot) {
+        const normalizedBot = this._normalizeBot(bot);
         const row = db.query(`
             SELECT *
             FROM ranks
@@ -125,23 +131,24 @@ class Rank {
               AND displayName = '未綁定'
             ORDER BY id ASC
             LIMIT 1
-        `).get(bot);
+        `).get(normalizedBot);
         return this._mapRow(row);
     }
 
     static ensureDefaultForBot(bot) {
-        let rank = this.getDefaultForBot(bot);
+        const normalizedBot = this._normalizeBot(bot);
+        let rank = this.getDefaultForBot(normalizedBot);
         if (rank) return rank;
 
         this.create({
             displayName: '未綁定',
-            bot: bot,
+            bot: normalizedBot,
             discordid: '',
             daily: { e: 0, c: 0 },
             bonusodds: 0
         });
 
-        rank = this.getDefaultForBot(bot);
+        rank = this.getDefaultForBot(normalizedBot);
         return rank;
     }
 }

@@ -69,6 +69,7 @@ db.run(schema);
 
 // init ranks
 const { readConfig } = require('../services/configService');
+const { getBotKeyFromConfigBot } = require('../utils/botKey');
 let config = null;
 
 try {
@@ -80,10 +81,13 @@ try {
 const bots = config?.bots || [];
 
 for (const bot of bots) {
+    const botKey = getBotKeyFromConfigBot(bot);
+    if (!botKey) continue;
+
     db.query(`
         INSERT OR IGNORE INTO ranks (id, displayName, daily, bonusodds, bot) 
         VALUES (1, '未綁定', '{"e":0, "c":0}', 0, ?)
-    `).run(bot.uuid);
+    `).run(botKey);
 }
 
 module.exports = db;

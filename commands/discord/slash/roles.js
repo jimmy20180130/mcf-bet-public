@@ -1,8 +1,8 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const { readConfig } = require('../../../services/configService');
 const { tForInteraction } = require('../../../utils/i18n');
-const minecraftDataService = require('../../../services/minecraftDataService');
 const Rank = require('../../../models/Rank');
+const { getBotKeyFromConfigBot, normalizeBotKey, resolveBotKeyFromIdentifier } = require('../../../utils/botKey');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -197,15 +197,15 @@ async function autocomplete(interaction) {
 	if (focusedOption.name === 'bot') {
 		const config = readConfig();
 		const choices = await Promise.all((config.bots || []).map(async bot => ({
-			botid: await minecraftDataService.getPlayerId(bot.uuid) || bot.username,
-			botuuid: bot.uuid
+			botid: bot.username,
+			botkey: getBotKeyFromConfigBot(bot)
 		})));
 
 		await interaction.respond(
 			choices
 				.filter(choice => (choice.botid || '').toLowerCase().includes(focusedValue.toLowerCase()))
 				.slice(0, 25)
-				.map(choice => ({ name: choice.botid, value: choice.botuuid }))
+				.map(choice => ({ name: choice.botid, value: choice.botkey }))
 		);
 		return;
 	}
@@ -217,8 +217,8 @@ async function autocomplete(interaction) {
 		const subcommand = interaction.options.getSubcommand(false);
 
 		const botKeys = (subcommand === 'list' && botInput)
-			? [botInput]
-			: (config.bots || []).map(bot => String(bot.uuid || '').replace(/-/g, '').toLowerCase());
+			? [resolveBotKeyFromIdentifier(config.bots || [], botInput)].filter(Boolean)
+			: (config.bots || []).map(bot => getBotKeyFromConfigBot(bot));
 
 		const allRanks = botKeys.flatMap(botKey => Rank.getByBot(botKey));
 
@@ -268,13 +268,18 @@ async function execute(interaction) {
 }
 
 async function handleAdd(interaction) {
-	const botUuid = interaction.options.getString('bot', true);
-	const botKey = botUuid.replace(/-/g, '').toLowerCase();
+	const config = readConfig();
+	const botKey = resolveBotKeyFromIdentifier(config.bots || [], interaction.options.getString('bot', true));
 	const name = interaction.options.getString('name', true).trim();
 	const discordRole = interaction.options.getRole('discord_role');
 	const bonusodds = interaction.options.getNumber('bonusodds');
 	const dailyEmerald = interaction.options.getInteger('daily_emerald');
 	const dailyCoin = interaction.options.getInteger('daily_coin');
+
+	if (!botKey) {
+		await interaction.editReply({ content: tForInteraction(interaction, 'dc.roles.botNotFound') });
+		return;
+	}
 
 	if (!name) {
 		await interaction.editReply({ content: tForInteraction(interaction, 'dc.roles.nameRequired') });
@@ -337,9 +342,10 @@ async function handleRemove(interaction) {
 }
 
 async function handleEdit(interaction) {
-	const nextBotUuid = interaction.options.getString('bot');
+	const nextBotKey = interaction.options.getString('bot');
 	const rankId = Number(interaction.options.getString('rank', true));
 	const rank = Rank.getById(rankId);
+	const config = readConfig();
 
 	if (!rank) {
 		await interaction.editReply({ content: tForInteraction(interaction, 'dc.roles.notFound') });
@@ -355,7 +361,15 @@ async function handleEdit(interaction) {
 	const updates = {};
 	if (name !== null) updates.displayName = name.trim();
 	if (bonusodds !== null) updates.bonusodds = bonusodds;
-	if (nextBotUuid !== null) updates.bot = nextBotUuid.replace(/-/g, '').toLowerCase();
+	if (nextBotKey !== null) {
+		const resolvedBotKey = resolveBotKeyFromIdentifier(config.bots || [], nextBotKey);
+		if (!resolvedBotKey) {
+			await interaction.editReply({ content: tForInteraction(interaction, 'dc.roles.botNotFound') });
+			return;
+		}
+
+		updates.bot = resolvedBotKey;
+	}
 	if (discordRole) {
 		updates.discordid = discordRole.id;
 	}
@@ -389,9 +403,17 @@ async function handleEdit(interaction) {
 }
 
 async function handleList(interaction) {
-	const botUuid = interaction.options.getString('bot');
+	const botKey = interaction.options.getString('bot');
 	const rankInput = interaction.options.getString('rank');
 	const config = readConfig();
+	const resolvedFilterBotKey = botKey
+		? resolveBotKeyFromIdentifier(config.bots || [], botKey)
+		: '';
+
+	if (botKey && !resolvedFilterBotKey) {
+		await interaction.editReply({ content: tForInteraction(interaction, 'dc.roles.botNotFound') });
+		return;
+	}
 
 	if (rankInput) {
 		const rankId = Number(rankInput);
@@ -402,15 +424,14 @@ async function handleList(interaction) {
 			return;
 		}
 
-		if (botUuid) {
-			const botKey = botUuid.replace(/-/g, '').toLowerCase();
-			if (rank.bot !== botKey) {
+		if (resolvedFilterBotKey) {
+			if (rank.bot !== resolvedFilterBotKey) {
 				await interaction.editReply({ content: tForInteraction(interaction, 'dc.roles.rankNotInBot') });
 				return;
 			}
 		}
 
-		const botName = await minecraftDataService.getPlayerId(rank.bot) || rank.bot;
+		const botName = (config.bots || []).find(b => getBotKeyFromConfigBot(b) === rank.bot)?.username || rank.bot;
 		const dcRole = rank.discordid ? `<@&${rank.discordid}>` : tForInteraction(interaction, 'common.none');
 		const daily = rank?.daily && typeof rank.daily === 'object' ? rank.daily : {};
 
@@ -429,9 +450,9 @@ async function handleList(interaction) {
 		return;
 	}
 
-	const targetBots = botUuid
-		? [botUuid.replace(/-/g, '').toLowerCase()]
-		: (config.bots || []).map(bot => String(bot.uuid || '').replace(/-/g, '').toLowerCase());
+	const targetBots = resolvedFilterBotKey
+		? [resolvedFilterBotKey]
+		: (config.bots || []).map(bot => getBotKeyFromConfigBot(bot));
 
 	const sections = [];
 
@@ -439,7 +460,7 @@ async function handleList(interaction) {
 		const ranks = Rank.getByBot(botKey);
 		if (ranks.length === 0) continue;
 
-		const botName = await minecraftDataService.getPlayerId(botKey) || botKey;
+		const botName = (config.bots || []).find(b => getBotKeyFromConfigBot(b) === botKey)?.username || botKey;
 		const lines = ranks.map(rank => {
 			const dcRole = rank.discordid ? `<@&${rank.discordid}>` : tForInteraction(interaction, 'common.none');
 			const daily = rank?.daily && typeof rank.daily === 'object' ? rank.daily : {};

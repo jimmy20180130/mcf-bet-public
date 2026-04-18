@@ -3,6 +3,7 @@ const { readConfig } = require('./configService');
 const Rank = require('../models/Rank');
 const User = require('../models/User');
 const PlayerStats = require('../models/PlayerStats');
+const { normalizeBotKey, getBotKeyFromConfigBot } = require('../utils/botKey');
 
 class RoleSyncService {
     constructor(client, logger) {
@@ -11,7 +12,7 @@ class RoleSyncService {
     }
 
     _normalizeBot(bot) {
-        return String(bot || '').replace(/-/g, '').toLowerCase();
+        return normalizeBotKey(bot);
     }
 
     _pickTargetRank(mappedRanks) {
@@ -27,21 +28,21 @@ class RoleSyncService {
             })[0];
     }
 
-    async _syncUserRankForBot({ user, member, botUuid }) {
-        const botKey = this._normalizeBot(botUuid);
-        const defaultRank = Rank.ensureDefaultForBot(botKey);
-        const ranks = Rank.getByBot(botKey);
+    async _syncUserRankForBot({ user, member, botKey }) {
+        const normalizedBotKey = this._normalizeBot(botKey);
+        const defaultRank = Rank.ensureDefaultForBot(normalizedBotKey);
+        const ranks = Rank.getByBot(normalizedBotKey);
 
         const mappedRanks = ranks.filter(rank => rank.discordid && member.roles.cache.has(rank.discordid));
         const targetRank = this._pickTargetRank(mappedRanks) || defaultRank;
-        const stats = PlayerStats.get(user.playeruuid, botKey);
+        const stats = PlayerStats.get(user.playeruuid, normalizedBotKey);
 
         if (!stats || Number(stats.rankId) === Number(targetRank.id)) {
             return false;
         }
 
-        PlayerStats.updateRank(user.playeruuid, botKey, targetRank.id);
-        this.logger.info(`同步身份組成功: ${user.playerid} (${user.playeruuid}) -> ${targetRank.displayName} [bot=${botKey}]`);
+        PlayerStats.updateRank(user.playeruuid, normalizedBotKey, targetRank.id);
+        this.logger.info(`同步身份組成功: ${user.playerid} (${user.playeruuid}) -> ${targetRank.displayName} [bot=${normalizedBotKey}]`);
         return true;
     }
 
@@ -58,7 +59,7 @@ class RoleSyncService {
 
         let updated = 0;
         for (const bot of bots) {
-            if (await this._syncUserRankForBot({ user, member, botUuid: bot.uuid })) {
+            if (await this._syncUserRankForBot({ user, member, botKey: getBotKeyFromConfigBot(bot) })) {
                 updated += 1;
             }
         }
@@ -83,7 +84,7 @@ class RoleSyncService {
         }
 
         for (const bot of configBots) {
-            const botKey = this._normalizeBot(bot.uuid);
+            const botKey = this._normalizeBot(getBotKeyFromConfigBot(bot));
             const ranks = Rank.getByBot(botKey);
             if (ranks.some(rank => rank.discordid && changedRoleIds.has(rank.discordid))) {
                 return true;

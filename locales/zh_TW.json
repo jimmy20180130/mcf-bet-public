@@ -39,6 +39,7 @@
 		},
 		"roles": {
 			"noPermission": "你沒有權限執行此操作",
+			"botNotFound": "找不到指定的 BOT，請重新選擇機器人",
 			"nameRequired": "請提供身份組名稱",
 			"duplicateName": "身份組名稱 {name} 已存在",
 			"added": "已新增身份組 #[{id}] {name}\nDiscord 綁定: {discordRole}\n加成賠率: {bonusodds}\n每日簽到: 綠寶石 {dailyEmerald} / 村民錠 {dailyCoin}",
@@ -121,6 +122,9 @@
 				"requesterNotLinked": "您尚未綁定 Minecraft 帳號",
 				"targetNotLinked": "使用者 <@{userId}> 尚未綁定 Minecraft 帳號",
 				"emptyTemplate": "你尚未建立模板，請先用 /template add 新增至少一個模板",
+				"selectPlaceholder": "請選擇一個查詢模板",
+				"selectPrompt": "請選擇您想使用的查詢模板：",
+				"notFound": "找不到指定的模板。",
 				"allBots": "所有機器人",
 				"unknownBot": "未知機器人",
 				"stats": "下注金額: {bet} | 下注次數: {count}",

@@ -1,8 +1,8 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
-const minecraftDataService = require('../../../services/minecraftDataService');
 const RecordTemplate = require('../../../models/RecordTemplate');
 const { readConfig } = require('../../../services/configService');
 const { tForInteraction } = require('../../../utils/i18n');
+const { getBotKeyFromConfigBot } = require('../../../utils/botKey');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -257,14 +257,14 @@ async function autocomplete(interaction) {
         const config = readConfig();
 
         const choices = await Promise.all(config.bots.map(async bot => ({
-            botid: await minecraftDataService.getPlayerId(bot.uuid) || bot.username,
-            botuuid: bot.uuid
+            botid: bot.username,
+            botkey: getBotKeyFromConfigBot(bot)
         }))).then(results => results.filter(bot => bot.botid.includes(focusedValue)));
 
         await interaction.respond(
             choices.map(choice => ({
                 name: choice.botid,
-                value: choice.botuuid
+                value: choice.botkey
             }))
         );
     }

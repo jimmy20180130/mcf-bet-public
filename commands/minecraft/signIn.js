@@ -4,16 +4,16 @@ const SignIn = require('../../models/SignIn');
 const User = require('../../models/User');
 const PlayerStats = require('../../models/PlayerStats');
 const { t } = require('../../utils/i18n');
+const { getBotKeyFromRuntimeBot } = require('../../utils/botKey');
 
 async function execute(bot, command, sender, args) {
-    const botName = bot._client.uuid.replace(/-/g, '').toLowerCase();
+    const botName = getBotKeyFromRuntimeBot(bot);
     const user = User.getByPlayerId(sender);
     if (!user) {
         bot.logger.error(`找不到玩家 ${sender} 的使用者資料`);
         return;
     }
     const playeruuid = user.playeruuid;
-
     const hasSignedIn = SignIn.hasSignedInToday(playeruuid, botName);
 
     if (hasSignedIn) {
