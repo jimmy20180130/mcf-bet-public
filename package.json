@@ -2,7 +2,8 @@
   "name": "mcf-bet-bot",
   "description": "an opensource gambling bot made for mcFallout.net",
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "rcedit": "^5.0.2"
   },
   "dependencies": {
     "decimal.js": "^10.6.0",
