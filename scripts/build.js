@@ -85,6 +85,24 @@ async function bundleExecutable() {
         } else {
             console.warn('Warning: config.toml not found.');
         }
+
+        // Copy additional files/folders
+        const itemsToCopy = ['data', 'locales', 'docs', 'README.md'];
+        for (const item of itemsToCopy) {
+            const srcPath = path.resolve(item);
+            const destPath = path.resolve(outputDir, item);
+            if (fs.existsSync(srcPath)) {
+                if (fs.statSync(srcPath).isDirectory()) {
+                    fs.cpSync(srcPath, destPath, { recursive: true });
+                    console.log(`Copied directory ${item} to ${destPath}`);
+                } else {
+                    fs.copyFileSync(srcPath, destPath);
+                    console.log(`Copied file ${item} to ${destPath}`);
+                }
+            } else {
+                console.warn(`Warning: ${item} not found.`);
+            }
+        }
     } catch (error) {
         console.error(error);
         process.exit(1);
