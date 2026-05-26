@@ -1,8 +1,10 @@
 const { normalizeUuid } = require('../utils/identifier');
+const Logger = require('../utils/logger');
 
 class MinecraftDataService {
     constructor() {
         this.cache = {};
+        this.logger = new Logger('MinecraftDataService');
     }
 
     async getPlayerUuid(playerid) {
@@ -69,7 +71,7 @@ class MinecraftDataService {
                         }
                     }
                 } catch (err) {
-                    console.error(`Mojang API Error: ${err.message}`);
+                    this.logger.warn(`Mojang API Error: ${err.message}`);
                 }
             }
         } else {
@@ -96,7 +98,7 @@ class MinecraftDataService {
                     }
                 }
             } catch (err) {
-                console.error(`Mojang API Error: ${err.message}`);
+                this.logger.warn(`Mojang API Error: ${err.message}`);
             }
         }
         return null;
@@ -134,7 +136,7 @@ class MinecraftDataService {
                 return (cleanData.length === 32) ? name : uuid;
             }
         } catch (err) {
-            console.error(`PlayerDB Error: ${err.message}`);
+            this.logger.warn(`PlayerDB Error: ${err.message}`);
         }
 
         return null;

@@ -53,12 +53,8 @@ class BetService {
         });
     }
 
-    _getCurrencyLimitLabel(currency) {
-        return currency === 'coin' ? '村民錠' : '綠寶石';
-    }
-
     async _refundOutOfRangeBet(playerid, amount, currency, minAmount, maxAmount) {
-        const currencyLabel = this._getCurrencyLimitLabel(currency);
+        const currencyLabel = currency === 'coin' ? '村民錠' : '綠寶石';
 
         try {
             await this.bot.PayService.pay(playerid, amount, currency);

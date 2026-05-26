@@ -11,10 +11,6 @@ class RoleSyncService {
         this.logger = logger;
     }
 
-    _normalizeBot(bot) {
-        return normalizeBotKey(bot);
-    }
-
     _pickTargetRank(mappedRanks) {
         if (!mappedRanks || mappedRanks.length === 0) {
             return null;
@@ -29,7 +25,7 @@ class RoleSyncService {
     }
 
     async _syncUserRankForBot({ user, member, botKey }) {
-        const normalizedBotKey = this._normalizeBot(botKey);
+        const normalizedBotKey = normalizeBotKey(botKey);
         const defaultRank = Rank.ensureDefaultForBot(normalizedBotKey);
         const ranks = Rank.getByBot(normalizedBotKey);
 
@@ -84,7 +80,7 @@ class RoleSyncService {
         }
 
         for (const bot of configBots) {
-            const botKey = this._normalizeBot(getBotKeyFromConfigBot(bot));
+            const botKey = normalizeBotKey(getBotKeyFromConfigBot(bot));
             const ranks = Rank.getByBot(botKey);
             if (ranks.some(rank => rank.discordid && changedRoleIds.has(rank.discordid))) {
                 return true;
