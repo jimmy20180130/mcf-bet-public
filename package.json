@@ -2,16 +2,13 @@
   "name": "mcf-bet-bot",
   "description": "an opensource gambling bot made for mcFallout.net",
   "devDependencies": {
-    "@types/bun": "latest",
     "rcedit": "^5.0.2"
   },
   "dependencies": {
     "decimal.js": "^10.6.0",
     "discord.js": "^14.26.4",
     "mineflayer": "^4.37.1",
-    "moment-timezone": "^0.6.2",
-    "smol-toml": "^1.6.1",
-    "ws": "^8.21.0"
+    "smol-toml": "^1.6.1"
   },
   "version": "3.0.0",
   "main": "index.js",
