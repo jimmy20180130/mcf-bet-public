@@ -3,6 +3,7 @@ class PayService {
         this.bot = bot;
         this.queue = [];
         this.isProcessing = false;
+        this.chatPatternsAdded = false;
     }
 
     async pay(target, amount, currency = 'emerald') {
@@ -104,9 +105,14 @@ class PayService {
             const failureEvents = ['epayNoMoney', 'epayNotSamePlace', 'epayNegative', 'cpayDifferentName', 'cpayNoMoney', 'generalCannotSend', 'epayProcessing'];
             const handlers = {};
 
-            for (const { name, regex } of chatPatterns) {
-                this.bot.addChatPattern(name, regex);
+            if (!this.chatPatternsAdded) {
+                for (const { name, regex } of chatPatterns) {
+                    this.bot.addChatPattern(name, regex);
+                }
+                this.chatPatternsAdded = true;
+            }
 
+            for (const { name } of chatPatterns) {
                 if (successEvents.includes(name)) {
                     handlers[name] = (matches) => onSuccess(matches);
                 } else {

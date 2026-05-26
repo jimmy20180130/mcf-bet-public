@@ -5,8 +5,10 @@ const Logger = require('./utils/logger');
 const { readConfig } = require('./services/configService');
 const logger = new Logger('Core', true);
 const WsClient = require('./services/authService');
-const { version } = require('os');
 const { getBotKeyFromConfigBot } = require('./utils/botKey');
+const { getAppVersion } = require('./utils/appVersion');
+
+const appVersion = getAppVersion();
 
 const consoleInterface = rl.createInterface({
     input: process.stdin,
@@ -39,7 +41,7 @@ async function start() {
         const token = botConfig.key || '';
         const authService = new WsClient({
             type: 'bet',
-            version: '1.0.0.0',
+            version: appVersion,
             token: token,
             mcClient: mc,
         });
@@ -121,7 +123,7 @@ consoleInterface.on('line', (input) => {
 // if mcbot triggered end event, restart it after 5 seconds
 setInterval(() => {
     mcBots.forEach((mc, index) => {
-        if (!mc.mcClient.bot && !mc.mcClient.stop) {
+        if (mc.mcClient.shouldReconnect && mc.mcClient.shouldReconnect()) {
             logger.warn(`[${mc.mcClient.options.username}] 連線已斷開，正在嘗試重新連線...`);
             mc.mcClient.start();
         }

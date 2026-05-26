@@ -1,19 +1,33 @@
 const db = require('../database/index');
 const { randomUUID } = require('crypto');
+const { normalizeUuid, normalizePlayerId } = require('../utils/identifier');
 
 class BetRecord {
     // odds: 當下的基礎 id
     // bonusodds: 玩家當下的加成 id
     static create({ betuuid = null, playeruuid, bot, playerid = null, currency, amount, result, odds, bonusodds }) {
-        if (!betuuid) {
-            betuuid = randomUUID().replace(/-/g, '');
+        const normalizedPlayerUuid = normalizeUuid(playeruuid);
+        if (!normalizedPlayerUuid) {
+            const err = new Error('Invalid playeruuid for bet record');
+            err.code = 'INVALID_PLAYERUUID';
+            throw err;
         }
+
+        const normalizedBetUuid = normalizeUuid(betuuid || randomUUID());
+        if (!normalizedBetUuid) {
+            const err = new Error('Invalid betuuid for bet record');
+            err.code = 'INVALID_BETUUID';
+            throw err;
+        }
+
+        const normalizedPlayerId = normalizePlayerId(playerid);
+
         const stmt = db.query(`
         INSERT INTO betRecords (betuuid, playeruuid, bot, playerid, currency, amount, result, odds, bonusodds)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-        stmt.run(betuuid, playeruuid, bot, playerid, currency, amount, result, odds, bonusodds);
-        return betuuid;
+        stmt.run(normalizedBetUuid, normalizedPlayerUuid, bot, normalizedPlayerId || null, currency, amount, result, odds, bonusodds);
+        return normalizedBetUuid;
     }
 
     static getStats(filters) {
@@ -47,11 +61,11 @@ class BetRecord {
             sql += ` AND createdAt <= ?`;
             params.push(filters.endTime);
         }
-        if (filters.minAmount) {
+        if (filters.minAmount !== undefined && filters.minAmount !== null) {
             sql += ` AND amount >= ?`;
             params.push(filters.minAmount);
         }
-        if (filters.maxAmount) {
+        if (filters.maxAmount !== undefined && filters.maxAmount !== null) {
             sql += ` AND amount <= ?`;
             params.push(filters.maxAmount);
         }

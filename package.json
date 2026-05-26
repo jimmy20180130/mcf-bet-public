@@ -7,11 +7,11 @@
   },
   "dependencies": {
     "decimal.js": "^10.6.0",
-    "discord.js": "^14.26.3",
-    "mineflayer": "^4.37.0",
-    "moment-timezone": "^0.6.1",
+    "discord.js": "^14.26.4",
+    "mineflayer": "^4.37.1",
+    "moment-timezone": "^0.6.2",
     "smol-toml": "^1.6.1",
-    "ws": "^8.20.0"
+    "ws": "^8.21.0"
   },
   "version": "3.0.0",
   "main": "index.js",
@@ -21,7 +21,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "bun run index.js",
-    "build": "bun run scripts/build.js"
+    "build": "bun run scripts/build.js",
+    "migrate": "bun run migrate.js"
   },
   "repository": {
     "type": "git",

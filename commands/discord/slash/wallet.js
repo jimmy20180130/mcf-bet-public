@@ -5,6 +5,7 @@ const minecraftDataService = require('../../../services/minecraftDataService');
 const { readConfig } = require('../../../services/configService');
 const { tForInteraction } = require('../../../utils/i18n');
 const { getBotKeyFromConfigBot, normalizeBotKey, findConfigBotByKey } = require('../../../utils/botKey');
+const { normalizeUuid } = require('../../../utils/identifier');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -291,6 +292,11 @@ async function execute(interaction) {
             return;
         }
 
+        if (!interaction.member?.permissions?.has('Administrator') && targetUser.playeruuid !== User.getByDiscordId(interaction.user.id)?.playeruuid) {
+            await interaction.editReply({ content: tForInteraction(interaction, 'dc.wallet.noPermission') });
+            return;
+        }
+
         const stats = PlayerStats.get(targetUser.playeruuid, botKey);
         await interaction.editReply({
             content: tForInteraction(interaction, 'dc.wallet.querySummary', {
@@ -419,11 +425,11 @@ async function resolveOrCreateUser(playerInput) {
     let playerid = null;
 
     if (isValidUuid(playerInput)) {
-        playeruuid = normalizedInput;
+           playeruuid = normalizeUuid(normalizedInput);
         playerid = await minecraftDataService.getPlayerId(normalizedInput) || playerInput;
     } else {
         playerid = playerInput;
-        playeruuid = await minecraftDataService.getPlayerUuid(playerInput);
+           playeruuid = normalizeUuid(await minecraftDataService.getPlayerUuid(playerInput));
     }
 
     if (!playeruuid) return null;

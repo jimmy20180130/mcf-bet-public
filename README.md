@@ -71,6 +71,18 @@
    bun run scripts/build.js
    ```
 
+  如果你要打特定版本，可以在建置時指定版本號：
+
+  ```powershell
+  $env:MCF_BET_VERSION="3.0.1-private.2"; $env:MCF_BET_WINDOWS_VERSION="3.0.1.2"; bun run scripts/build.js
+  ```
+
+  或者直接帶參數：
+
+  ```bash
+  bun run scripts/build.js --version 3.0.1-private.2 --windows-version 3.0.1.2
+  ```
+
 ---
 
 ## 📂 專案架構概覽

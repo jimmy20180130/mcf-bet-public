@@ -53,6 +53,35 @@ class BetService {
         });
     }
 
+    _getCurrencyLimitLabel(currency) {
+        return currency === 'coin' ? '村民錠' : '綠寶石';
+    }
+
+    async _refundOutOfRangeBet(playerid, amount, currency, minAmount, maxAmount) {
+        const currencyLabel = this._getCurrencyLimitLabel(currency);
+
+        try {
+            await this.bot.PayService.pay(playerid, amount, currency);
+            this.bot.sendMsg(t('service.betService.amountOutOfRange', {
+                target: playerid,
+                amount,
+                currency: currencyLabel,
+                min: minAmount,
+                max: maxAmount
+            }));
+            this.bot.logger.info(`下注金額超出範圍，已退回: ${playerid} ${amount} ${currency} (allowed: ${minAmount}-${maxAmount})`);
+        } catch (err) {
+            this.bot.logger.error(`下注金額超出範圍但退回失敗: ${playerid} ${amount} ${currency} (allowed: ${minAmount}-${maxAmount}, error: ${err?.error?.message || err?.message || err})`);
+            this.bot.sendMsg(t('service.betService.amountOutOfRangeRefundFailed', {
+                target: playerid,
+                amount,
+                currency: currencyLabel,
+                min: minAmount,
+                max: maxAmount
+            }));
+        }
+    }
+
     async _execute() {
         if (this.isProcessing || this.queue.length === 0) return;
 
@@ -63,6 +92,33 @@ class BetService {
 
         try {
             this.bot.logger.info(`準備處理任務: ${playerid} ${amount} ${currency} (剩餘任務: ${this.queue.length})`);
+
+            const betAmount = Number(amount);
+            if (!Number.isFinite(betAmount) || betAmount <= 0) {
+                const invalidAmountError = new Error('invalid bet amount');
+                invalidAmountError.code = 'invalidBetAmount';
+                reject({ success: false, target: playerid, amount, currency, errType: 'unknown', error: invalidAmountError });
+                return;
+            }
+
+            const betConfig = this._getCurrentBetConfig();
+            const minAmount = currency === 'emerald' ? betConfig.emin : betConfig.cmin;
+            const maxAmount = currency === 'emerald' ? betConfig.emax : betConfig.cmax;
+
+            if (betAmount < minAmount || betAmount > maxAmount) {
+                await this._refundOutOfRangeBet(playerid, betAmount, currency, minAmount, maxAmount);
+                resolve({
+                    success: false,
+                    skipped: true,
+                    target: playerid,
+                    amount: betAmount,
+                    currency,
+                    errType: 'range',
+                    minAmount,
+                    maxAmount
+                });
+                return;
+            }
 
             let playeruuid = await this.bot.MinecraftDataService.getPlayerId(playerid);
             if (!playeruuid) {
@@ -77,25 +133,29 @@ class BetService {
 
             const botKey = getBotKeyFromRuntimeBot(this.bot);
             const stats = PlayerStats.get(playeruuid, botKey);
-            const betConfig = this._getCurrentBetConfig();
             let odds = currency == 'emerald' ? new Decimal(betConfig.eodds) : new Decimal(betConfig.codds);
             let bonusodds = new Decimal(stats?.bonusodds || 0);
-            let payout = odds.plus(bonusodds).times(amount).floor();
+            let payout = odds.plus(bonusodds).times(betAmount).floor();
 
-            const result = await this._performBet(playerid, amount, currency, odds, bonusodds);
+            const result = await this._performBet(playerid, betAmount, currency, odds, bonusodds);
 
             const recordResult = result.outcome === 'win' ? payout.toNumber() : 0;
 
-            const betRecordUuid = BetRecord.create({
-                playeruuid,
-                bot: botKey,
-                playerid,
-                currency,
-                amount,
-                result: recordResult,
-                odds: odds.toNumber(),
-                bonusodds: bonusodds.toNumber()
-            });
+            try {
+                BetRecord.create({
+                    playeruuid,
+                    bot: botKey,
+                    playerid,
+                    currency,
+                    amount: betAmount,
+                    result: recordResult,
+                    odds: odds.toNumber(),
+                    bonusodds: bonusodds.toNumber()
+                });
+            } catch (recordError) {
+                this.bot.logger.error(`下注紀錄寫入失敗: ${playerid} ${betAmount} ${currency}，錯誤: ${recordError.message}`);
+                throw recordError;
+            }
 
             // resolve({ success: true, target, amount, currency, outcome: 'lose' });
             result.bonusOdds = bonusodds.toNumber();

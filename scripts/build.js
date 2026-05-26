@@ -1,6 +1,10 @@
 const path = require('path');
 const fs = require('fs');
 const rcedit = require('rcedit');
+const { getAppVersion, getWindowsVersion } = require('../utils/appVersion');
+
+const appVersion = getAppVersion();
+const windowsVersion = getWindowsVersion();
 
 const BUILD_CONFIG = {
     entryPoint: ['./index.js'],
@@ -12,8 +16,8 @@ const BUILD_CONFIG = {
         fileDescription: '廢土對賭機器人 by Jimmy',
         productName: 'mcBet-Bot',
         legalCopyright: '© 2026 Jimmy',
-        fileVersion: '1.0.0.0',
-        productVersion: '1.0.0.0',
+        fileVersion: windowsVersion,
+        productVersion: windowsVersion,
         originalFilename: 'mcf-bet-bot.exe',
         internalName: 'mcf-bet-bot',
     },
@@ -63,7 +67,7 @@ async function bundleExecutable() {
                 windows: {
                     title: "廢土對賭機器人",
                     publisher: "jimmy20180130",
-                    version: "1.0.0.0",
+                    version: windowsVersion,
                     description: "廢土對賭機器人 by Jimmy",
                     copyright: "© 2026 Jimmy",
                     hideConsole: false,
@@ -73,6 +77,7 @@ async function bundleExecutable() {
         });
 
         console.log(`Executable created at ${outputFileAbs}`);
+        console.log(`Build version: ${appVersion} (${windowsVersion})`);
 
         //await applyWindowsMetadata(outputFileAbs, iconPathAbs);
         console.log('Windows metadata applied successfully via rcedit.');

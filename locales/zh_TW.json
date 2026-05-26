@@ -91,8 +91,10 @@
 		},
 		"record": {
 			"autocompleteNoMatch": "無符合玩家",
+			"allPlayers": "所有玩家",
 			"requesterNotLinked": "您尚未綁定 Minecraft 帳號",
 			"targetNotFound": "找不到該玩家或該玩家尚未綁定帳號",
+			"noPermission": "你沒有權限查詢其他玩家的下注紀錄",
 			"templateNotFound": "找不到你建立的模板",
 			"allBots": "所有機器人",
 			"unknownBot": "未知機器人",
@@ -211,6 +213,8 @@
 		"betService": {
 			"spawnTimeout": "等待結果逾時",
 			"spawnFailed": "等待結果失敗: {reason}",
+			"amountOutOfRange": "下注金額需介於 {min} ~ {max} {currency}，已退回 {amount} {currency}",
+			"amountOutOfRangeRefundFailed": "下注金額超出範圍，退回失敗，請聯繫管理員 ({min} ~ {max} {currency})",
 			"winCommand": "{target} win {payout} {currency}",
             "cwinCommand": "&3[{time}]&r &f&l{target} &r&f贏得了 &6&l{payout} &f個&6{currency} &7(&f賠率: &e{odds}&7)",
             "ewinCommand": "&3[{time}]&r &f&l{target} &r&f贏得了 &6&l{payout} &f個&a{currency} &7(&f賠率: &e{odds}&7)",

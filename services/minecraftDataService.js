@@ -1,6 +1,16 @@
+const { normalizeUuid } = require('../utils/identifier');
+
 class MinecraftDataService {
     constructor() {
         this.cache = {};
+    }
+
+    _logError(message) {
+        if (this.bot?.logger?.error) {
+            this.bot.logger.error(message);
+            return;
+        }
+        console.error(message);
     }
 
     async getPlayerUuid(playerid) {
@@ -53,24 +63,28 @@ class MinecraftDataService {
                     const res = await fetch(url);
                     if (res.ok) {
                         const data = await res.json();
-                        if (data && data.id) {
+                        const normalizedUuid = normalizeUuid(data?.id);
+                        if (data && normalizedUuid) {
                             this.cache[playername.toLowerCase()] = {
-                                playeruuid: data.id,
+                                playeruuid: normalizedUuid,
                                 expires: expires
                             };
-                            this.cache[data.id.toLowerCase()] = {
+                            this.cache[normalizedUuid] = {
                                 playername: data.name,
                                 expires: expires
                             };
-                            return data.id;
+                            return normalizedUuid;
                         }
                     }
                 } catch (err) {
-                    this.bot.logger.error(`Mojang API Error: ${err.message}`);
+                    this._logError(`Mojang API Error: ${err.message}`);
                 }
             }
         } else {
-            const uuid = cleanData;
+            const uuid = normalizeUuid(cleanData);
+            if (!uuid) {
+                return null;
+            }
             const url = `https://api.minecraftservices.com/minecraft/profile/lookup/${uuid}`;
 
             try {
@@ -90,7 +104,7 @@ class MinecraftDataService {
                     }
                 }
             } catch (err) {
-                this.bot.logger.error(`Mojang API Error: ${err.message}`);
+                this._logError(`Mojang API Error: ${err.message}`);
             }
         }
         return null;
@@ -109,8 +123,12 @@ class MinecraftDataService {
             if (result.success && result.data && result.data.player) {
                 const player = result.data.player;
                 const name = player.username;
-                const uuid = player.raw_id;
+                const uuid = normalizeUuid(player.raw_id);
                 const expires = Date.now() + 10 * 60 * 1000;
+
+                if (!uuid) {
+                    return null;
+                }
 
                 this.cache[name.toLowerCase()] = {
                     playeruuid: uuid,
@@ -124,7 +142,7 @@ class MinecraftDataService {
                 return (cleanData.length === 32) ? name : uuid;
             }
         } catch (err) {
-            this.bot.logger.error(`PlayerDB Error: ${err.message}`);
+            this._logError(`PlayerDB Error: ${err.message}`);
         }
 
         return null;

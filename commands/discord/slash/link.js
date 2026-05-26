@@ -3,6 +3,7 @@ const { tForInteraction } = require('../../../utils/i18n');
 const { verifyLinkCode } = require('../../../services/linkService');
 const User = require('../../../models/User');
 const minecraftDataService = require('../../../services/minecraftDataService');
+const { normalizeUuid } = require('../../../utils/identifier');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -37,7 +38,11 @@ module.exports = {
             await interaction.editReply({ content: tForInteraction(interaction, 'dc.link.invalidCode') });
             return;
         } else {
-            const playeruuid = await minecraftDataService.getPlayerUuid(playerid);
+            const playeruuid = normalizeUuid(await minecraftDataService.getPlayerUuid(playerid));
+            if (!playeruuid) {
+                await interaction.editReply({ content: tForInteraction(interaction, 'dc.link.linkFailed') });
+                return;
+            }
             try {
                 await User.create({ playeruuid, playerid });
                 await User.linkDiscord(playeruuid, interaction.user.id);

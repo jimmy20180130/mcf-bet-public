@@ -14,11 +14,15 @@ class mcBot {
         this.bot = null;
         this.dcBot = dcBot;
         this.botKey = getBotKeyFromConfigBot(options);
+        this.chatPatternsAdded = false;
+        this.reconnectAttempts = 0;
+        this.nextReconnectAt = 0;
+        this.reconnectDisabled = false;
         this.options = {
             username: options.username || 'mcf-bet-bot',
             host: options.host || 'mcfallout.net',
             auth: 'microsoft',
-            version: '1.21.4'
+            version: '1.20.1'
         };
         this.chatQueue = [];
         this.autoMessageTimer = null;
@@ -57,6 +61,7 @@ class mcBot {
 
     start() {
         this.bot = mineflayer.createBot(this.options);
+        this.chatPatternsAdded = false;
         this.bot.botKey = this.botKey;
         this.bot.logger = new Logger(`${this.options.username}`, true);
         this.bot.nick = this.options.username;
@@ -107,7 +112,10 @@ class mcBot {
 
     _onSpawn() {
         // 在 spawn 事件觸發後才能 addChatPattern
-        this._addChatPatterns();
+        if (!this.chatPatternsAdded) {
+            this._addChatPatterns();
+            this.chatPatternsAdded = true;
+        }
         this._startAutoMessageLoop();
     }
 
@@ -126,6 +134,8 @@ class mcBot {
     _onError(err) {
         this.bot.logger.error(`遇到錯誤: ${err}`);
         if (err.message.includes('Failed to obtain profile data')) {
+            this.reconnectDisabled = true;
+            this.nextReconnectAt = Number.POSITIVE_INFINITY;
             this.bot = null
         }
     }
@@ -142,17 +152,32 @@ class mcBot {
 
         if (reason == 'stop') {
             this.stop = true;
+            this.reconnectDisabled = true;
+            this.nextReconnectAt = Number.POSITIVE_INFINITY;
             this.bot.logger.warn(`Bot 已停止`);
             this.bot = null;
             return;
         } else if (reason == 'restart') {
             this.bot.logger.warn(`Bot 正在重新啟動`);
+            this.reconnectAttempts = 0;
+            this.nextReconnectAt = Date.now() + 1000;
             this.bot = null;
         } else {
             this.bot.logger.warn(`連線已結束`);
+            this.reconnectAttempts += 1;
+            const backoffMs = Math.min(60000, 5000 * Math.pow(2, Math.max(0, this.reconnectAttempts - 1)));
+            this.nextReconnectAt = Date.now() + backoffMs;
+            this.bot.logger.warn(`將於 ${Math.ceil(backoffMs / 1000)} 秒後嘗試重新連線`);
             this.bot = null;
         }
 
+    }
+
+    shouldReconnect() {
+        return !this.stop
+            && !this.reconnectDisabled
+            && !this.bot
+            && Date.now() >= this.nextReconnectAt;
     }
 
     _addChatPatterns() {
@@ -247,10 +272,15 @@ class mcBot {
 
         await this.bot.BetService.addBet(sender, amount, 'emerald')
             .then(async (result) => {
+                if (result?.skipped) {
+                    this.bot.logger.debug(`已略過超出範圍的下注: ${result.amount} ${result.currency} 來自: ${result.target}`);
+                    return;
+                }
+
                 // { success: true, target, amount, currency }
                 const botConfig = this._getCurrentBotConfig();
                 if (botConfig?.betRecordChannelID) {
-                    await this.dcBot.sendBetRecordEmbed(botConfig.betRecordChannelID, result.target, result.currency, result.amount, result.returnAmount, result.odds, result.bonusOdds, result.isWin, this.bot.username);
+                    await this.dcBot.sendBetRecordEmbed(botConfig.betRecordChannelID, result.target, result.currency, result.amount, result.returnAmount, result.odds, result.bonusOdds, result.outcome === 'win', this.bot.username);
                 }
 
                 this.bot.logger.debug(`已完成下注紀錄: ${result.amount} ${result.currency} 來自: ${result.target}`);
@@ -288,10 +318,15 @@ class mcBot {
 
         await this.bot.BetService.addBet(sender, amount, 'coin')
             .then(async (result) => {
+                if (result?.skipped) {
+                    this.bot.logger.debug(`已略過超出範圍的下注: ${result.amount} ${result.currency} 來自: ${result.target}`);
+                    return;
+                }
+
                 // { success: true, target, amount, currency }
                 const botConfig = this._getCurrentBotConfig();
                 if (botConfig?.betRecordChannelID) {
-                    await this.dcBot.sendBetRecordEmbed(botConfig.betRecordChannelID, result.target, result.currency, result.amount, result.returnAmount, result.odds, result.bonusOdds, result.isWin, this.bot.username);
+                    await this.dcBot.sendBetRecordEmbed(botConfig.betRecordChannelID, result.target, result.currency, result.amount, result.returnAmount, result.odds, result.bonusOdds, result.outcome === 'win', this.bot.username);
                 }
 
                 this.bot.logger.debug(`已完成下注紀錄: ${result.amount} ${result.currency} 來自: ${result.target}`);

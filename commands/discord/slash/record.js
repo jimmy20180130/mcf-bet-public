@@ -6,6 +6,8 @@ const { readConfig } = require('../../../services/configService');
 const { tForInteraction } = require('../../../utils/i18n');
 const { getBotKeyFromConfigBot, normalizeBotKey, findConfigBotByKey } = require('../../../utils/botKey');
 
+const ALL_PLAYERS_VALUE = '__all_players__';
+
 function parseDate(dateStr) {
     if (!dateStr) return null;
     const d = new Date(dateStr);
@@ -298,6 +300,8 @@ module.exports = {
     async autocomplete(interaction) {
         const focusedOption = interaction.options.getFocused(true);
         const focusedValue = focusedOption.value.toLowerCase();
+        const isDiscordAdmin = interaction.member?.permissions?.has('Administrator');
+        const requestingUser = User.getByDiscordId(interaction.user.id);
 
         if (focusedOption.name === 'template_name') {
             const choices = RecordTemplate.searchOwnNames(interaction.user.id, focusedValue);
@@ -306,11 +310,18 @@ module.exports = {
         }
 
         if (focusedOption.name === 'player') {
-            const choices = User.searchPlayers(focusedValue);
-            const mappedChoices = choices
-                .filter(choice => choice.playerid && choice.playeruuid)
-                .map(choice => ({ name: choice.playerid, value: choice.playeruuid }));
-                
+            const mappedChoices = [];
+
+            if (isDiscordAdmin) {
+                mappedChoices.push({ name: tForInteraction(interaction, 'dc.record.allPlayers'), value: ALL_PLAYERS_VALUE });
+                mappedChoices.push(...User.searchPlayers(focusedValue).map(choice => ({ name: choice.playerid, value: choice.playeruuid })));
+            } else if (requestingUser) {
+                const matchesSelf = requestingUser.playerid.toLowerCase().includes(focusedValue) || requestingUser.playeruuid.toLowerCase().includes(focusedValue);
+                if (matchesSelf) {
+                    mappedChoices.push({ name: requestingUser.playerid, value: requestingUser.playeruuid });
+                }
+            }
+
             if (mappedChoices.length === 0) {
                 await interaction.respond([
                     { name: tForInteraction(interaction, 'dc.record.autocompleteNoMatch'), value: 'none' }
@@ -349,31 +360,35 @@ async function execute(interaction) {
     const advancedOption = interaction.options.getBoolean('advanced') ?? false;
 
     let requestingUser = User.getByDiscordId(interaction.user.id);
-    if (!requestingUser) {
+    const isDiscordAdmin = interaction.member?.permissions?.has('Administrator');
+    if (!requestingUser && !isDiscordAdmin) {
         return interaction.editReply({ content: tForInteraction(interaction, 'dc.record.requesterNotLinked') });
     }
 
     const config = readConfig();
-    const isDiscordAdmin = interaction.member.permissions.has('Administrator');
 
     let hasPermission = false;
-    if (!botKey) {
-        const isInGeneralWhitelist = config.general?.whitelist?.includes(requestingUser.playerid);
+    if (isDiscordAdmin) {
+        hasPermission = true;
+    } else if (!botKey) {
+        const isInGeneralWhitelist = requestingUser && config.general?.whitelist?.includes(requestingUser.playerid);
         if (isDiscordAdmin || isInGeneralWhitelist) {
             hasPermission = true;
         }
     } else {
         const targetBotConfig = findConfigBotByKey(config.bots, botKey);
-        if (targetBotConfig && targetBotConfig.whitelist?.includes(requestingUser.playerid)) {
+        if (targetBotConfig && requestingUser && targetBotConfig.whitelist?.includes(requestingUser.playerid)) {
             hasPermission = true;
         }
-        if (isDiscordAdmin) hasPermission = true;
     }
 
     const canSeeAdvanced = advancedOption && hasPermission;
 
     let targetUser = null;
-    if (playerOpt) {
+    let queryAllPlayers = false;
+    if (playerOpt === ALL_PLAYERS_VALUE) {
+        queryAllPlayers = true;
+    } else if (playerOpt) {
         targetUser = User.getByPlayerId(playerOpt) || User.getByUuid(playerOpt);
     } else if (discordUserOpt) {
         targetUser = User.getByDiscordId(discordUserOpt.id);
@@ -381,8 +396,16 @@ async function execute(interaction) {
         targetUser = requestingUser;
     }
 
-    if (!targetUser) {
+    if (!queryAllPlayers && !targetUser) {
         return interaction.editReply({ content: tForInteraction(interaction, 'dc.record.targetNotFound') });
+    }
+
+    if (queryAllPlayers && !isDiscordAdmin) {
+        return interaction.editReply({ content: tForInteraction(interaction, 'dc.record.noPermission') });
+    }
+
+    if (!queryAllPlayers && !isDiscordAdmin && targetUser.playeruuid !== requestingUser.playeruuid) {
+        return interaction.editReply({ content: tForInteraction(interaction, 'dc.record.noPermission') });
     }
 
     let template = null;
@@ -407,7 +430,7 @@ async function execute(interaction) {
     const templateEm = normalizeTemplateCurrencyFilters(template?.filters?.emerald);
     const emDateRange = interaction.options.getString('date_range')?.split('~') || [];
     const emFilters = {
-        playeruuid: targetUser.playeruuid,
+        playeruuid: queryAllPlayers ? null : targetUser.playeruuid,
         bot: botKey || null,
         currency: 'emerald',
         startTime: parseDate(interaction.options.getString('later_than')) || parseDate(emDateRange[0]) || templateEm.startTime,
@@ -420,7 +443,7 @@ async function execute(interaction) {
     const templateCoin = normalizeTemplateCurrencyFilters(template?.filters?.coin);
     const coinDateRange = interaction.options.getString('coin_date_range')?.split('~') || [];
     const coinFilters = {
-        playeruuid: targetUser.playeruuid,
+        playeruuid: queryAllPlayers ? null : targetUser.playeruuid,
         bot: botKey || null,
         currency: 'coin',
         startTime: parseDate(interaction.options.getString('coin_later_than')) || parseDate(coinDateRange[0]) || templateCoin.startTime,
@@ -447,17 +470,19 @@ async function execute(interaction) {
         return tForInteraction(interaction, 'dc.record.statsSimple', { bet, count });
     }
 
-    const imageUrl = `https://minotar.net/helm/${targetUser.playeruuid}/64.png`;
+    const imageUrl = queryAllPlayers ? `https://xi11.cc/wool` : `https://minotar.net/helm/${targetUser.playeruuid}/64.png`;
+    const allPlayersLabel = tForInteraction(interaction, 'dc.record.allPlayers');
+    const playerIdValue = queryAllPlayers ? allPlayersLabel : targetUser.playerid;
+    const discordValue = queryAllPlayers
+        ? allPlayersLabel
+        : (targetUser.discordid ? `<@${targetUser.discordid}>` : tForInteraction(interaction, 'dc.record.unbound'));
+    const playerUuidValue = queryAllPlayers ? allPlayersLabel : targetUser.playeruuid;
 
     const fields = [
-        { name: tForInteraction(interaction, 'dc.record.fieldPlayerId'), value: targetUser.playerid, inline: true },
-        {
-            name: tForInteraction(interaction, 'dc.record.fieldDiscord'),
-            value: targetUser.discordid ? `<@${targetUser.discordid}>` : tForInteraction(interaction, 'dc.record.unbound'),
-            inline: true
-        },
+        { name: tForInteraction(interaction, 'dc.record.fieldPlayerId'), value: playerIdValue, inline: true },
+        { name: tForInteraction(interaction, 'dc.record.fieldDiscord'), value: discordValue, inline: true },
         { name: tForInteraction(interaction, 'dc.record.fieldQueryBot'), value: botDisplayName, inline: true },
-        { name: tForInteraction(interaction, 'dc.record.fieldPlayerUuid'), value: targetUser.playeruuid, inline: false }
+        { name: tForInteraction(interaction, 'dc.record.fieldPlayerUuid'), value: playerUuidValue, inline: false }
     ];
 
     if (emFilters.startTime || emFilters.endTime)
@@ -486,9 +511,12 @@ async function execute(interaction) {
         .setTitle(tForInteraction(interaction, 'dc.record.embedTitle'))
         .addFields(fields)
         .setColor("#313338")
-        .setThumbnail(imageUrl)
         .setFooter({ text: tForInteraction(interaction, 'dc.record.embedFooter'), iconURL: 'https://cdn.discordapp.com/icons/1173075041030787233/bbf79773eab98fb335edc9282241f9fe.webp?size=1024&format=webp&width=0&height=256' })
         .setTimestamp();
+
+    if (imageUrl) {
+        embed.setThumbnail(imageUrl);
+    }
 
     await interaction.editReply({ embeds: [embed] });
 }

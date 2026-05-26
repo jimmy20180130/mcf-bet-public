@@ -3,6 +3,8 @@ bun.lock
 package-lock.json
 
 dist
+test
+old_db
 
 .env
 .env.local

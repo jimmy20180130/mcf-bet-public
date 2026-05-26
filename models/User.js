@@ -1,4 +1,5 @@
 const db = require('../database/index');
+const { normalizeUuid, normalizePlayerId } = require('../utils/identifier');
 
 class User {
     static getByUuid(uuid) {
@@ -28,11 +29,19 @@ class User {
     }
 
     static create({ playeruuid, playerid, discordid = null }) {
+        const normalizedUuid = normalizeUuid(playeruuid);
+        if (!normalizedUuid) {
+            return null;
+        }
+
+        const normalizedPlayerId = normalizePlayerId(playerid);
+        const normalizedDiscordId = typeof discordid === 'string' ? discordid.trim() : null;
+
         const stmt = db.query(`
             INSERT OR IGNORE INTO users (playeruuid, playerid, discordid)
             VALUES (?, ?, ?)
         `);
-        return stmt.run(playeruuid, playerid, discordid);
+        return stmt.run(normalizedUuid, normalizedPlayerId || null, normalizedDiscordId);
     }
 
     static linkDiscord(playeruuid, discordid) {

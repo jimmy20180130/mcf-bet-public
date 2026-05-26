@@ -26,14 +26,14 @@ async function execute(bot, command, sender, args) {
     // 綠寶石 ＄13,981,583元
     // 村民錠 16個
     const emeraldMatch = fullTabText.match(/綠寶石.*?＄([\d,]+)元/);
-    const coinMatch = fullTabText.match(/村民錠\s*?(\d+)個/);
+    const coinMatch = fullTabText.match(/村民錠\s*?([\d,]+)個/);
 
     let emerald = emeraldMatch 
         ? addCommas(parseInt(emeraldMatch[1].replace(/,/g, ""))) 
         : t('mc.money.unavailable');
 
     let coin = coinMatch 
-        ? addCommas(parseInt(coinMatch[1])) 
+        ? addCommas(parseInt(coinMatch[1].replace(/,/g, ""))) 
         : t('mc.money.unavailable');
 
     bot.sendMsg(t('mc.money.summary', { sender, emerald, coin }));
