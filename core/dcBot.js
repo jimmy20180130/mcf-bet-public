@@ -275,31 +275,39 @@ class DcBot {
             })
             .setTimestamp();
 
-        const channel = await this.client.channels.fetch(channelId);
-        if (!channel) {
-            this.logger.warn(`找不到頻道 ID: ${channelId}`);
-            return;
-        }
+        try {
+            const channel = await this.client.channels.fetch(channelId);
+            if (!channel) {
+                this.logger.warn(`找不到頻道 ID: ${channelId}`);
+                return;
+            }
 
-        if (isWin) {
-            await channel.send({ embeds: [winEmbed] });
-        } else {
-            await channel.send({ embeds: [loseEmbed] });
+            if (isWin) {
+                await channel.send({ embeds: [winEmbed] });
+            } else {
+                await channel.send({ embeds: [loseEmbed] });
+            }
+        } catch (error) {
+            this.logger.warn(`發送下注結果訊息失敗 (channelId=${channelId}):`, error);
         }
 
     }
 
     async sendMsg(channelId, message) {
-        const channel = await this.client.channels.fetch(channelId);
-        if (!channel) {
-            this.logger.warn(`找不到頻道 ID: ${channelId}`);
-            return;
+        try {
+            const channel = await this.client.channels.fetch(channelId);
+            if (!channel) {
+                this.logger.warn(`找不到頻道 ID: ${channelId}`);
+                return;
+            }
+
+            const cleanMessage = message.replace(/\u001b\[[0-9;]*m/g, '');
+            if (cleanMessage == '' || !cleanMessage) return
+
+            await channel.send({ content: `\`${cleanMessage}\``, flags: MessageFlags.SuppressNotifications });
+        } catch (error) {
+            this.logger.warn(`發送 Discord 訊息失敗 (channelId=${channelId}):`, error);
         }
-
-        const cleanMessage = message.replace(/\u001b\[[0-9;]*m/g, '');
-        if (cleanMessage == '' || !cleanMessage) return
-
-        await channel.send({ content: `\`${cleanMessage}\``, flags: MessageFlags.SuppressNotifications });
     }
 }
 
