@@ -25,7 +25,7 @@ const BUILD_CONFIG = {
 
 async function applyWindowsMetadata(executablePath, iconPath) {
     const metadata = BUILD_CONFIG.windowsMetadata;
-    await rcedit(executablePath, {
+    await rcedit.rcedit(executablePath, {
         icon: iconPath,
         'file-version': metadata.fileVersion,
         'product-version': metadata.productVersion,
