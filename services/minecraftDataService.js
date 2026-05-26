@@ -5,14 +5,6 @@ class MinecraftDataService {
         this.cache = {};
     }
 
-    _logError(message) {
-        if (this.bot?.logger?.error) {
-            this.bot.logger.error(message);
-            return;
-        }
-        console.error(message);
-    }
-
     async getPlayerUuid(playerid) {
         const id = playerid.toLowerCase();
         const now = Date.now();
@@ -77,7 +69,7 @@ class MinecraftDataService {
                         }
                     }
                 } catch (err) {
-                    this._logError(`Mojang API Error: ${err.message}`);
+                    console.error(`Mojang API Error: ${err.message}`);
                 }
             }
         } else {
@@ -104,7 +96,7 @@ class MinecraftDataService {
                     }
                 }
             } catch (err) {
-                this._logError(`Mojang API Error: ${err.message}`);
+                console.error(`Mojang API Error: ${err.message}`);
             }
         }
         return null;
@@ -142,7 +134,7 @@ class MinecraftDataService {
                 return (cleanData.length === 32) ? name : uuid;
             }
         } catch (err) {
-            this._logError(`PlayerDB Error: ${err.message}`);
+            console.error(`PlayerDB Error: ${err.message}`);
         }
 
         return null;
