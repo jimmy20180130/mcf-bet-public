@@ -352,6 +352,14 @@ class mcBot {
         matches = /^\[系統\] (\w+) 想要你傳送到 該玩家 的位置|^\[系統\] (\w+) 想要傳送到 你 的位置/.exec(matches[0]);
         const sender = matches[1] || matches[2];
         this.bot.logger.debug(`收到傳送請求來自: ${sender}`);
+
+        if (this._getCurrentBotConfig()?.whitelist.map((name) => name.toLowerCase()).includes(sender.toLowerCase()) || readConfig().whitelist.map((name) => name.toLowerCase()).includes(sender.toLowerCase())) {
+            this.bot.logger.debug(`自動接受 ${sender} 的傳送請求`);
+            this.bot.chat(`/tok`);
+        } else {
+            this.bot.logger.debug(`拒絕 ${sender} 的傳送請求，因為他不在白名單中`);
+            this.bot.chat(`/tno`);
+        }
     }
 }
 
