@@ -64,35 +64,23 @@ async function bundleExecutable() {
             compile: {
                 target: 'bun-windows-x64',
                 outfile: 'mcf-bet-bot.exe',
-                windows: {
-                    title: "廢土對賭機器人",
-                    publisher: "jimmy20180130",
-                    version: windowsVersion,
-                    description: "廢土對賭機器人 by Jimmy",
-                    copyright: "© 2026 Jimmy",
-                    hideConsole: false,
-                    icon: iconPath
-                },
+                // windows: {
+                //     title: "廢土對賭機器人",
+                //     publisher: "jimmy20180130",
+                //     version: windowsVersion,
+                //     description: "廢土對賭機器人 by Jimmy",
+                //     copyright: "© 2026 Jimmy",
+                //     hideConsole: false,
+                //     icon: iconPath
+                // },
             },
         });
 
         console.log(`Executable created at ${outputFileAbs}`);
         console.log(`Build version: ${appVersion} (${windowsVersion})`);
 
-        //await applyWindowsMetadata(outputFileAbs, iconPathAbs);
-        console.log('Windows metadata applied successfully via rcedit.');
-
-        const configPath = path.resolve('config.toml');
-        const destConfigPath = path.resolve(outputDir, 'config.toml');
-        if (fs.existsSync(configPath)) {
-            fs.copyFileSync(configPath, destConfigPath);
-            console.log(`Copied config.toml to ${destConfigPath}`);
-        } else {
-            console.warn('Warning: config.toml not found.');
-        }
-
-        // Copy additional files/folders
-        const itemsToCopy = ['data', 'locales', 'docs', 'README.md'];
+        // 把其他設定檔複製到 dist 裡面
+        const itemsToCopy = ['data', 'locales', 'docs', 'README.md', 'config.toml', 'start.bat'];
         for (const item of itemsToCopy) {
             const srcPath = path.resolve(item);
             const destPath = path.resolve(outputDir, item);
@@ -108,6 +96,10 @@ async function bundleExecutable() {
                 console.warn(`Warning: ${item} not found.`);
             }
         }
+
+        // 最後才應用 Windows metadata，確保 rcedit 修改的是最終的可執行檔
+        await applyWindowsMetadata(outputFileAbs, iconPathAbs);
+        console.log('Windows metadata applied successfully via rcedit.');
     } catch (error) {
         console.error(error);
         process.exit(1);
