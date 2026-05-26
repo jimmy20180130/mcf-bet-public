@@ -6,9 +6,7 @@ const { readConfig } = require('./services/configService');
 const logger = new Logger('Core', true);
 const WsClient = require('./services/authService');
 const { getBotKeyFromConfigBot } = require('./utils/botKey');
-const { getAppVersion } = require('./utils/appVersion');
-
-const appVersion = getAppVersion();
+const APP_VERSION = require('./utils/appVersion');
 
 const consoleInterface = rl.createInterface({
     input: process.stdin,
@@ -41,7 +39,7 @@ async function start() {
         const token = botConfig.key || '';
         const authService = new WsClient({
             type: 'bet',
-            version: appVersion,
+            version: APP_VERSION,
             token: token,
             mcClient: mc,
         });

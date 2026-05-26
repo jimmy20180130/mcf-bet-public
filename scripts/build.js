@@ -1,10 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const rcedit = require('rcedit');
-const { getAppVersion, getWindowsVersion } = require('../utils/appVersion');
-
-const appVersion = getAppVersion();
-const windowsVersion = getWindowsVersion();
+const APP_VERSION = require('../utils/appVersion');
 
 const BUILD_CONFIG = {
     entryPoint: ['./index.js'],
@@ -16,8 +13,8 @@ const BUILD_CONFIG = {
         fileDescription: '廢土對賭機器人 by Jimmy',
         productName: 'mcBet-Bot',
         legalCopyright: '© 2026 Jimmy',
-        fileVersion: windowsVersion,
-        productVersion: windowsVersion,
+        fileVersion: APP_VERSION,
+        productVersion: APP_VERSION,
         originalFilename: 'mcf-bet-bot.exe',
         internalName: 'mcf-bet-bot',
     },
@@ -67,7 +64,7 @@ async function bundleExecutable() {
                 // windows: {
                 //     title: "廢土對賭機器人",
                 //     publisher: "jimmy20180130",
-                //     version: windowsVersion,
+                //     version: APP_VERSION,
                 //     description: "廢土對賭機器人 by Jimmy",
                 //     copyright: "© 2026 Jimmy",
                 //     hideConsole: false,
@@ -77,7 +74,7 @@ async function bundleExecutable() {
         });
 
         console.log(`Executable created at ${outputFileAbs}`);
-        console.log(`Build version: ${appVersion} (${windowsVersion})`);
+        console.log(`Build version: ${APP_VERSION} (${APP_VERSION})`);
 
         // 把其他設定檔複製到 dist 裡面
         const itemsToCopy = ['data', 'locales', 'docs', 'README.md', 'config.toml', 'start.bat'];
