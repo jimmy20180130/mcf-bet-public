@@ -11,7 +11,7 @@ async function execute(bot, command, sender, args) {
 module.exports = {
     name: 'stop',
     description: '停止 Bot',
-    aliases: ['reload', '停止'],
+    aliases: ['停止'],
     requireAdmin: true,
     execute
 }
