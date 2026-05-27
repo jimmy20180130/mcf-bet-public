@@ -21,10 +21,12 @@ async function execute(bot, command, sender, args) {
         return bot.sendMsg(t('mc.money.unavailable'));
     }
 
-    const fullTabText = getAllText(headerData);
-    
+    let fullTabText = getAllText(headerData);
+    // remove color codes like this §7
+    fullTabText = fullTabText.replace(/§[0-9a-fk-or]/gi, "");
+
     // 綠寶石 ＄13,981,583元
-    // 村民錠 16個
+    // 村民錠 1,600個
     const emeraldMatch = fullTabText.match(/綠寶石.*?＄([\d,]+)元/);
     const coinMatch = fullTabText.match(/村民錠\s*?([\d,]+)個/);
 
