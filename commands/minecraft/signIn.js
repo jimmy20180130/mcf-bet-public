@@ -8,12 +8,12 @@ const { getBotKeyFromRuntimeBot } = require('../../utils/botKey');
 
 async function execute(bot, command, sender, args) {
     const botName = getBotKeyFromRuntimeBot(bot);
-    const user = User.getByPlayerId(sender);
+    const playeruuid = await bot.MinecraftDataService.getPlayerUuid(sender);
+    const user = playeruuid ? User.getByUuid(playeruuid) : null;
     if (!user) {
         bot.logger.error(`找不到玩家 ${sender} 的使用者資料`);
         return;
     }
-    const playeruuid = user.playeruuid;
     const hasSignedIn = SignIn.hasSignedInToday(playeruuid, botName);
 
     if (hasSignedIn) {

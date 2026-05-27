@@ -38,8 +38,17 @@ class User {
         const normalizedDiscordId = typeof discordid === 'string' ? discordid.trim() : null;
 
         const stmt = db.query(`
-            INSERT OR IGNORE INTO users (playeruuid, playerid, discordid)
+            INSERT INTO users (playeruuid, playerid, discordid)
             VALUES (?, ?, ?)
+            ON CONFLICT(playeruuid) DO UPDATE SET
+                playerid = CASE
+                    WHEN excluded.playerid IS NOT NULL AND excluded.playerid != '' THEN excluded.playerid
+                    ELSE users.playerid
+                END,
+                discordid = CASE
+                    WHEN excluded.discordid IS NOT NULL THEN excluded.discordid
+                    ELSE users.discordid
+                END
         `);
         return stmt.run(normalizedUuid, normalizedPlayerId || null, normalizedDiscordId);
     }

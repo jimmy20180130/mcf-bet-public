@@ -163,7 +163,7 @@ class mcBot {
             this.nextReconnectAt = Date.now() + 1000;
             this.bot = null;
         } else {
-            this.bot.logger.warn(`連線已結束`);
+            this.bot.logger.warn(`連線已結束，原因: ${reason}`);
             this.reconnectAttempts += 1;
             const backoffMs = Math.min(60000, 5000 * Math.pow(2, Math.max(0, this.reconnectAttempts - 1)));
             this.nextReconnectAt = Date.now() + backoffMs;

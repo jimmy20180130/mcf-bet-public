@@ -32,14 +32,14 @@ module.exports = {
         await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
         const code = interaction.options.getInteger('code');
-        const playerid = verifyLinkCode(code);
+        const playeruuid = verifyLinkCode(code);
 
-        if (!playerid) {
+        if (!playeruuid) {
             await interaction.editReply({ content: tForInteraction(interaction, 'dc.link.invalidCode') });
             return;
         } else {
-            const playeruuid = normalizeUuid(await minecraftDataService.getPlayerUuid(playerid));
-            if (!playeruuid) {
+            const playerid = await minecraftDataService.getPlayerId(playeruuid);
+            if (!playerid) {
                 await interaction.editReply({ content: tForInteraction(interaction, 'dc.link.linkFailed') });
                 return;
             }

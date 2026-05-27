@@ -26,14 +26,15 @@ async function executeCommand(bot, sender, command, args) {
         return;
     }
 
-    let user = User.getByPlayerId(sender);
-    if (!user) {
-        const playeruuid = await bot.MinecraftDataService.getPlayerId(sender);
-        if (!playeruuid) return;
-
-        User.create({ playerid: sender, playeruuid });
-        user = User.getByPlayerId(sender);
+    const playeruuid = await bot.MinecraftDataService.getPlayerUuid(sender);
+    if (!playeruuid) {
+        bot.sendMsg(t('mc.command.unexpectedError', { sender }));
+        bot.logger.error(`無法解析玩家 UUID: ${sender}`);
+        return;
     }
+
+    User.create({ playerid: sender, playeruuid });
+    const user = User.getByUuid(playeruuid);
 
     if (!user) {
         bot.sendMsg(t('mc.command.unexpectedError', { sender }));

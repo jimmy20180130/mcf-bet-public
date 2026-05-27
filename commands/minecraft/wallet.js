@@ -5,7 +5,8 @@ const { t } = require('../../utils/i18n');
 const { getBotKeyFromRuntimeBot } = require('../../utils/botKey');
 
 async function execute(bot, command, sender, args) {
-    const user = User.getByPlayerId(sender);
+    const playeruuid = await bot.MinecraftDataService.getPlayerUuid(sender);
+    const user = playeruuid ? User.getByUuid(playeruuid) : null;
     
     if (!user) {
         bot.logger.error(`找不到玩家 ${sender} 的使用者資料`);
@@ -13,7 +14,7 @@ async function execute(bot, command, sender, args) {
     }
 
     const botName = getBotKeyFromRuntimeBot(bot);
-    const stats = PlayerStats.get(user.playeruuid, botName);
+    const stats = PlayerStats.get(playeruuid, botName);
 
     if (!stats) {
         bot.sendMsg(t('mc.wallet.noBalance', { sender }));
@@ -29,7 +30,7 @@ async function execute(bot, command, sender, args) {
         await bot.PayService.pay(sender, userEWallet, 'emerald')
             .then(() => {
                 bot.logger.debug(`${sender} 已成功領取 ${userEWallet} 綠寶石`);
-                PlayerStats.updateWallet(user.playeruuid, botName, { eChange: -userEWallet });
+                PlayerStats.updateWallet(playeruuid, botName, { eChange: -userEWallet });
             })
             .catch((err) => {
                 const errorMsg = err.error?.message || t('common.unknownError');
@@ -42,7 +43,7 @@ async function execute(bot, command, sender, args) {
         await bot.PayService.pay(sender, userCWallet, 'coin')
             .then(() => {
                 bot.logger.debug(`${sender} 已成功領取 ${userCWallet} 村民錠`);
-                PlayerStats.updateWallet(user.playeruuid, botName, { cChange: -userCWallet });
+                PlayerStats.updateWallet(playeruuid, botName, { cChange: -userCWallet });
             })
             .catch((err) => {
                 const errorMsg = err.error?.message || t('common.unknownError');
