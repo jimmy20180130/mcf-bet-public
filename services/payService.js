@@ -61,11 +61,22 @@ class PayService {
                 reject({ success: false, target, amount, currency, error });
             };
 
+            const successEvents = ['epaySuccess', 'cpaySuccess'];
+            const failureEvents = ['epayNoMoney', 'epayNotSamePlace', 'epayNegative', 'cpayDifferentName', 'cpayNoMoney', 'generalCannotSend', 'epayProcessing'];
+
+            const handlers = {};
+            for (const e of successEvents) {
+                handlers[e] = (matches) => onSuccess(matches);
+            }
+            for (const e of failureEvents) {
+                handlers[e] = (matches) => onFailure(e, matches);
+            }
+
             const cleanup = () => {
                 finalized = true;
                 clearTimeout(timer);
-                successEvents.forEach(e => this.bot.removeListener(`chat:${e}`, onSuccess));
-                failureEvents.forEach(e => this.bot.removeListener(`chat:${e}`, onFailure));
+                successEvents.forEach(e => this.bot.removeListener(`chat:${e}`, handlers[e]));
+                failureEvents.forEach(e => this.bot.removeListener(`chat:${e}`, handlers[e]));
             };
 
             const timer = setTimeout(() => {
@@ -101,23 +112,11 @@ class PayService {
                 'generalCannotSend': '系統限制，無法傳送訊息'
             };
 
-            const successEvents = ['epaySuccess', 'cpaySuccess'];
-            const failureEvents = ['epayNoMoney', 'epayNotSamePlace', 'epayNegative', 'cpayDifferentName', 'cpayNoMoney', 'generalCannotSend', 'epayProcessing'];
-            const handlers = {};
-
             if (!this.chatPatternsAdded) {
                 for (const { name, regex } of chatPatterns) {
                     this.bot.addChatPattern(name, regex);
                 }
                 this.chatPatternsAdded = true;
-            }
-
-            for (const { name } of chatPatterns) {
-                if (successEvents.includes(name)) {
-                    handlers[name] = (matches) => onSuccess(matches);
-                } else {
-                    handlers[name] = (matches) => onFailure(name, matches);
-                }
             }
 
             successEvents.forEach(e => this.bot.once(`chat:${e}`, handlers[e]));
@@ -127,7 +126,7 @@ class PayService {
                 this.bot.sendMsg(`/pay ${target} ${amount}`);
             } else if (currency === 'coin') {
                 this.bot.sendMsg(`/cointrans ${target} ${amount}`);
-                await this.bot.waitForTicks(30) // 2s
+                await this.bot.waitForTicks(30);
                 this.bot.sendMsg(target);
             }
         });
