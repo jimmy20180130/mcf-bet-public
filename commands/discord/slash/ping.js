@@ -5,7 +5,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('ping')
         .setNameLocalizations({
-            'zh-TW': 'ping'
+            'zh-TW': '延遲'
         })
         .setDescription('Replies with Pong!')
         .setDescriptionLocalizations({
