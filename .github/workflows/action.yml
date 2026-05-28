@@ -1,4 +1,5 @@
 name: build
+
 on:
   push:
     branches:
@@ -11,16 +12,20 @@ jobs:
     runs-on: windows-latest
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
+    env:
+      FEATURES_REPO: ${{ vars.FEATURES_REPO }}
+      FEATURES_REPO_REF: ${{ vars.FEATURES_REPO_REF }}
+      FEATURES_REPO_TOKEN: ${{ secrets.FEATURES_REPO_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Checkout private feature source
-        if: ${{ vars.FEATURES_REPO != '' && secrets.FEATURES_REPO_TOKEN != '' }}
+        if: ${{ env.FEATURES_REPO != '' && env.FEATURES_REPO_TOKEN != '' }}
         uses: actions/checkout@v4
         with:
-          repository: ${{ vars.FEATURES_REPO }}
-          ref: ${{ vars.FEATURES_REPO_REF }}
-          token: ${{ secrets.FEATURES_REPO_TOKEN }}
+          repository: ${{ env.FEATURES_REPO }}
+          ref: ${{ env.FEATURES_REPO_REF }}
+          token: ${{ env.FEATURES_REPO_TOKEN }}
           path: private-features
 
       - id: matrix
@@ -64,21 +69,25 @@ jobs:
       matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
     env:
       APP_EXE: dist/mcf-bet-bot.exe
+      FEATURES_REPO: ${{ vars.FEATURES_REPO }}
+      FEATURES_REPO_REF: ${{ vars.FEATURES_REPO_REF }}
+      FEATURES_REPO_TOKEN: ${{ secrets.FEATURES_REPO_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Checkout private feature source
-        if: ${{ vars.FEATURES_REPO != '' && secrets.FEATURES_REPO_TOKEN != '' }}
+        if: ${{ env.FEATURES_REPO != '' && env.FEATURES_REPO_TOKEN != '' }}
         uses: actions/checkout@v4
         with:
-          repository: ${{ vars.FEATURES_REPO }}
-          ref: ${{ vars.FEATURES_REPO_REF }}
-          token: ${{ secrets.FEATURES_REPO_TOKEN }}
+          repository: ${{ env.FEATURES_REPO }}
+          ref: ${{ env.FEATURES_REPO_REF }}
+          token: ${{ env.FEATURES_REPO_TOKEN }}
           path: private-features
 
       - uses: oven-sh/setup-bun@v2
 
       - run: bun install
+
       - name: Apply patches
         run: |
           Copy-Item -Recurse -Force patch\* node_modules\
@@ -101,12 +110,7 @@ jobs:
 
           Copy-Item -Path (Join-Path $sourcePath '*') -Destination . -Recurse -Force
 
-      # - name: Install UPX
-      #   run: choco install upx -y
       - run: bun scripts/build.js
-
-      # - name: Pack with UPX
-      #   run: upx --best --lzma ${{ env.APP_EXE }}
 
       - name: Upload release artifact
         uses: actions/upload-artifact@v4
