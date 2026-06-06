@@ -15,6 +15,7 @@ class mcBot {
         this.dcBot = dcBot;
         this.botKey = getBotKeyFromConfigBot(options);
         this.chatPatternsAdded = false;
+        this.isProcessingChatQueue = false;
         this.reconnectAttempts = 0;
         this.nextReconnectAt = 0;
         this.reconnectDisabled = false;
@@ -25,8 +26,10 @@ class mcBot {
             version: '1.20.1'
         };
         this.chatQueue = [];
-        this.autoMessageTimer = null;
-        this.autoMessageCursor = 0;
+        this.autoMessageIntervals = [];
+        this.autoMessageRefreshTimer = null;
+        this.autoMessagesStarted = false;
+        this.autoMessageSignature = '';
     }
 
     _getCurrentBotConfig() {
@@ -81,13 +84,13 @@ class mcBot {
 
     sendMsg(message) {
         this.chatQueue.push(message);
-        if (this.chatQueue.length === 1) {
-            this._processChatQueue();
-        }
+        this._processChatQueue();
     }
 
     async _processChatQueue() {
-        if (this.chatQueue.length === 0 || !this.bot) return;
+        if (this.isProcessingChatQueue || this.chatQueue.length === 0 || !this.bot) return;
+
+        this.isProcessingChatQueue = true;
         const message = this.chatQueue[0];
         const botConfig = this._getCurrentBotConfig();
 
@@ -98,10 +101,11 @@ class mcBot {
             }
             await new Promise(resolve => setTimeout(resolve, 1000));
             this.chatQueue.shift();
-            this._processChatQueue();
         } catch (err) {
             this.bot.logger.error(`發送訊息失敗: ${message}，錯誤: ${err}`);
             this.chatQueue.shift();
+        } finally {
+            this.isProcessingChatQueue = false;
             this._processChatQueue();
         }
     }
@@ -185,7 +189,7 @@ class mcBot {
             { name: 'command', regex: /^\[([A-Za-z0-9_]+) -> 您\] ([\p{L}\p{N}_]+)\s*(.*)$/u, handler: '_handleCommand' },
             { name: 'getEmerald', regex: /^\[系統\] 您收到了\s+(\w+)\s+轉帳的 (\d{1,3}(,\d{3})*)( 綠寶石 \(目前擁有 (\d{1,3}(,\d{3})*)) 綠寶石\)/, handler: '_handleGetEmerald' },
             { name: 'getCoin', regex: /^\[系統\] 您收到了 (\S+) 送來的 (\d{1,3}(,\d{3})*|\d+) 村民錠\. \(目前擁有 (\d{1,3}(,\d{3})*|\d+) 村民錠\)/, handler: '_handleGetCoin' },
-            { name: 'tpRequest', regex: /^\[系統\] (\w+) 想要你傳送到 該玩家 的位置|^\[系統\] (\w+) 想要傳送到 你 的位置/, handler: '_handleTpRequest' },
+            { name: 'tpRequest', regex: /^\[系統\]\s+([A-Za-z0-9_]+)\s+想要(?:你傳送到\s+該玩家|傳送到\s+你)\s+的位置/u, handler: '_handleTpRequest' },
             // { name: 'epayProcessing', regex: new RegExp(`^\[系統\] 正在處理您的其他請求, 請稍後`), handler: '_handleEpayProcessing' },
             // { name: 'epayNoMoney', regex: /^\[系統\] 綠寶石不足, 尚需(.+)$/, handler: '_handleEpayNoMoney' },
             // { name: 'epayNotSamePlace', regex: /^\[系統\] 只能轉帳給同一分流的線上玩家\. 請檢查對方的ID與所在分流(.*)/, handler: '_handleEpayNotSamePlace' },
@@ -200,7 +204,7 @@ class mcBot {
         ]
 
         chatPatterns.forEach(({ name, regex, handler }) => {
-            this.bot.addChatPattern(name, regex);
+            this.bot.addChatPattern(name, regex, { parse: true });
 
             if (this[handler]) {
                 this.bot.on(`chat:${name}`, (matches) => {
@@ -213,39 +217,52 @@ class mcBot {
     }
 
     _startAutoMessageLoop() {
-        this._stopAutoMessageLoop();
-        this.autoMessageCursor = 0;
-        this._scheduleNextAutoMessage(1000);
+        if (this.autoMessagesStarted) return;
+
+        this.autoMessagesStarted = true;
+        this._refreshAutoMessageLoop();
+
+        // 定期重新讀取設定檔；新增/刪除/修改廣告時不用重啟 bot。
+        this.autoMessageRefreshTimer = setInterval(() => {
+            this._refreshAutoMessageLoop();
+        }, 30000);
+    }
+
+    _clearAutoMessageIntervals() {
+        this.autoMessageIntervals.forEach((timer) => clearInterval(timer));
+        this.autoMessageIntervals = [];
     }
 
     _stopAutoMessageLoop() {
-        if (this.autoMessageTimer) {
-            clearTimeout(this.autoMessageTimer);
-            this.autoMessageTimer = null;
+        if (this.autoMessageRefreshTimer) {
+            clearInterval(this.autoMessageRefreshTimer);
+            this.autoMessageRefreshTimer = null;
         }
+
+        this._clearAutoMessageIntervals();
+        this.autoMessagesStarted = false;
+        this.autoMessageSignature = '';
     }
 
-    _scheduleNextAutoMessage(delayMs) {
-        this._stopAutoMessageLoop();
+    _refreshAutoMessageLoop() {
+        if (!this.bot || !this.autoMessagesStarted) return;
 
-        this.autoMessageTimer = setTimeout(() => {
-            if (!this.bot) {
-                return;
-            }
+        const autoMessages = this._getCurrentAutoMessages();
+        const signature = JSON.stringify(autoMessages);
+        if (signature === this.autoMessageSignature) return;
 
-            const autoMessages = this._getCurrentAutoMessages();
-            if (autoMessages.length === 0) {
-                this._scheduleNextAutoMessage(15000);
-                return;
-            }
+        this.autoMessageSignature = signature;
+        this._clearAutoMessageIntervals();
 
-            const currentIndex = this.autoMessageCursor % autoMessages.length;
-            const current = autoMessages[currentIndex];
-            this.autoMessageCursor = currentIndex + 1;
+        autoMessages.forEach(({ message, waitSeconds }) => {
+            const waitMs = Math.max(1000, waitSeconds * 1000);
+            const timer = setInterval(() => {
+                if (!this.bot || !this.autoMessagesStarted) return;
+                this.sendMsg(message);
+            }, waitMs);
 
-            this.sendMsg(current.message);
-            this._scheduleNextAutoMessage(current.waitSeconds * 1000);
-        }, Math.max(1000, Number(delayMs) || 1000));
+            this.autoMessageIntervals.push(timer);
+        });
     }
 
     _handleCommand(matches) {
@@ -349,16 +366,23 @@ class mcBot {
     }
 
     _handleTpRequest(matches) {
-        matches = /^\[系統\] (\w+) 想要你傳送到 該玩家 的位置|^\[系統\] (\w+) 想要傳送到 你 的位置/.exec(matches[0]);
-        const sender = matches[1] || matches[2];
+        const sender = matches[0][0] || undefined;
+
+        if (!sender) return;
+
         this.bot.logger.debug(`收到傳送請求來自: ${sender}`);
 
-        if (this._getCurrentBotConfig()?.whitelist.map((name) => name.toLowerCase()).includes(sender.toLowerCase()) || readConfig().whitelist.map((name) => name.toLowerCase()).includes(sender.toLowerCase())) {
+        const botWhitelist = this._getCurrentBotConfig()?.whitelist || [];
+        const globalWhitelist = readConfig()?.whitelist || [];
+        const whitelist = [...botWhitelist, ...globalWhitelist]
+            .map((name) => String(name).toLowerCase());
+
+        if (whitelist.includes(sender.toLowerCase())) {
             this.bot.logger.debug(`自動接受 ${sender} 的傳送請求`);
-            this.bot.chat(`/tok`);
+            this.sendMsg('/tok');
         } else {
             this.bot.logger.debug(`拒絕 ${sender} 的傳送請求，因為他不在白名單中`);
-            this.bot.chat(`/tno`);
+            this.sendMsg('/tno');
         }
     }
 }
