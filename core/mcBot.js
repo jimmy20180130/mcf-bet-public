@@ -137,11 +137,6 @@ class mcBot {
 
     _onError(err) {
         this.bot.logger.error(`遇到錯誤: ${err}`);
-        if (err.message.includes('Failed to obtain profile data')) {
-            this.reconnectDisabled = true;
-            this.nextReconnectAt = Number.POSITIVE_INFINITY;
-            this.bot = null
-        }
     }
 
     _onKicked(reason) {
@@ -187,8 +182,8 @@ class mcBot {
     _addChatPatterns() {
         const chatPatterns = [
             { name: 'command', regex: /^\[([A-Za-z0-9_]+) -> 您\] ([\p{L}\p{N}_]+)\s*(.*)$/u, handler: '_handleCommand' },
-            { name: 'getEmerald', regex: /^\[系統\] 您收到了\s+(\w+)\s+轉帳的 (\d{1,3}(,\d{3})*)( 綠寶石 \(目前擁有 (\d{1,3}(,\d{3})*)) 綠寶石\)/, handler: '_handleGetEmerald' },
-            { name: 'getCoin', regex: /^\[系統\] 您收到了 (\S+) 送來的 (\d{1,3}(,\d{3})*|\d+) 村民錠\. \(目前擁有 (\d{1,3}(,\d{3})*|\d+) 村民錠\)/, handler: '_handleGetCoin' },
+            { name: 'getEmerald', regex: /^\[系統\] 您收到了\s+(\S+)\s+轉帳的\s+((?:\d{1,3}(?:,\d{3})+)|\d+)\s+綠寶石\s+\(目前擁有\s+((?:\d{1,3}(?:,\d{3})+)|\d+)\s+綠寶石\)/, handler: '_handleGetEmerald' },
+            { name: 'getCoin', regex: /^\[系統\] 您收到了 (\S+) 送來的 ((?:\d{1,3}(?:,\d{3})+)|\d+) 村民錠\. \(目前擁有 ((?:\d{1,3}(?:,\d{3})+)|\d+) 村民錠\)/, handler: '_handleGetCoin' },
             { name: 'tpRequest', regex: /^\[系統\]\s+([A-Za-z0-9_]+)\s+想要(?:你傳送到\s+該玩家|傳送到\s+你)\s+的位置/u, handler: '_handleTpRequest' },
             // { name: 'epayProcessing', regex: new RegExp(`^\[系統\] 正在處理您的其他請求, 請稍後`), handler: '_handleEpayProcessing' },
             // { name: 'epayNoMoney', regex: /^\[系統\] 綠寶石不足, 尚需(.+)$/, handler: '_handleEpayNoMoney' },
@@ -267,15 +262,13 @@ class mcBot {
 
     _handleCommand(matches) {
         // matches: [ "[Jimmy4Real -> 您] epay Jimmy4Real 100" ]
-        matches = /^\[([A-Za-z0-9_]+) -> 您\] ([\p{L}\p{N}_]+)\s*(.*)$/u.exec(matches[0]);
-        const [, sender, command, args] = matches;
+        let [[sender, command, args]] = matches;
         this.bot.logger.debug(`收到指令: ${command} 參數: ${args} 來自: ${sender}`);
         mcCommandHandler.executeCommand(this.bot, sender, command, args);
     }
 
     async _handleGetEmerald(matches) {
-        matches = /^\[系統\] 您收到了\s+(\w+)\s+轉帳的 (\d{1,3}(,\d{3})*)( 綠寶石 \(目前擁有 (\d{1,3}(,\d{3})*)) 綠寶石\)/.exec(matches[0]);
-        let [, sender, amount, , , current] = matches;
+        let [[sender, amount, current]] = matches;
         amount = parseInt(amount.replace(/,/g, ''));
         current = parseInt(current.replace(/,/g, ''));
         this.bot.logger.debug(`收到綠寶石轉帳: ${amount} 綠寶石 來自: ${sender} 目前擁有: ${current} 綠寶石`);
@@ -320,8 +313,7 @@ class mcBot {
     }
 
     async _handleGetCoin(matches) {
-        matches = /^\[系統\] 您收到了 (\S+) 送來的 (\d{1,3}(,\d{3})*|\d+) 村民錠\. \(目前擁有 (\d{1,3}(,\d{3})*|\d+) 村民錠\)/.exec(matches[0]);
-        let [, sender, amount, , current] = matches;
+        let [[sender, amount, current]] = matches;
         amount = parseInt(amount.replace(/,/g, ''));
         current = parseInt(current.replace(/,/g, ''));
         this.bot.logger.debug(`收到村民錠轉帳: ${amount} 村民錠 來自: ${sender} 目前擁有: ${current} 村民錠`);
