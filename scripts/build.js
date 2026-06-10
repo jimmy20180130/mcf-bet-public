@@ -58,6 +58,8 @@ async function bundleExecutable() {
         await Bun.build({
             entrypoints: entryPoint,
             outdir: outputDir,
+            bytecode: true,
+            minify: true,
             compile: {
                 target: 'bun-windows-x64',
                 outfile: 'mcf-bet-bot.exe',
