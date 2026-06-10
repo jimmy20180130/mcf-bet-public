@@ -29,9 +29,15 @@ dcBot.setConsoleRelayHandler((botKey, content, authorName) => {
 });
 
 async function start() {
-    logger.log('正在啟動 [廢土對賭機器人]')
+    logger.log('正在啟動 [廢土對賭機器人 v' + APP_VERSION + ']');
     const config = readConfig();
     await dcBot.start();
+
+    // stops if discord bot failed to start
+    if (!dcBot.client.isReady()) {
+        logger.error('Discord Bot 啟動失敗，請檢查網路狀況並確保設定檔設置正確');
+        process.exit(1);
+    }
 
     for (let i = 0; i < config.bots.length; i++) {
         const botConfig = config.bots[i];
