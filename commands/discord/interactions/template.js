@@ -58,6 +58,13 @@ module.exports = {
             return;
         }
 
+        // 僅管理員或查詢自己時可使用，避免任意已綁定使用者查看他人的下注紀錄 (IDOR)。
+        const isAdmin = interaction.member?.permissions?.has('Administrator');
+        if (!isAdmin && targetUser.playeruuid !== requester.playeruuid) {
+            await interaction.editReply({ content: tForInteraction(interaction, 'dc.record.noPermission') });
+            return;
+        }
+
         const templates = RecordTemplate.listOwn(interaction.user.id, 25);
         if (!templates || templates.length === 0) {
             await interaction.editReply({
@@ -99,6 +106,12 @@ module.exports = {
                 content: tForInteraction(interaction, 'dc.interaction.template.targetNotLinked', { userId: targetDiscordId }),
                 components: []
             });
+            return;
+        }
+
+        const isAdmin = interaction.member?.permissions?.has('Administrator');
+        if (!isAdmin && targetUser.playeruuid !== requester.playeruuid) {
+            await interaction.editReply({ content: tForInteraction(interaction, 'dc.record.noPermission'), components: [] });
             return;
         }
 
