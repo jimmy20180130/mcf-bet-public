@@ -53,7 +53,7 @@ class Logger {
         const timestamp = this._formatTimestamp(new Date());
         const message = this._formatMessage(args);
         const level = this.levels[levelKey];
-        const fileInfo = this._getFileInfo(new Error().stack || '');
+        const fileInfo = levelKey != 'INFO' ? this._getFileInfo(new Error().stack || '') : '';
 
         this.logs.push({ level: levelKey, message, timestamp });
 
