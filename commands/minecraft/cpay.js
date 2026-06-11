@@ -13,7 +13,7 @@ async function execute(bot, command, sender, args) {
             bot.sendMsg(t('mc.cpay.success', { sender, amount, target }));
         })
         .catch(err => {
-            bot.sendMsg(t('mc.cpay.failed', { sender, error: err.message }));
+            bot.sendMsg(t('mc.cpay.failed', { sender, error: err.error.message }));
         });
 }
 
