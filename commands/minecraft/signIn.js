@@ -43,7 +43,7 @@ async function execute(bot, command, sender, args) {
             })
             .catch((err) => {
                 payoutResult.emeraldError = err;
-                bot.logger.error(`[${botName}] 發放獎勵 ${reward.e} 綠寶石給 ${sender} 失敗: ${err.error.message}`);
+                bot.logger.error(`[${botName}] 發放獎勵 ${reward.e} 綠寶石給 ${sender} 失敗: ${err.error?.message}`);
             });
     } else {
         payoutResult.emerald = true;
@@ -56,7 +56,7 @@ async function execute(bot, command, sender, args) {
             })
             .catch((err) => {
                 payoutResult.coinError = err;
-                bot.logger.error(`[${botName}] 發放獎勵 ${reward.c} 村民錠給 ${sender} 失敗: ${err.error.message}`);
+                bot.logger.error(`[${botName}] 發放獎勵 ${reward.c} 村民錠給 ${sender} 失敗: ${err.error?.message}`);
             });
     } else {
         payoutResult.coin = true;
@@ -77,10 +77,10 @@ async function execute(bot, command, sender, args) {
     } else {
         let errorParts = [];
         if (!payoutResult.emerald) {
-            errorParts.push(t('mc.signin.emeraldFail', { error: payoutResult.emeraldError.error.message.slice(0, 30) }));
+            errorParts.push(t('mc.signin.emeraldFail', { error: (payoutResult.emeraldError.error?.message || t('common.unknownError')).slice(0, 30) }));
         }
         if (!payoutResult.coin) {
-            errorParts.push(t('mc.signin.coinFail', { error: payoutResult.coinError.error.message.slice(0, 30) }));
+            errorParts.push(t('mc.signin.coinFail', { error: (payoutResult.coinError.error?.message || t('common.unknownError')).slice(0, 30) }));
         }
 
         bot.sendMsg(t('mc.signin.partialError', { sender, streakMsg, errors: errorParts.join('，') }));

@@ -215,7 +215,7 @@ class BetService {
 
         } catch (err) {
             if (err.errType) {
-                this.bot.logger.error(`任務失敗 (類型: ${err.errType}): ${err.error.message}`);
+                this.bot.logger.error(`任務失敗 (類型: ${err.errType}): ${err.error?.message}`);
                 reject(err);
             } else {
                 this.bot.logger.error(`任務失敗: ${err.message}`);

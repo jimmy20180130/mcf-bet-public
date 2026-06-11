@@ -173,12 +173,12 @@
 		},
 		"epay": {
 			"usage": "/m {sender} {command} 玩家ID 金額",
-			"success": "/msg {sender} 已成功轉帳 {amount} &a&l綠寶石&r&f給 {target}",
-			"failed": "/msg {sender} &c&l轉帳失敗: {error}"
+			"success": "/m {sender} 已成功轉帳 {amount} &a&l綠寶石&r&f給 {target}",
+			"failed": "/m {sender} &c&l轉帳失敗: {error}"
 		},
 		"command": {
 			"unexpectedError": "/m {sender} &c&l執行指令時發生不可預期的錯誤，請聯繫開發者",
-			"internalError": "/msg {sender} &c&l執行指令 {command} 時發生內部錯誤"
+			"internalError": "/m {sender} &c&l執行指令 {command} 時發生內部錯誤"
 		},
 		"money": {
 			"unavailable": "無法取得",

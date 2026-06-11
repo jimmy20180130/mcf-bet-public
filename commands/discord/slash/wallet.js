@@ -409,11 +409,6 @@ async function execute(interaction) {
     });
 }
 
-function isValidUuid(value) {
-    const normalized = value.replace(/-/g, '').toLowerCase();
-    return /^[0-9a-f]{32}$/.test(normalized);
-}
-
 async function resolveOrCreateUser(playerInput) {
     if (!playerInput) return null;
 
@@ -424,7 +419,7 @@ async function resolveOrCreateUser(playerInput) {
     let playeruuid = null;
     let playerid = null;
 
-    if (isValidUuid(playerInput)) {
+    if (/^[0-9a-f]{32}$/.test(normalizedInput)) {
            playeruuid = normalizeUuid(normalizedInput);
         playerid = await minecraftDataService.getPlayerId(normalizedInput) || playerInput;
     } else {

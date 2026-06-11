@@ -22,7 +22,7 @@ class ErrorHandler {
                         }));
                     })
                     .catch(err => {
-                        this.bot.logger.error(`退回下注金額失敗: ${amount} ${currency} 給 ${target} (type: ${errType}, reason: ${error.message}, error: ${err.error.message})`);
+                        this.bot.logger.error(`退回下注金額失敗: ${amount} ${currency} 給 ${target} (type: ${errType}, reason: ${error.message}, error: ${err.error?.message})`);
                         this.bot.sendMsg(t('service.errorHandler.refundFailed', {
                             target,
                             amount,
@@ -54,7 +54,7 @@ class ErrorHandler {
                             }));
                         })
                         .catch(err => {
-                            this.bot.logger.error(`退回下注金額失敗: ${amount} ${currency} 給 ${target} (type: ${errType}, reason: ${error.message}, error: ${err.error.message})`);
+                            this.bot.logger.error(`退回下注金額失敗: ${amount} ${currency} 給 ${target} (type: ${errType}, reason: ${error.message}, error: ${err.error?.message})`);
                             this.bot.sendMsg(t('service.errorHandler.refundFailedReason', {
                                 target,
                                 amount,

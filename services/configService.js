@@ -116,15 +116,7 @@ function writeConfig(config, options = {}) {
     atomicWriteConfigString(configText, paths);
 }
 
-function updateConfig(mutator, options = {}) {
-    const currentConfig = readConfig(options);
-    const nextConfig = mutator(currentConfig) || currentConfig;
-    writeConfig(nextConfig, options);
-    return nextConfig;
-}
-
 module.exports = {
     readConfig,
-    writeConfig,
-    updateConfig
+    writeConfig
 };

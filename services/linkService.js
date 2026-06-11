@@ -1,11 +1,6 @@
 const codes = [] // { code, playeruuid, expiresAt }
 const User = require('../models/User');
 
-function generateCode() {
-    // 00001 ~ 99999
-    return Math.floor(Math.random() * 99999) + 1;
-}
-
 function createLinkCode(playeruuid) {
     const user = User.getByUuid(playeruuid);
     if (user && user.discordid) {
@@ -20,7 +15,7 @@ function createLinkCode(playeruuid) {
 
     let code;
     do {
-        code = generateCode();
+        code = Math.floor(Math.random() * 99999) + 1; // 00001 ~ 99999
     } while (codes.some(c => c.code === code));
     codes.push({ code, playeruuid, expiresAt: Date.now() + 3600000 }); // 1 hour expiration
     return code;

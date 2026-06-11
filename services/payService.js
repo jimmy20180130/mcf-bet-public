@@ -27,7 +27,7 @@ class PayService {
             resolve(result);
 
         } catch (err) {
-            this.bot.logger.error(`轉帳失敗: ${err.error.message}`);
+            this.bot.logger.error(`轉帳失敗: ${err.error?.message}`);
             reject(err);
 
         } finally {
