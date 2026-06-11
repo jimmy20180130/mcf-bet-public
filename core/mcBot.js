@@ -283,7 +283,11 @@ class mcBot {
         await this.bot.BetService.addBet(sender, amount, 'emerald')
             .then(async (result) => {
                 if (result?.skipped) {
-                    this.bot.logger.debug(`已略過超出範圍的下注: ${result.amount} ${result.currency} 來自: ${result.target}`);
+                    if (result.errType === 'botNoMoney') {
+                        this.bot.logger.warn(`機器人餘額不足，已退回下注: ${result.amount} ${result.currency} 來自: ${result.target} (機器人餘額: ${result.botBalance ?? '未知'}, 需賠付: ${result.requiredPayout})`);
+                    } else {
+                        this.bot.logger.debug(`已略過超出範圍的下注: ${result.amount} ${result.currency} 來自: ${result.target}`);
+                    }
                     return;
                 }
 
@@ -328,7 +332,11 @@ class mcBot {
         await this.bot.BetService.addBet(sender, amount, 'coin')
             .then(async (result) => {
                 if (result?.skipped) {
-                    this.bot.logger.debug(`已略過超出範圍的下注: ${result.amount} ${result.currency} 來自: ${result.target}`);
+                    if (result.errType === 'botNoMoney') {
+                        this.bot.logger.warn(`機器人餘額不足，已退回下注: ${result.amount} ${result.currency} 來自: ${result.target} (機器人餘額: ${result.botBalance ?? '未知'}, 需賠付: ${result.requiredPayout})`);
+                    } else {
+                        this.bot.logger.debug(`已略過超出範圍的下注: ${result.amount} ${result.currency} 來自: ${result.target}`);
+                    }
                     return;
                 }
 

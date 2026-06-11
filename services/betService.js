@@ -46,6 +46,31 @@ class BetService {
         }
     }
 
+    _getTabText(node) {
+        let text = node?.text || '';
+        if (Array.isArray(node?.extra)) {
+            for (const child of node.extra) {
+                text += this._getTabText(child);
+            }
+        }
+        return text;
+    }
+
+    _getCurrentBotBalance(currency) {
+        const headerData = this.bot.tablist?.header;
+        if (!headerData) return null;
+
+        const fullTabText = this._getTabText(headerData).replace(/§[0-9a-fk-or]/gi, '');
+        const match = currency === 'emerald'
+            ? fullTabText.match(/綠寶石.*?＄([\d,]+)元/)
+            : fullTabText.match(/村民錠\s*?([\d,]+)個/);
+
+        if (!match) return null;
+
+        const balance = Number(match[1].replace(/,/g, ''));
+        return Number.isFinite(balance) ? balance : null;
+    }
+
     async addBet(playerid, amount, currency) {
         return await new Promise((resolve, reject) => {
             this.queue.push({ playerid, amount, currency, resolve, reject });
@@ -75,6 +100,18 @@ class BetService {
                 min: minAmount,
                 max: maxAmount
             }));
+        }
+    }
+
+    async _refundBotNoMoneyBet(playerid, amount, currency) {
+        const currencyLabel = currency === 'coin' ? '村民錠' : '綠寶石';
+        try {
+            await this.bot.PayService.pay(playerid, amount, currency);
+            this.bot.sendMsg(t('service.betService.botNoMoney', { target: playerid, amount, currency: currencyLabel }));
+            this.bot.logger.info(`機器人餘額不足，已退回下注: ${playerid} ${amount} ${currency}`);
+        } catch (err) {
+            this.bot.logger.error(`機器人餘額不足且退回下注失敗: ${playerid} ${amount} ${currency} (error: ${err?.error?.message || err?.message || err})`);
+            this.bot.sendMsg(t('service.betService.botNoMoneyRefundFailed', { target: playerid, amount, currency: currencyLabel }));
         }
     }
 
@@ -132,6 +169,22 @@ class BetService {
             let odds = currency == 'emerald' ? new Decimal(betConfig.eodds) : new Decimal(betConfig.codds);
             let bonusodds = new Decimal(stats?.bonusodds || 0);
             let payout = odds.plus(bonusodds).times(betAmount).floor();
+
+            const botBalance = this._getCurrentBotBalance(currency);
+            if (botBalance === null || payout.gt(botBalance)) {
+                await this._refundBotNoMoneyBet(playerid, betAmount, currency);
+                resolve({
+                    success: false,
+                    skipped: true,
+                    target: playerid,
+                    amount: betAmount,
+                    currency,
+                    errType: 'botNoMoney',
+                    botBalance,
+                    requiredPayout: payout.toNumber()
+                });
+                return;
+            }
 
             const result = await this._performBet(playerid, betAmount, currency, odds, bonusodds);
 
@@ -221,7 +274,7 @@ class BetService {
                 } else {
                     this.bot.sendMsg(t('service.betService.ewinCommand', {
                         time: new Date().toLocaleTimeString('zh-TW', { hour12: false }),
-                        target, 
+                        target,
                         payout: payout.toNumber(),
                         currency: '綠寶石',
                         odds: totalOdds.toFixed(2),
