@@ -327,71 +327,15 @@ class BetService {
                 return;
             }
 
-            function vectorToDirection(v) {
-                if (v.y < 0) {
-                    return 0;
-                } else if (v.y > 0) {
-                    return 1;
-                } else if (v.z < 0) {
-                    return 2;
-                } else if (v.z > 0) {
-                    return 3;
-                } else if (v.x < 0) {
-                    return 4;
-                } else if (v.x > 0) {
-                    return 5;
-                }
-            }
-
-            const direction = new Vec3(0, 1, 0);
-            const directionNum = vectorToDirection(direction);
-            const cursorPos = new Vec3(0.5, 0.5, 0.5);
-
-            if (this.bot.supportFeature('blockPlaceHasHeldItem')) {
-                this.bot._client.write('block_place', {
-                    location: block.position,
-                    direction: directionNum,
-                    heldItem: Item.toNotch(this.bot.heldItem),
-                    cursorX: cursorPos.scaled(16).x,
-                    cursorY: cursorPos.scaled(16).y,
-                    cursorZ: cursorPos.scaled(16).z
+            this.bot.activateBlock(block)
+                .then(() => {
+                    resolve();
+                })
+                .catch(err => {
+                    const error = new Error(t('service.betService.unsupportedVersion', { reason: err.message }));
+                    error.code = 'unsupportedVersion';
+                    reject(error);
                 });
-            } else if (this.bot.supportFeature('blockPlaceHasHandAndIntCursor')) {
-                this.bot._client.write('block_place', {
-                    location: block.position,
-                    direction: directionNum,
-                    hand: 0,
-                    cursorX: cursorPos.scaled(16).x,
-                    cursorY: cursorPos.scaled(16).y,
-                    cursorZ: cursorPos.scaled(16).z
-                });
-            } else if (this.bot.supportFeature('blockPlaceHasHandAndFloatCursor')) {
-                this.bot._client.write('block_place', {
-                    location: block.position,
-                    direction: directionNum,
-                    hand: 0,
-                    cursorX: cursorPos.x,
-                    cursorY: cursorPos.y,
-                    cursorZ: cursorPos.z
-                });
-            } else if (this.bot.supportFeature('blockPlaceHasInsideBlock')) {
-                this.bot._client.write('block_place', {
-                    location: block.position,
-                    direction: directionNum,
-                    hand: 0,
-                    cursorX: cursorPos.x,
-                    cursorY: cursorPos.y,
-                    cursorZ: cursorPos.z,
-                    insideBlock: false
-                });
-            } else {
-                const error = new Error(t('service.betService.unsupportedVersion'));
-                error.code = 'unsupportedVersion';
-                reject(error);
-                return;
-            }
-
-            resolve();
         });
     }
 
