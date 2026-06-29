@@ -2,8 +2,7 @@
 const { t } = require('../../utils/i18n');
 
 async function execute(bot, command, sender, args) {
-    //bot.depositMode = [{playerid: sender, expiresAt: Date.now() + 20000}];
-    if (bot.depositMode.find(m => m.playerid === sender)) {
+    if (bot.depositMode.find(m => m.playerid === sender && m.expiresAt > Date.now())) {
         bot.depositMode = bot.depositMode.filter(m => m.playerid !== sender);
         bot.sendMsg(t('mc.deposit.cancel', { sender }));
         bot.logger.debug(`${sender} exited deposit mode`);

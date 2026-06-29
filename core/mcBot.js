@@ -273,7 +273,7 @@ class mcBot {
         current = parseInt(current.replace(/,/g, ''));
         this.bot.logger.debug(`收到綠寶石轉帳: ${amount} 綠寶石 來自: ${sender} 目前擁有: ${current} 綠寶石`);
 
-        if (this.bot.depositMode.find(m => m.playerid === sender)) {
+        if (this.bot.depositMode.find(m => m.playerid === sender && m.expiresAt > Date.now())) {
             this.bot.depositMode = this.bot.depositMode.filter(m => m.playerid !== sender);
             this.bot.sendMsg(t('mc.deposit.receivedEmerald', { sender, amount }));
             this.bot.logger.debug(`${sender} exited deposit mode`);
@@ -322,7 +322,7 @@ class mcBot {
         current = parseInt(current.replace(/,/g, ''));
         this.bot.logger.debug(`收到村民錠轉帳: ${amount} 村民錠 來自: ${sender} 目前擁有: ${current} 村民錠`);
 
-        if (this.bot.depositMode.find(m => m.playerid === sender)) {
+        if (this.bot.depositMode.find(m => m.playerid === sender && m.expiresAt > Date.now())) {
             this.bot.depositMode = this.bot.depositMode.filter(m => m.playerid !== sender);
             this.bot.sendMsg(t('mc.deposit.receivedCoin', { sender, amount }));
             this.bot.logger.debug(`${sender} exited deposit mode`);
@@ -373,7 +373,7 @@ class mcBot {
         this.bot.logger.debug(`收到傳送請求來自: ${sender}`);
 
         const botWhitelist = this._getCurrentBotConfig()?.whitelist || [];
-        const globalWhitelist = readConfig()?.whitelist || [];
+        const globalWhitelist = readConfig()?.general?.whitelist || [];
         const whitelist = [...botWhitelist, ...globalWhitelist]
             .map((name) => String(name).toLowerCase());
 

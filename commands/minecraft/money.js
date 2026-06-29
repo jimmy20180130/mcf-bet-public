@@ -45,7 +45,7 @@ async function execute(bot, command, sender, args) {
 module.exports = {
     name: 'money',
     description: '查看目前 Bot 的餘額 (支援廢土伺服器)',
-    aliases: ['bal', 'money'],
+    aliases: ['bal'],
     requireAdmin: true,
     execute
 };

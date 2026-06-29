@@ -39,7 +39,8 @@ class BetService {
                 emin: Number(nextConfig?.emin ?? this.defaultBetConfig.emin),
                 emax: Number(nextConfig?.emax ?? this.defaultBetConfig.emax),
                 cmin: Number(nextConfig?.cmin ?? this.defaultBetConfig.cmin),
-                cmax: Number(nextConfig?.cmax ?? this.defaultBetConfig.cmax)
+                cmax: Number(nextConfig?.cmax ?? this.defaultBetConfig.cmax),
+                redstone: nextConfig?.redstone ?? null
             };
         } catch {
             return { ...this.defaultBetConfig };
@@ -159,7 +160,16 @@ class BetService {
                 if (user) playeruuid = user.playeruuid;
             }
 
-            if (!playeruuid) return;
+            if (!playeruuid) {
+                this.bot.logger.warn(`無法解析玩家 UUID，退回下注: ${playerid} ${betAmount} ${currency}`);
+                try {
+                    await this.bot.PayService.pay(playerid, betAmount, currency);
+                } catch (refundErr) {
+                    this.bot.logger.error(`退回下注失敗 (UUID 未知): ${playerid} ${betAmount} ${currency}`);
+                }
+                resolve({ success: false, skipped: true, target: playerid, amount: betAmount, currency, errType: 'unknownPlayer' });
+                return;
+            }
 
             // create user if not exist
             User.create({ playeruuid, playerid });
@@ -232,7 +242,9 @@ class BetService {
     _performBet(target, amount, currency, odds, bonusodds) {
         return new Promise(async (resolve, reject) => {
             try {
-                await this._clickRedstoneDust()
+                const pos = this._getCurrentBetConfig().redstone;
+                const block = Array.isArray(pos) ? this.bot.blockAt(new Vec3(pos[0], pos[1], pos[2])) : null;
+                await this._clickRedstoneDust(block)
             } catch (err) {
                 reject({ success: false, target, amount, currency, errType: 'click', error: new Error(err.message) });
                 return;

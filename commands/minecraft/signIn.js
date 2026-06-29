@@ -65,10 +65,12 @@ async function execute(bot, command, sender, args) {
             payoutResult.coin = true;
         }
 
-        try {
-            SignIn.record(playeruuid, botName, JSON.stringify({ e: reward.e, c: reward.c }));
-        } catch (error) {
-            bot.logger.error(`[${botName}] 簽到紀錄寫入失敗: ${sender}，錯誤: ${error.message}`);
+        if (payoutResult.emerald && payoutResult.coin) {
+            try {
+                SignIn.record(playeruuid, botName, JSON.stringify({ e: reward.e, c: reward.c }));
+            } catch (error) {
+                bot.logger.error(`[${botName}] 簽到紀錄寫入失敗: ${sender}，錯誤: ${error.message}`);
+            }
         }
 
         const signInData = SignIn.getSignInData(playeruuid, botName);

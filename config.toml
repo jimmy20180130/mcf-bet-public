@@ -26,6 +26,7 @@ cmax = 5000000
 cmin = 1
 eodds = 1.85
 codds = 1.85
+# redstone = [x, y, z] 要指定的話再填，不然 bot 會自己找
 
 # 自動宣傳訊息 (可設定多則，會依序循環發送)
 [[bots.autoMessages]]
