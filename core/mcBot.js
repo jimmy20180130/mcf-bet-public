@@ -111,9 +111,6 @@ class mcBot {
         const botConfig = this._getCurrentBotConfig();
 
         try {
-            if (!this.bot?._client?.chat) {
-                throw new Error('Bot 尚未連線或已斷線，無法發送訊息');
-            }
             this.bot.chat(message);
             if (botConfig?.consoleChannelID) {
                 this.dcBot.sendMsg(botConfig.consoleChannelID, message);
