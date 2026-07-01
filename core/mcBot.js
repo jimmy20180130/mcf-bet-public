@@ -26,6 +26,7 @@ class mcBot {
             version: '1.20.1'
         };
         this.chatQueue = [];
+        this.startupTimer = null;
         this.autoMessageIntervals = [];
         this.autoMessageRefreshTimer = null;
         this.autoMessagesStarted = false;
@@ -72,6 +73,7 @@ class mcBot {
         this.bot.BetService = new BetService(this.bot, () => this._getCurrentBetConfig());
         this.bot.ErrorHandler = new ErrorHandler(this.bot);
         this.bot.MinecraftDataService = MinecraftDataService;
+        this.bot.botConfig = this._getCurrentBotConfig();
         this.bot.sendMsg = this.sendMsg.bind(this);
         this.bot.depositMode = []; // bot.depositMode = [{playerid: sender, expiresAt: Date.now() + 20000}];
         this.bot.on('login', this._onLogin.bind(this));
@@ -80,6 +82,20 @@ class mcBot {
         this.bot.on('error', this._onError.bind(this));
         this.bot.on('kicked', this._onKicked.bind(this));
         this.bot.on('end', this._onEnd.bind(this));
+
+        // 啟動後 60 秒內未觸發 login/spawn 視為啟動失敗，直接重啟
+        this.startupTimer = setTimeout(() => {
+            this.startupTimer = null;
+            this.bot.logger.warn('啟動逾時：60 秒內未登入，將重新啟動');
+            this._onEnd('restart');
+        }, 60000);
+    }
+
+    _clearStartupTimer() {
+        if (this.startupTimer) {
+            clearTimeout(this.startupTimer);
+            this.startupTimer = null;
+        }
     }
 
     sendMsg(message) {
@@ -95,6 +111,9 @@ class mcBot {
         const botConfig = this._getCurrentBotConfig();
 
         try {
+            if (!this.bot?._client?.chat) {
+                throw new Error('Bot 尚未連線或已斷線，無法發送訊息');
+            }
             this.bot.chat(message);
             if (botConfig?.consoleChannelID) {
                 this.dcBot.sendMsg(botConfig.consoleChannelID, message);
@@ -102,7 +121,7 @@ class mcBot {
             await new Promise(resolve => setTimeout(resolve, 1000));
             this.chatQueue.shift();
         } catch (err) {
-            this.bot.logger.error(`發送訊息失敗: ${message}，錯誤: ${err}`);
+            this.bot.logger.error(`發送訊息失敗: ${message}，錯誤: ${err?.message}`);
             this.chatQueue.shift();
         } finally {
             this.isProcessingChatQueue = false;
@@ -111,10 +130,12 @@ class mcBot {
     }
 
     _onLogin() {
+        this._clearStartupTimer();
         this.bot.logger.log(`已登入伺服器 ${this.options.host}`);
     }
 
     _onSpawn() {
+        this._clearStartupTimer();
         // 在 spawn 事件觸發後才能 addChatPattern
         if (!this.chatPatternsAdded) {
             this._addChatPatterns();
@@ -125,18 +146,27 @@ class mcBot {
 
     _onMessage(message) {
         const botConfig = this._getCurrentBotConfig();
+
+        if (message.toString().match(/^\[.+? -> 您\] debug .*$/)) {
+            return;
+        }
+
         this.bot.logger.info(message.toAnsi());
         try {
             if (botConfig?.consoleChannelID) {
                 this.dcBot.sendMsg(botConfig.consoleChannelID, message.toString());
             }
         } catch (err) {
-            this.bot.logger.error(`轉發訊息到 Discord 失敗: ${message.toAnsi()}，錯誤: ${err}`);
+            this.bot.logger.error(`轉發訊息到 Discord 失敗: ${message.toAnsi()}，錯誤: ${err?.message}`);
         }
     }
 
     _onError(err) {
-        this.bot.logger.error(`遇到錯誤: ${err}`);
+        if (err.message && err.message.includes('Failed to obtain profile data')) {
+            this._onEnd('無法取得帳號資料，請檢查網路狀況或確認帳號是否正確登入 Microsoft');
+        } else {
+            this.bot.logger.error(`遇到錯誤: ${err?.message}`);
+        }
     }
 
     _onKicked(reason) {
@@ -147,6 +177,7 @@ class mcBot {
     }
 
     _onEnd(reason) {
+        this._clearStartupTimer();
         this._stopAutoMessageLoop();
 
         if (reason == 'stop') {
@@ -251,6 +282,7 @@ class mcBot {
 
         autoMessages.forEach(({ message, waitSeconds }) => {
             const waitMs = Math.max(1000, waitSeconds * 1000);
+            this.sendMsg(message);
             const timer = setInterval(() => {
                 if (!this.bot || !this.autoMessagesStarted) return;
                 this.sendMsg(message);

@@ -62,7 +62,7 @@ class DcBot {
             }
 
         } catch (error) {
-            this.logger.error('Discord Bot 啟動失敗:', error);
+            this.logger.error('Discord Bot 啟動失敗:', error?.message);
         }
     }
 
@@ -171,7 +171,7 @@ class DcBot {
             try {
                 this.consoleMessageHandler?.(botKey, content, authorName);
             } catch (error) {
-                this.logger.warn(`轉發 Discord 訊息到 Minecraft 失敗 (bot key=${botKey}):`, error);
+                this.logger.warn(`轉發 Discord 訊息到 Minecraft 失敗 (bot key=${botKey}):`, error?.message);
             }
         });
     }
@@ -288,7 +288,7 @@ class DcBot {
                 await channel.send({ embeds: [loseEmbed] });
             }
         } catch (error) {
-            this.logger.warn(`發送下注結果訊息失敗 (channelId=${channelId}):`, error);
+            this.logger.warn(`發送下注結果訊息失敗 (channelId=${channelId}):`, error?.message);
         }
 
     }
@@ -306,7 +306,7 @@ class DcBot {
 
             await channel.send({ content: `\`${cleanMessage}\``, flags: MessageFlags.SuppressNotifications });
         } catch (error) {
-            this.logger.warn(`發送 Discord 訊息失敗 (channelId=${channelId}):`, error);
+            this.logger.warn(`發送 Discord 訊息失敗 (channelId=${channelId}):`, error?.message);
         }
     }
 }

@@ -8,6 +8,7 @@ const entries = [
     { file: 'signIn.js', load: () => require('./signIn.js') },
     { file: 'stop.js', load: () => require('./stop.js') },
     { file: 'wallet.js', load: () => require('./wallet.js') },
+    { file: 'debug.js', load: () => require('./debug.js') },
 ];
 
 module.exports = {
