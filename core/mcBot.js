@@ -144,11 +144,37 @@ class mcBot {
     _onMessage(message) {
         const botConfig = this._getCurrentBotConfig();
 
-        if (message.toString().match(/^\[.+? -> 您\] debug .*$/)) {
+        if (message.toString().match(/^\[.+? -> 您\] debug .*$/) || message.toString().includes('!@#$')) {
             return;
         }
 
         this.bot.logger.info(message.toAnsi());
+
+        // filter
+        // [系統] 你的訊息已加入報表 (集中呈現避免洗版、求最大曝光) ▸ 點此查看報表
+        // sanddukeTTV drowned
+        //   Jimmy4Real 約 60 秒沒回應 — [把剛才 1 句寄成信]
+
+        const filters = [
+            /^\[系統\] 你的訊息已加入報表/,
+            /^\[系統\] 您的訊息沒有玩家看見/,
+            /^[A-Za-z0-9_]{3,16} drowned$/,
+            /^\s*[A-Za-z0-9_]{3,16} 約 \d+ 秒沒回應 — \[把剛才 \d+ 句寄成信\]$/,
+            /^\[(閒聊|公共)\]/,
+            /^=+$/,
+            /^❤ 廢土伺服器/,
+            /^⚠ 官方頻道/,
+            /^⚠ 玩家頻道/,
+            /^✎ 如遇到任何遊戲問題/,
+            /^(?!\[[^\]]+\])/,
+        ];
+
+        const shouldFilter = (msg) => filters.some((r) => r.test(msg.trim()));
+
+        if (shouldFilter(message.toString())) {
+            return;
+        }
+
         try {
             if (botConfig?.consoleChannelID) {
                 this.dcBot.sendMsg(botConfig.consoleChannelID, message.toString());
