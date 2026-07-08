@@ -156,7 +156,9 @@
 			"betWinDescription": "下注{currency} `{amount}` -> `{returnAmount}` (賠率=`{odds}`)",
 			"betLoseTitle": "{currencyIcon} [未中獎] {playerId}",
 			"betLoseDescription": "下注{currency} `{amount}` -> `0` (賠率=`{odds}`)",
-			"betEmbedFooter": "Jimmy Bot"
+			"commandLogTitle": "指令紀錄 - 玩家 {player}",
+			"commandLogMcDescription": "玩家 {player} 觸發了 minecraft 指令 `{command} {args}`",
+			"commandLogDcDescription": "玩家 {player} 觸發了 discord 指令 `/{command} {args}`"
 		}
 	},
 	"mc": {

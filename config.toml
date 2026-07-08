@@ -12,6 +12,7 @@ whitelist = ["Jimmy4Real"] # 伺服器白名單玩家的 Minecraft ID，當機�
 [discord]
 discordBotToken = "" # Discord Bot 的 token，可至 Discord 開法者頁面取得
 discordApplicationID = "" # Discord Bot 的 application id，可至 Discord 開法者頁面取得
+commandLogChannelID = "" # 指令紀錄的 Discord 頻道 ID，玩家使用 Minecraft/Discord 指令時會記錄於此，留空則不紀錄
 
 [[bots]]
 username = "" # Bot 的代號，不一定要填實際的 Minecraft ID 或是電子郵件，僅能填英文和數字

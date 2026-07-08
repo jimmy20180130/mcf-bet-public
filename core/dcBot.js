@@ -11,6 +11,14 @@ const {
     clearModuleCache,
 } = require('../commands/discord/manifest');
 
+// 將 discord 指令的子指令/選項攤平成 "sub opt:value" 字串
+function formatInteractionArgs(interaction) {
+    const walk = (opts) => (opts || []).flatMap(o =>
+        o.options ? [o.name, ...walk(o.options)] : (o.value !== undefined ? [`${o.name}:${o.value}`] : [o.name])
+    );
+    return walk(interaction.options?.data).join(' ');
+}
+
 class DcBot {
     constructor() {
         this.logger = new Logger('Discord');
@@ -189,6 +197,9 @@ class DcBot {
                 return;
             }
 
+            const author = interaction.member?.displayName || interaction.user?.username || 'DiscordUser';
+            this.sendCommandLogEmbed('discord', author, interaction.commandName, formatInteractionArgs(interaction));
+
             try {
                 await command.execute(interaction);
             } catch (error) {
@@ -239,6 +250,7 @@ class DcBot {
     }
 
     async sendBetRecordEmbed(channelId, playerid, currency, amount, returnAmount, odds, bonusOdds, isWin, bot) {
+        if (!channelId) return; // 未設定則不發送
         const currencyIcon = currency === 'emerald' ? '💵' : '💴';
         currency = currency == 'emerald' ? '綠寶石' : '村民錠';
 
@@ -254,7 +266,7 @@ class DcBot {
             }))
             .setColor("#00ff1e")
             .setFooter({
-                text: t('core.dcBot.betEmbedFooter'),
+                text: 'Jimmy Bot',
                 iconURL: "https://cdn.discordapp.com/icons/1173075041030787233/bbf79773eab98fb335edc9282241f9fe.webp?size=1024",
             })
             .setTimestamp();
@@ -268,7 +280,7 @@ class DcBot {
             }))
             .setColor("#ff0000")
             .setFooter({
-                text: t('core.dcBot.betEmbedFooter'),
+                text: 'Jimmy Bot',
                 iconURL: "https://cdn.discordapp.com/icons/1173075041030787233/bbf79773eab98fb335edc9282241f9fe.webp?size=1024",
             })
             .setTimestamp();
@@ -291,7 +303,38 @@ class DcBot {
 
     }
 
+    async sendCommandLogEmbed(source, player, command, args) {
+        let channelId;
+        try {
+            channelId = this._loadConfig()?.discord?.commandLogChannelID;
+        } catch { return; }
+        if (!channelId) return; // 未設定則不紀錄
+
+        const descKey = source === 'discord' ? 'core.dcBot.commandLogDcDescription' : 'core.dcBot.commandLogMcDescription';
+        const embed = new EmbedBuilder()
+            .setTitle(t('core.dcBot.commandLogTitle', { player: escapeDiscordId(player) }))
+            .setDescription(t(descKey, { player: escapeDiscordId(player), command, args: args || '' }).trim())
+            .setColor('#5865F2')
+            .setFooter({
+                text: 'Jimmy Bot',
+                iconURL: 'https://cdn.discordapp.com/icons/1173075041030787233/bbf79773eab98fb335edc9282241f9fe.webp?size=1024',
+            })
+            .setTimestamp();
+
+        try {
+            const channel = await this.client.channels.fetch(channelId);
+            if (!channel) {
+                this.logger.warn(`找不到頻道 ID: ${channelId}`);
+                return;
+            }
+            await channel.send({ embeds: [embed] });
+        } catch (error) {
+            this.logger.warn(`發送指令紀錄失敗 (channelId=${channelId}):`, error?.message);
+        }
+    }
+
     async sendMsg(channelId, message) {
+        if (!channelId) return; // 未設定則不發送
         try {
             const channel = await this.client.channels.fetch(channelId);
             if (!channel) {

@@ -76,6 +76,7 @@ class mcBot {
         this.bot.MinecraftDataService = MinecraftDataService;
         this.bot.botConfig = this._getCurrentBotConfig();
         this.bot.sendMsg = this.sendMsg.bind(this);
+        this.bot.dcBot = this.dcBot;
         this.bot.depositMode = []; // bot.depositMode = [{playerid: sender, expiresAt: Date.now() + 20000}];
         this.bot.on('login', this._onLogin.bind(this));
         this.bot.on('spawn', this._onSpawn.bind(this));

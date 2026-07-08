@@ -21,6 +21,8 @@ async function executeCommand(bot, sender, command, args) {
     const cmd = commands.get(command);
     if (!cmd) return;
 
+    bot.dcBot?.sendCommandLogEmbed('minecraft', sender, command, args);
+
     const botKey = getBotKeyFromRuntimeBot(bot);
     if (sender.toLowerCase() === botKey) {
         return;
