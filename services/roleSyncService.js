@@ -31,6 +31,8 @@ class RoleSyncService {
 
         const mappedRanks = ranks.filter(rank => rank.discordid && member.roles.cache.has(rank.discordid));
         const targetRank = this._pickTargetRank(mappedRanks) || defaultRank;
+
+        this.logger.info(`[roleSync] ${user.playerid} roles=[${[...member.roles.cache.keys()].join(',')}] mappedRanks=[${mappedRanks.map(r => r.id).join(',')}] target=${targetRank.id}(${targetRank.displayName})`);
         const stats = PlayerStats.get(user.playeruuid, normalizedBotKey);
 
         if (!stats || Number(stats.rankId) === Number(targetRank.id)) {
