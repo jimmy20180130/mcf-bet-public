@@ -1,6 +1,7 @@
 const { ApplicationCommandType, ContextMenuCommandBuilder, MessageFlags } = require('discord.js');
 const User = require('../../../models/User');
 const { tForInteraction } = require('../../../utils/i18n');
+const { escapeDiscordId } = require('../../../utils/format');
 
 module.exports = {
 	data: new ContextMenuCommandBuilder()
@@ -29,7 +30,7 @@ module.exports = {
 		await interaction.reply({
 			content: tForInteraction(interaction, 'dc.interaction.minecraftData.summary', {
 				userId: targetUser.id,
-				playerId: userData.playerid,
+				playerId: escapeDiscordId(userData.playerid),
 				uuid: userData.playeruuid
 			}),
 			flags: [MessageFlags.Ephemeral]

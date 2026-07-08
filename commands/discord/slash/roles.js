@@ -305,6 +305,8 @@ async function handleAdd(interaction) {
 		}
 	});
 
+	interaction.client.roleSyncService?.fullScanAllGuilds();
+
 	await interaction.editReply({
 		content: tForInteraction(interaction, 'dc.roles.added', {
 			id: result.lastInsertRowid,
@@ -333,6 +335,7 @@ async function handleRemove(interaction) {
 	}
 
 	Rank.delete(rank.id);
+	interaction.client.roleSyncService?.fullScanAllGuilds();
 	await interaction.editReply({
 		content: tForInteraction(interaction, 'dc.roles.removed', {
 			id: rank.id,
@@ -388,6 +391,7 @@ async function handleEdit(interaction) {
 	}
 
 	Rank.update(rankId, updates);
+	interaction.client.roleSyncService?.fullScanAllGuilds();
 	const updated = Rank.getById(rankId);
 	await interaction.editReply({
 		content: tForInteraction(interaction, 'dc.roles.edited', {

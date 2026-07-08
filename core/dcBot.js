@@ -3,6 +3,7 @@ const Logger = require('../utils/logger');
 const { readConfig } = require('../services/configService');
 const RoleSyncService = require('../services/roleSyncService');
 const { t } = require('../utils/i18n');
+const { money, escapeDiscordId } = require('../utils/format');
 const { getBotKeyFromConfigBot } = require('../utils/botKey');
 const {
     slashEntries,
@@ -27,6 +28,7 @@ class DcBot {
         });
 
         this.roleSyncService = new RoleSyncService(this.client, this.logger);
+        this.client.roleSyncService = this.roleSyncService;
     }
 
     setConsoleRelayHandler(handler) {
@@ -240,18 +242,14 @@ class DcBot {
         const currencyIcon = currency === 'emerald' ? '💵' : '💴';
         currency = currency == 'emerald' ? '綠寶石' : '村民錠';
 
-        const addCommas = (num) => {
-            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-        };
-
         odds = (odds+bonusOdds).toFixed(2);
 
         const winEmbed = new EmbedBuilder()
-            .setTitle(t('core.dcBot.betWinTitle', { currencyIcon, playerId: playerid }))
+            .setTitle(t('core.dcBot.betWinTitle', { currencyIcon, playerId: escapeDiscordId(playerid) }))
             .setDescription(t('core.dcBot.betWinDescription', {
                 currency,
-                amount: addCommas(amount),
-                returnAmount: addCommas(returnAmount),
+                amount: money(amount),
+                returnAmount: money(returnAmount),
                 odds
             }))
             .setColor("#00ff1e")
@@ -262,10 +260,10 @@ class DcBot {
             .setTimestamp();
 
         const loseEmbed = new EmbedBuilder()
-            .setTitle(t('core.dcBot.betLoseTitle', { currencyIcon, playerId: playerid }))
+            .setTitle(t('core.dcBot.betLoseTitle', { currencyIcon, playerId: escapeDiscordId(playerid) }))
             .setDescription(t('core.dcBot.betLoseDescription', {
                 currency,
-                amount: addCommas(amount),
+                amount: money(amount),
                 odds
             }))
             .setColor("#ff0000")

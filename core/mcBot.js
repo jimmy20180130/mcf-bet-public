@@ -7,6 +7,7 @@ const mcCommandHandler = require('../commands/minecraft/index');
 const MinecraftDataService = require('../services/minecraftDataService');
 const { readConfig } = require('../services/configService');
 const { t } = require('../utils/i18n');
+const { money } = require('../utils/format');
 const { getBotKeyFromConfigBot, findConfigBotByKey } = require('../utils/botKey');
 
 class mcBot {
@@ -170,6 +171,9 @@ class mcBot {
 
                 // 系統
                 /^\[系統\]\s*村民錠 \d+個 於村綠交易所\(\/pool\) 販售可獲得約 綠寶石＄[\d,]+元/.test(s) ||
+
+                // 小幫手提示 ([系統] <生存者-st4910> 提供了 小幫手提示 - [...])
+                /^\[系統\]\s*<[^>]+>\s*提供了\s*小幫手提示/.test(s) ||
 
                 // 沒回應寄信提示
                 /^\s*\w+ 約 \d+ 秒沒回應 — \[把剛才 \d+ 句寄成信\]$/.test(s) ||
@@ -338,7 +342,7 @@ class mcBot {
 
         if (this.bot.depositMode.find(m => m.playerid === sender && m.expiresAt > Date.now())) {
             this.bot.depositMode = this.bot.depositMode.filter(m => m.playerid !== sender);
-            this.bot.sendMsg(t('mc.deposit.receivedEmerald', { sender, amount }));
+            this.bot.sendMsg(t('mc.deposit.receivedEmerald', { sender, amount: money(amount) }));
             this.bot.logger.debug(`${sender} exited deposit mode`);
             return;
         }
@@ -387,7 +391,7 @@ class mcBot {
 
         if (this.bot.depositMode.find(m => m.playerid === sender && m.expiresAt > Date.now())) {
             this.bot.depositMode = this.bot.depositMode.filter(m => m.playerid !== sender);
-            this.bot.sendMsg(t('mc.deposit.receivedCoin', { sender, amount }));
+            this.bot.sendMsg(t('mc.deposit.receivedCoin', { sender, amount: money(amount) }));
             this.bot.logger.debug(`${sender} exited deposit mode`);
             return;
         }

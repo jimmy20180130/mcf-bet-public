@@ -4,6 +4,7 @@ const RecordTemplate = require('../../../models/RecordTemplate');
 const User = require('../../../models/User');
 const { readConfig } = require('../../../services/configService');
 const { tForInteraction } = require('../../../utils/i18n');
+const { money, escapeDiscordId } = require('../../../utils/format');
 const { getBotKeyFromConfigBot, normalizeBotKey, findConfigBotByKey } = require('../../../utils/botKey');
 
 const ALL_PLAYERS_VALUE = '__all_players__';
@@ -461,18 +462,18 @@ async function execute(interaction) {
         const count = stats.totalBets || 0;
         if (showDetailed) {
             return tForInteraction(interaction, 'dc.record.statsDetailed', {
-                bet,
+                bet: money(bet),
                 count,
-                win,
-                profit: bet - win
+                win: money(win),
+                profit: money(bet - win)
             });
         }
-        return tForInteraction(interaction, 'dc.record.statsSimple', { bet, count });
+        return tForInteraction(interaction, 'dc.record.statsSimple', { bet: money(bet), count });
     }
 
     const imageUrl = queryAllPlayers ? `https://xi11.cc/wool` : `https://minotar.net/helm/${targetUser.playeruuid}/64.png`;
     const allPlayersLabel = tForInteraction(interaction, 'dc.record.allPlayers');
-    const playerIdValue = queryAllPlayers ? allPlayersLabel : targetUser.playerid;
+    const playerIdValue = queryAllPlayers ? allPlayersLabel : escapeDiscordId(targetUser.playerid);
     const discordValue = queryAllPlayers
         ? allPlayersLabel
         : (targetUser.discordid ? `<@${targetUser.discordid}>` : tForInteraction(interaction, 'dc.record.unbound'));

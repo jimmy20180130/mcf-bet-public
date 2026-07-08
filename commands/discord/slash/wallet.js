@@ -4,6 +4,7 @@ const PlayerStats = require('../../../models/PlayerStats');
 const minecraftDataService = require('../../../services/minecraftDataService');
 const { readConfig } = require('../../../services/configService');
 const { tForInteraction } = require('../../../utils/i18n');
+const { money, escapeDiscordId } = require('../../../utils/format');
 const { getBotKeyFromConfigBot, normalizeBotKey, findConfigBotByKey } = require('../../../utils/botKey');
 const { normalizeUuid } = require('../../../utils/identifier');
 
@@ -300,10 +301,10 @@ async function execute(interaction) {
         const stats = PlayerStats.get(targetUser.playeruuid, botKey);
         await interaction.editReply({
             content: tForInteraction(interaction, 'dc.wallet.querySummary', {
-                playerId: targetUser.playerid,
+                playerId: escapeDiscordId(targetUser.playerid),
                 botName,
-                emerald: stats.emerald || 0,
-                coin: stats.coin || 0
+                emerald: money(stats.emerald || 0),
+                coin: money(stats.coin || 0)
             })
         });
         return;
@@ -343,10 +344,10 @@ async function execute(interaction) {
         const updated = PlayerStats.get(targetUser.playeruuid, botKey);
         await interaction.editReply({
             content: tForInteraction(interaction, 'dc.wallet.addSummary', {
-                playerId: targetUser.playerid,
+                playerId: escapeDiscordId(targetUser.playerid),
                 botName,
-                emerald: updated.emerald || 0,
-                coin: updated.coin || 0
+                emerald: money(updated.emerald || 0),
+                coin: money(updated.coin || 0)
             })
         });
         return;
@@ -375,10 +376,10 @@ async function execute(interaction) {
         const updated = PlayerStats.get(targetUser.playeruuid, botKey);
         await interaction.editReply({
             content: tForInteraction(interaction, 'dc.wallet.removeSummary', {
-                playerId: targetUser.playerid,
+                playerId: escapeDiscordId(targetUser.playerid),
                 botName,
-                emerald: updated.emerald || 0,
-                coin: updated.coin || 0
+                emerald: money(updated.emerald || 0),
+                coin: money(updated.coin || 0)
             })
         });
         return;
@@ -401,10 +402,10 @@ async function execute(interaction) {
     const updated = PlayerStats.get(targetUser.playeruuid, botKey);
     await interaction.editReply({
         content: tForInteraction(interaction, 'dc.wallet.setSummary', {
-            playerId: targetUser.playerid,
+            playerId: escapeDiscordId(targetUser.playerid),
             botName,
-            emerald: updated.emerald || 0,
-            coin: updated.coin || 0
+            emerald: money(updated.emerald || 0),
+            coin: money(updated.coin || 0)
         })
     });
 }

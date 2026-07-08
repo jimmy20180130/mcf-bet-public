@@ -4,6 +4,7 @@ const RecordTemplate = require('../../../models/RecordTemplate');
 const User = require('../../../models/User');
 const { readConfig } = require('../../../services/configService');
 const { tForInteraction } = require('../../../utils/i18n');
+const { money, escapeDiscordId } = require('../../../utils/format');
 const { normalizeBotKey, findConfigBotByKey } = require('../../../utils/botKey');
 
 function parseDate(dateStr) {
@@ -164,11 +165,11 @@ module.exports = {
         const formatStats = (stats) => {
             const bet = stats.totalBetAmount || 0;
             const count = stats.totalBets || 0;
-            return tForInteraction(interaction, 'dc.interaction.template.stats', { bet, count });
+            return tForInteraction(interaction, 'dc.interaction.template.stats', { bet: money(bet), count });
         };
 
         const fields = [
-            { name: tForInteraction(interaction, 'dc.interaction.template.fieldPlayerId'), value: targetUser.playerid, inline: true },
+            { name: tForInteraction(interaction, 'dc.interaction.template.fieldPlayerId'), value: escapeDiscordId(targetUser.playerid), inline: true },
             {
                 name: tForInteraction(interaction, 'dc.interaction.template.fieldDiscord'),
                 value: targetUser.discordid ? `<@${targetUser.discordid}>` : tForInteraction(interaction, 'dc.interaction.template.unbound'),

@@ -1,5 +1,6 @@
 // epay
 const { t } = require('../../utils/i18n');
+const { money } = require('../../utils/format');
 
 async function execute(bot, command, sender, args) {
     const [target, amount] = args.split(' ');
@@ -10,7 +11,7 @@ async function execute(bot, command, sender, args) {
 
     await bot.PayService.pay(target, amount, 'emerald')
         .then(() => {
-            bot.sendMsg(t('mc.epay.success', { sender, amount, target }));
+            bot.sendMsg(t('mc.epay.success', { sender, amount: money(amount), target }));
         })
         .catch(err => {
             bot.sendMsg(t('mc.epay.failed', { sender, error: err.error?.message || t('common.unknownError') }));

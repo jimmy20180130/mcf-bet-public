@@ -5,6 +5,7 @@ const User = require('../models/User');
 const PlayerStats = require('../models/PlayerStats');
 const Decimal = require('decimal.js');
 const { t } = require('../utils/i18n');
+const { money } = require('../utils/format');
 const { getBotKeyFromRuntimeBot } = require('../utils/botKey');
 
 class BetService {
@@ -86,20 +87,20 @@ class BetService {
             await this.bot.PayService.pay(playerid, amount, currency);
             this.bot.sendMsg(t('service.betService.amountOutOfRange', {
                 target: playerid,
-                amount,
+                amount: money(amount),
                 currency: currencyLabel,
-                min: minAmount,
-                max: maxAmount
+                min: money(minAmount),
+                max: money(maxAmount)
             }));
             this.bot.logger.info(`下注金額超出範圍，已退回: ${playerid} ${amount} ${currency} (allowed: ${minAmount}-${maxAmount})`);
         } catch (err) {
             this.bot.logger.error(`下注金額超出範圍但退回失敗: ${playerid} ${amount} ${currency} (allowed: ${minAmount}-${maxAmount}, error: ${err?.error?.message || err?.message || err})`);
             this.bot.sendMsg(t('service.betService.amountOutOfRangeRefundFailed', {
                 target: playerid,
-                amount,
+                amount: money(amount),
                 currency: currencyLabel,
-                min: minAmount,
-                max: maxAmount
+                min: money(minAmount),
+                max: money(maxAmount)
             }));
         }
     }
@@ -108,11 +109,11 @@ class BetService {
         const currencyLabel = currency === 'coin' ? '村民錠' : '綠寶石';
         try {
             await this.bot.PayService.pay(playerid, amount, currency);
-            this.bot.sendMsg(t('service.betService.botNoMoney', { target: playerid, amount, currency: currencyLabel }));
+            this.bot.sendMsg(t('service.betService.botNoMoney', { target: playerid, amount: money(amount), currency: currencyLabel }));
             this.bot.logger.info(`機器人餘額不足，已退回下注: ${playerid} ${amount} ${currency}`);
         } catch (err) {
             this.bot.logger.error(`機器人餘額不足且退回下注失敗: ${playerid} ${amount} ${currency} (error: ${err?.error?.message || err?.message || err})`);
-            this.bot.sendMsg(t('service.betService.botNoMoneyRefundFailed', { target: playerid, amount, currency: currencyLabel }));
+            this.bot.sendMsg(t('service.betService.botNoMoneyRefundFailed', { target: playerid, amount: money(amount), currency: currencyLabel }));
         }
     }
 
@@ -279,7 +280,7 @@ class BetService {
                     this.bot.sendMsg(t('service.betService.cwinCommand', {
                         time: new Date().toLocaleTimeString('zh-TW', { hour12: false }),
                         target,
-                        payout: payout.toNumber(),
+                        payout: money(payout.toNumber()),
                         currency: '村民錠',
                         odds: totalOdds.toFixed(2),
                     }));
@@ -287,7 +288,7 @@ class BetService {
                     this.bot.sendMsg(t('service.betService.ewinCommand', {
                         time: new Date().toLocaleTimeString('zh-TW', { hour12: false }),
                         target,
-                        payout: payout.toNumber(),
+                        payout: money(payout.toNumber()),
                         currency: '綠寶石',
                         odds: totalOdds.toFixed(2),
                     }));
@@ -304,9 +305,9 @@ class BetService {
 
             } else if (spawnResult.data === 'lose') {
                 if (currency === 'coin') {
-                    this.bot.sendMsg(t('service.betService.closeCommand', { time: new Date().toLocaleTimeString('zh-TW', { hour12: false }), target, amount, currency: '村民錠' }));
+                    this.bot.sendMsg(t('service.betService.closeCommand', { time: new Date().toLocaleTimeString('zh-TW', { hour12: false }), target, amount: money(amount), currency: '村民錠' }));
                 } else {
-                    this.bot.sendMsg(t('service.betService.eloseCommand', { time: new Date().toLocaleTimeString('zh-TW', { hour12: false }), target, amount, currency: '綠寶石' }));
+                    this.bot.sendMsg(t('service.betService.eloseCommand', { time: new Date().toLocaleTimeString('zh-TW', { hour12: false }), target, amount: money(amount), currency: '綠寶石' }));
                 }
                 resolve({ success: true, target, amount, currency, outcome: 'lose' });
             }

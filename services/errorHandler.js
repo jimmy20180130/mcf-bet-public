@@ -1,4 +1,5 @@
 const { t } = require('../utils/i18n');
+const { money } = require('../utils/format');
 
 class ErrorHandler {
     constructor(bot) {
@@ -16,7 +17,7 @@ class ErrorHandler {
                         this.bot.logger.info(`已退回下注金額: ${amount} ${currency} 給 ${target} (type: ${errType}, reason: ${error.message})`);
                         this.bot.sendMsg(t('service.errorHandler.refunded', {
                             target,
-                            amount,
+                            amount: money(amount),
                             currency,
                             reason: error.message
                         }));
@@ -25,7 +26,7 @@ class ErrorHandler {
                         this.bot.logger.error(`退回下注金額失敗: ${amount} ${currency} 給 ${target} (type: ${errType}, reason: ${error.message}, error: ${err.error?.message})`);
                         this.bot.sendMsg(t('service.errorHandler.refundFailed', {
                             target,
-                            amount,
+                            amount: money(amount),
                             currency,
                             reason: error.message
                         }));
@@ -37,7 +38,7 @@ class ErrorHandler {
                     this.bot.logger.error(`轉帳逾時: ${amount} ${currency} 給 ${target} (type: ${errType}, reason: ${error.message})`);
                     this.bot.sendMsg(t('service.errorHandler.payTimeout', {
                         target,
-                        amount,
+                        amount: money(amount),
                         currency,
                         reason: error.message
                     }));
@@ -48,7 +49,7 @@ class ErrorHandler {
                             this.bot.logger.info(`已退回下注金額: ${amount} ${currency} 給 ${target} (type: ${errType}, reason: ${error.message})`);
                             this.bot.sendMsg(t('service.errorHandler.refundedReason', {
                                 target,
-                                amount,
+                                amount: money(amount),
                                 currency,
                                 reason: error.message
                             }));
@@ -57,7 +58,7 @@ class ErrorHandler {
                             this.bot.logger.error(`退回下注金額失敗: ${amount} ${currency} 給 ${target} (type: ${errType}, reason: ${error.message}, error: ${err.error?.message})`);
                             this.bot.sendMsg(t('service.errorHandler.refundFailedReason', {
                                 target,
-                                amount,
+                                amount: money(amount),
                                 currency,
                                 reason: error.message
                             }));

@@ -1,5 +1,6 @@
 // money
 const { t } = require('../../utils/i18n');
+const { money } = require('../../utils/format');
 
 function getAllText(node) {
     let text = node.text || "";
@@ -9,10 +10,6 @@ function getAllText(node) {
         }
     }
     return text;
-}
-
-function addCommas(n) {
-    return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
 async function execute(bot, command, sender, args) {
@@ -30,12 +27,12 @@ async function execute(bot, command, sender, args) {
     const emeraldMatch = fullTabText.match(/綠寶石.*?＄([\d,]+)元/);
     const coinMatch = fullTabText.match(/村民錠\s*?([\d,]+)個/);
 
-    let emerald = emeraldMatch 
-        ? addCommas(parseInt(emeraldMatch[1].replace(/,/g, ""))) 
+    let emerald = emeraldMatch
+        ? money(parseInt(emeraldMatch[1].replace(/,/g, "")))
         : t('mc.money.unavailable');
 
-    let coin = coinMatch 
-        ? addCommas(parseInt(coinMatch[1].replace(/,/g, ""))) 
+    let coin = coinMatch
+        ? money(parseInt(coinMatch[1].replace(/,/g, "")))
         : t('mc.money.unavailable');
 
     bot.sendMsg(t('mc.money.summary', { sender, emerald, coin }));

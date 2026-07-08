@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const { tForInteraction } = require('../../../utils/i18n');
+const { escapeDiscordId } = require('../../../utils/format');
 const { verifyLinkCode } = require('../../../services/linkService');
 const User = require('../../../models/User');
 const minecraftDataService = require('../../../services/minecraftDataService');
@@ -46,7 +47,7 @@ module.exports = {
             try {
                 await User.create({ playeruuid, playerid });
                 await User.linkDiscord(playeruuid, interaction.user.id);
-                await interaction.editReply({ content: tForInteraction(interaction, 'dc.link.success', { playerId: playerid, playerUuid: playeruuid }) });
+                await interaction.editReply({ content: tForInteraction(interaction, 'dc.link.success', { playerId: escapeDiscordId(playerid), playerUuid: playeruuid }) });
 
             } catch (error) {
                 await interaction.editReply({ content: tForInteraction(interaction, 'dc.link.linkFailed') });
