@@ -200,12 +200,6 @@ class mcBot {
             );
         };
 
-        // 疑似私訊但沒被指令格式吃掉 -> 伺服器訊息格式又改了
-        const raw = message.toString();
-        if (/[>→]\s*[你您]\]/.test(raw) && !this.commandRegex.test(raw)) {
-            this.bot.logger.warn(`私訊未符合指令格式，請回報此行: ${JSON.stringify(raw)}`);
-        }
-
         if (shouldFilter(message.toString())) {
             return;
         }
