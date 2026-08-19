@@ -16,7 +16,7 @@ class mcBot {
         this.dcBot = dcBot;
         this.botKey = getBotKeyFromConfigBot(options);
         this.chatPatternsAdded = false;
-        this.commandRegex = /^\[([A-Za-z0-9_]+)\s*(?:->|→)\s*您\]\s*([\p{L}\p{N}_]+)\s*(.*)$/u;
+        this.commandRegex = /^\[([A-Za-z0-9_]+)\s*(?:->|→)\s*[你您]\]\s*([\p{L}\p{N}_]+)\s*(.*)$/u;
         this.isProcessingChatQueue = false;
         this.reconnectAttempts = 0;
         this.nextReconnectAt = 0;
@@ -162,7 +162,7 @@ class mcBot {
     _onMessage(message) {
         const botConfig = this._getCurrentBotConfig();
 
-        if (message.toString().match(/^\[.+? -> 您\] debug .*$/) || message.toString().includes('!@#$')) {
+        if (message.toString().match(/^\[.+? -> [你您]\] debug .*$/) || message.toString().includes('!@#$')) {
             return;
         }
 
@@ -199,6 +199,12 @@ class mcBot {
                 /^\w{3,16} drowned$/.test(s)
             );
         };
+
+        // 疑似私訊但沒被指令格式吃掉 -> 伺服器訊息格式又改了
+        const raw = message.toString();
+        if (/[>→]\s*[你您]\]/.test(raw) && !this.commandRegex.test(raw)) {
+            this.bot.logger.warn(`私訊未符合指令格式，請回報此行: ${JSON.stringify(raw)}`);
+        }
 
         if (shouldFilter(message.toString())) {
             return;
@@ -344,7 +350,7 @@ class mcBot {
     }
 
     _handleCommand(matches) {
-        // matches: [ "[Jimmy4Real -> 您] epay Jimmy4Real 100" ]
+        // matches: [ "[Jimmy4Real -> 你] epay Jimmy4Real 100" ]
         let [[sender, command, args]] = matches;
         this.bot.logger.debug(`收到指令: ${command} 參數: ${args} 來自: ${sender}`);
         Promise.resolve(mcCommandHandler.executeCommand(this.bot, sender, command, args))
