@@ -16,6 +16,7 @@ class mcBot {
         this.dcBot = dcBot;
         this.botKey = getBotKeyFromConfigBot(options);
         this.chatPatternsAdded = false;
+        this.commandRegex = /^\[([A-Za-z0-9_]+)\s*(?:->|→)\s*您\]\s*([\p{L}\p{N}_]+)\s*(.*)$/u;
         this.isProcessingChatQueue = false;
         this.reconnectAttempts = 0;
         this.nextReconnectAt = 0;
@@ -101,26 +102,38 @@ class mcBot {
     }
 
     sendMsg(message) {
-        this.chatQueue.push(message);
-        this._processChatQueue();
+        return new Promise((resolve) => {
+            this.chatQueue.push({ message, resolve });
+            this._processChatQueue();
+        });
     }
 
     async _processChatQueue() {
-        if (this.isProcessingChatQueue || this.chatQueue.length === 0 || !this.bot) return;
+        if (this.isProcessingChatQueue || this.chatQueue.length === 0) return;
+
+        if (!this.bot) {
+            const error = new Error('Minecraft Bot 尚未連線');
+            this.chatQueue.splice(0).forEach(task => task.resolve({ success: false, error }));
+            return;
+        }
 
         this.isProcessingChatQueue = true;
-        const message = this.chatQueue[0];
-        const botConfig = this._getCurrentBotConfig();
+        const task = this.chatQueue[0];
+        const activeBot = this.bot;
 
         try {
-            this.bot.chat(message);
+            const botConfig = this._getCurrentBotConfig();
+            activeBot.chat(task.message);
+            task.resolve({ success: true });
+
             if (botConfig?.consoleChannelID) {
-                this.dcBot.sendMsg(botConfig.consoleChannelID, message);
+                this.dcBot.sendMsg(botConfig.consoleChannelID, task.message);
             }
             await new Promise(resolve => setTimeout(resolve, 1000));
             this.chatQueue.shift();
         } catch (err) {
-            this.bot.logger.error(`發送訊息失敗: ${message}，錯誤: ${err?.message}`);
+            task.resolve({ success: false, error: err });
+            activeBot.logger.error(`發送訊息失敗: ${task.message}，錯誤: ${err?.message}`);
             this.chatQueue.shift();
         } finally {
             this.isProcessingChatQueue = false;
@@ -130,17 +143,20 @@ class mcBot {
 
     _onLogin() {
         this._clearStartupTimer();
+        this._ensureChatPatterns();
         this.bot.logger.log(`已登入伺服器 ${this.options.host}`);
     }
 
     _onSpawn() {
         this._clearStartupTimer();
-        // 在 spawn 事件觸發後才能 addChatPattern
-        if (!this.chatPatternsAdded) {
-            this._addChatPatterns();
-            this.chatPatternsAdded = true;
-        }
+        this._ensureChatPatterns();
         this._startAutoMessageLoop();
+    }
+
+    _ensureChatPatterns() {
+        if (this.chatPatternsAdded || typeof this.bot?.addChatPattern !== 'function') return;
+        this._addChatPatterns();
+        this.chatPatternsAdded = true;
     }
 
     _onMessage(message) {
@@ -248,7 +264,7 @@ class mcBot {
 
     _addChatPatterns() {
         const chatPatterns = [
-            { name: 'command', regex: /^\[([A-Za-z0-9_]+) -> 您\] ([\p{L}\p{N}_]+)\s*(.*)$/u, handler: '_handleCommand' },
+            { name: 'command', regex: this.commandRegex, handler: '_handleCommand' },
             { name: 'getEmerald', regex: /^\[系統\] 您收到了\s+(\S+)\s+轉帳的\s+((?:\d{1,3}(?:,\d{3})+)|\d+)\s+綠寶石\s+\(目前擁有\s+((?:\d{1,3}(?:,\d{3})+)|\d+)\s+綠寶石\)/, handler: '_handleGetEmerald' },
             { name: 'getCoin', regex: /^\[系統\] 您收到了 (\S+) 送來的 ((?:\d{1,3}(?:,\d{3})+)|\d+) 村民錠\. \(目前擁有 ((?:\d{1,3}(?:,\d{3})+)|\d+) 村民錠\)/, handler: '_handleGetCoin' },
             { name: 'tpRequest', regex: /^\[系統\]\s+([A-Za-z0-9_]+)\s+想要(?:你傳送到\s+該玩家|傳送到\s+你)\s+的位置/u, handler: '_handleTpRequest' },
@@ -284,7 +300,6 @@ class mcBot {
         this.autoMessagesStarted = true;
         this._refreshAutoMessageLoop();
 
-        // 定期重新讀取設定檔；新增/刪除/修改廣告時不用重啟 bot。
         this.autoMessageRefreshTimer = setInterval(() => {
             this._refreshAutoMessageLoop();
         }, 30000);
@@ -332,7 +347,8 @@ class mcBot {
         // matches: [ "[Jimmy4Real -> 您] epay Jimmy4Real 100" ]
         let [[sender, command, args]] = matches;
         this.bot.logger.debug(`收到指令: ${command} 參數: ${args} 來自: ${sender}`);
-        mcCommandHandler.executeCommand(this.bot, sender, command, args);
+        Promise.resolve(mcCommandHandler.executeCommand(this.bot, sender, command, args))
+            .catch(err => this.bot.logger.error(`指令 ${command} 執行失敗: ${err?.stack || err}`));
     }
 
     async _handleGetEmerald(matches) {

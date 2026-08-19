@@ -5,8 +5,11 @@ const { normalizeBotKey } = require('../utils/botKey');
 class PlayerStats {
     static get(playeruuid, bot) {
         const normalizedBot = normalizeBotKey(bot);
+        // 加成與簽到獎勵是「所有身份組加總」後寫進 playerStats；為 NULL 時才退回 rankId 對應的 rank
         let stats = db.query(`
-            SELECT ps.*, r.displayName as rankName, r.daily, r.bonusodds, r.discordid
+            SELECT ps.*, r.displayName as rankName, r.discordid,
+                   COALESCE(ps.bonusodds, r.bonusodds) as bonusodds,
+                   COALESCE(ps.daily, r.daily) as daily
             FROM playerStats ps
             LEFT JOIN ranks r ON ps.rankId = r.id
             WHERE ps.playeruuid = ? AND ps.bot = ?
@@ -33,10 +36,11 @@ class PlayerStats {
         `).run(eChange, cChange, playeruuid, bot);
     }
 
-    static updateRank(playeruuid, bot, rankId) {
+    static updateRankState(playeruuid, bot, { rankId, bonusodds, daily }) {
         return db.query(`
-            UPDATE playerStats SET rankId = ? WHERE playeruuid = ? AND bot = ?
-        `).run(rankId, playeruuid, bot);
+            UPDATE playerStats SET rankId = ?, bonusodds = ?, daily = ?
+            WHERE playeruuid = ? AND bot = ?
+        `).run(rankId, Number(bonusodds || 0), JSON.stringify(daily || {}), playeruuid, bot);
     }
 }
 

@@ -21,6 +21,15 @@ async function executeCommand(bot, sender, command, args) {
     const cmd = commands.get(command);
     if (!cmd) return;
 
+    try {
+        await runCommand(bot, cmd, sender, command, args);
+    } catch (err) {
+        bot.logger.error(`執行指令 ${command} 時發生錯誤: ${err?.stack || err}`);
+        bot.sendMsg(t('mc.command.internalError', { sender, command }));
+    }
+}
+
+async function runCommand(bot, cmd, sender, command, args) {
     bot.dcBot?.sendCommandLogEmbed('minecraft', sender, command, args);
 
     const botKey = getBotKeyFromRuntimeBot(bot);
@@ -51,26 +60,21 @@ async function executeCommand(bot, sender, command, args) {
     let isAdmin = false;
     config.bots.forEach(botConfig => {
         if (getBotKeyFromConfigBot(botConfig) === botKey) {
-            if (botConfig.whitelist.includes(sender)) {
+            if ((botConfig.whitelist || []).some(n => String(n).toLowerCase() === sender.toLowerCase())) {
                 isAdmin = true;
             }
         }
     });
 
-    if (config.general.whitelist.includes(sender)) {
+    if ((config.general?.whitelist || []).some(n => String(n).toLowerCase() === sender.toLowerCase())) {
         isAdmin = true;
     }
 
-    try {
-        if (cmd.requireAdmin && !isAdmin) {
-            return;
-        }
-
-        await cmd.execute(bot, command, sender, args);
-    } catch (err) {
-        bot.logger.error(`執行指令 ${command} 時發生錯誤: ${err.stack || err}`);
-        bot.sendMsg(t('mc.command.internalError', { sender, command }));
+    if (cmd.requireAdmin && !isAdmin) {
+        return;
     }
+
+    await cmd.execute(bot, command, sender, args);
 }
 
 module.exports = {

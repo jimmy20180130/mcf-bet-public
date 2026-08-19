@@ -67,6 +67,12 @@ CREATE TABLE IF NOT EXISTS recordTemplates (
 
 db.run(schema);
 
+// ponytail: 加成/簽到獎勵改為「所有身份組加總」，結果存在 playerStats；NULL 代表沿用 rankId 對應的 rank
+for (const [table, column, type] of [['playerStats', 'bonusodds', 'REAL'], ['playerStats', 'daily', 'TEXT']]) {
+    const exists = db.query(`PRAGMA table_info(${table})`).all().some(col => col.name === column);
+    if (!exists) db.run(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
+}
+
 // init ranks
 const { readConfig } = require('../services/configService');
 const { getBotKeyFromConfigBot } = require('../utils/botKey');

@@ -30,6 +30,10 @@ dcBot.setConsoleRelayHandler((botKey, content, authorName) => {
 
 async function start() {
     logger.log('正在啟動 [廢土對賭機器人 v' + APP_VERSION + ']');
+    // TODO: check updates
+
+    // TODO: update locales, regex, and config
+
     const config = readConfig();
     await dcBot.start();
 

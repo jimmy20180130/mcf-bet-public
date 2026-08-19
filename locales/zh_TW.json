@@ -13,6 +13,7 @@
 			"notImplemented": "排行榜功能尚未實作"
 		},
 		"settings": {
+			"noPermission": "你沒有權限執行此操作",
 			"betUpdated": "已成功更新下注設定",
 			"betUpdateFailed": "更新下注設定時發生錯誤",
 			"channelUpdated": "已成功更新頻道設定",

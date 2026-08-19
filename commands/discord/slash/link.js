@@ -47,6 +47,13 @@ module.exports = {
             try {
                 await User.create({ playeruuid, playerid });
                 await User.linkDiscord(playeruuid, interaction.user.id);
+
+                try {
+                    await interaction.client.roleSyncService?.syncDiscordUser(interaction.user.id, 'link');
+                } catch (syncError) {
+                    console.warn(`Discord 身份組同步失敗 (${interaction.user.id}):`, syncError?.message || syncError);
+                }
+
                 await interaction.editReply({ content: tForInteraction(interaction, 'dc.link.success', { playerId: escapeDiscordId(playerid), playerUuid: playeruuid }) });
 
             } catch (error) {
