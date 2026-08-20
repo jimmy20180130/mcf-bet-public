@@ -6,6 +6,7 @@ const { readConfig } = require('../../../services/configService');
 const { tForInteraction } = require('../../../utils/i18n');
 const { money, escapeDiscordId } = require('../../../utils/format');
 const { getBotKeyFromConfigBot, normalizeBotKey, findConfigBotByKey } = require('../../../utils/botKey');
+const { hasAdminPermission } = require('../../../utils/permissions');
 
 const ALL_PLAYERS_VALUE = '__all_players__';
 
@@ -301,7 +302,7 @@ module.exports = {
     async autocomplete(interaction) {
         const focusedOption = interaction.options.getFocused(true);
         const focusedValue = focusedOption.value.toLowerCase();
-        const isDiscordAdmin = interaction.member?.permissions?.has('Administrator');
+        const isAdmin = hasAdminPermission(interaction);
         const requestingUser = User.getByDiscordId(interaction.user.id);
 
         if (focusedOption.name === 'template_name') {
@@ -313,7 +314,7 @@ module.exports = {
         if (focusedOption.name === 'player') {
             const mappedChoices = [];
 
-            if (isDiscordAdmin) {
+            if (isAdmin) {
                 mappedChoices.push({ name: tForInteraction(interaction, 'dc.record.allPlayers'), value: ALL_PLAYERS_VALUE });
                 mappedChoices.push(...User.searchPlayers(focusedValue).map(choice => ({ name: choice.playerid, value: choice.playeruuid })));
             } else if (requestingUser) {
@@ -361,29 +362,14 @@ async function execute(interaction) {
     const advancedOption = interaction.options.getBoolean('advanced') ?? false;
 
     let requestingUser = User.getByDiscordId(interaction.user.id);
-    const isDiscordAdmin = interaction.member?.permissions?.has('Administrator');
-    if (!requestingUser && !isDiscordAdmin) {
+    const isAdmin = hasAdminPermission(interaction);
+    if (!requestingUser && !isAdmin) {
         return interaction.editReply({ content: tForInteraction(interaction, 'dc.record.requesterNotLinked') });
     }
 
     const config = readConfig();
 
-    let hasPermission = false;
-    if (isDiscordAdmin) {
-        hasPermission = true;
-    } else if (!botKey) {
-        const isInGeneralWhitelist = requestingUser && config.general?.whitelist?.includes(requestingUser.playerid);
-        if (isDiscordAdmin || isInGeneralWhitelist) {
-            hasPermission = true;
-        }
-    } else {
-        const targetBotConfig = findConfigBotByKey(config.bots, botKey);
-        if (targetBotConfig && requestingUser && targetBotConfig.whitelist?.includes(requestingUser.playerid)) {
-            hasPermission = true;
-        }
-    }
-
-    const canSeeAdvanced = advancedOption && hasPermission;
+    const canSeeAdvanced = advancedOption && isAdmin;
 
     let targetUser = null;
     let queryAllPlayers = false;
@@ -401,11 +387,11 @@ async function execute(interaction) {
         return interaction.editReply({ content: tForInteraction(interaction, 'dc.record.targetNotFound') });
     }
 
-    if (queryAllPlayers && !isDiscordAdmin) {
+    if (queryAllPlayers && !isAdmin) {
         return interaction.editReply({ content: tForInteraction(interaction, 'dc.record.noPermission') });
     }
 
-    if (!queryAllPlayers && !isDiscordAdmin && targetUser.playeruuid !== requestingUser.playeruuid) {
+    if (!queryAllPlayers && !isAdmin && targetUser.playeruuid !== requestingUser.playeruuid) {
         return interaction.editReply({ content: tForInteraction(interaction, 'dc.record.noPermission') });
     }
 

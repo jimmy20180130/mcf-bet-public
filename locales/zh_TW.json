@@ -1,6 +1,7 @@
 {
 	"dc": {
 		"link": {
+			"alreadyLinked": "你已經綁定過 Minecraft 帳號了",
 			"invalidCode": "驗證碼無效或已過期",
 			"success": "成功綁定 Minecraft 帳號 {playerId} ({playerUuid})",
 			"linkFailed": "綁定時發生錯誤，請稍後再試"
@@ -70,6 +71,7 @@
 			"setSummary": "已設定 {playerId} 在 {botName} 的錢包\n綠寶石: {emerald}\n村民錠: {coin}"
 		},
 		"template": {
+			"noPermission": "你沒有權限執行此操作",
 			"nameEmpty": "模板名稱不可為空",
 			"nameExists": "你已經有名稱為 {templateName} 的模板，請先刪除或改用其他名稱",
 			"filterError": "模板條件錯誤: {error}",

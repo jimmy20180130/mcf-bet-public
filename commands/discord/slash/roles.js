@@ -2,8 +2,8 @@ const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const { readConfig } = require('../../../services/configService');
 const { tForInteraction } = require('../../../utils/i18n');
 const Rank = require('../../../models/Rank');
-const User = require('../../../models/User');
 const { getBotKeyFromConfigBot, normalizeBotKey, resolveBotKeyFromIdentifier } = require('../../../utils/botKey');
+const { hasAdminPermission } = require('../../../utils/permissions');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -236,22 +236,6 @@ async function autocomplete(interaction) {
 				}))
 		);
 	}
-}
-
-// Discord 管理員，或綁定的 Minecraft 帳號在白名單內 (跟 /record 一致)
-function hasAdminPermission(interaction) {
-	if (interaction.member?.permissions?.has('Administrator')) return true;
-
-	const user = User.getByDiscordId(interaction.user.id);
-	if (!user?.playerid) return false;
-
-	const config = readConfig();
-	const whitelist = [
-		...(config.general?.whitelist || []),
-		...(config.bots || []).flatMap(bot => bot.whitelist || [])
-	].map(name => String(name).toLowerCase());
-
-	return whitelist.includes(String(user.playerid).toLowerCase());
 }
 
 async function execute(interaction) {

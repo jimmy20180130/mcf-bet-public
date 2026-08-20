@@ -1,8 +1,9 @@
-const { SlashCommandBuilder, MessageFlags, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const User = require('../../../models/User');
 const { readConfig, writeConfig } = require('../../../services/configService');
 const { tForInteraction } = require('../../../utils/i18n');
 const { getBotKeyFromConfigBot, normalizeBotKey } = require('../../../utils/botKey');
+const { hasAdminPermission } = require('../../../utils/permissions');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -14,7 +15,6 @@ module.exports = {
         .setDescriptionLocalizations({
             'zh-TW': 'Bot 設定'
         })
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addSubcommand(subcommand =>
             subcommand
                 .setName('bet')
@@ -266,7 +266,7 @@ module.exports = {
     ,
 
     async autocomplete(interaction) {
-        if (!interaction.member?.permissions?.has(PermissionFlagsBits.Administrator)) {
+        if (!hasAdminPermission(interaction)) {
             await interaction.respond([]);
             return;
         }
@@ -299,7 +299,7 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
-        if (!interaction.member?.permissions?.has(PermissionFlagsBits.Administrator)) {
+        if (!hasAdminPermission(interaction)) {
             await interaction.editReply({ content: tForInteraction(interaction, 'dc.settings.noPermission') });
             return;
         }

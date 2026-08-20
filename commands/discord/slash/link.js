@@ -32,6 +32,11 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
+        if (User.getByDiscordId(interaction.user.id)) {
+            await interaction.editReply({ content: tForInteraction(interaction, 'dc.link.alreadyLinked') });
+            return;
+        }
+
         const code = interaction.options.getInteger('code');
         const playeruuid = verifyLinkCode(code);
 

@@ -3,6 +3,7 @@ const RecordTemplate = require('../../../models/RecordTemplate');
 const { readConfig } = require('../../../services/configService');
 const { tForInteraction } = require('../../../utils/i18n');
 const { getBotKeyFromConfigBot } = require('../../../utils/botKey');
+const { hasAdminPermission } = require('../../../utils/permissions');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -272,6 +273,12 @@ async function autocomplete(interaction) {
 
 async function execute(interaction) {
     await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+
+    if (!hasAdminPermission(interaction)) {
+        await interaction.editReply({ content: tForInteraction(interaction, 'dc.template.noPermission') });
+        return;
+    }
+
     const subcommand = interaction.options.getSubcommand();
 
     try {

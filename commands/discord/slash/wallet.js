@@ -7,6 +7,7 @@ const { tForInteraction } = require('../../../utils/i18n');
 const { money, escapeDiscordId } = require('../../../utils/format');
 const { getBotKeyFromConfigBot, normalizeBotKey, findConfigBotByKey } = require('../../../utils/botKey');
 const { normalizeUuid } = require('../../../utils/identifier');
+const { hasAdminPermission } = require('../../../utils/permissions');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -239,7 +240,7 @@ async function autocomplete(interaction) {
     const focusedOption = interaction.options.getFocused(true);
     const focusedValue = focusedOption.value;
 
-    if (focusedOption.name === 'player' && interaction.member.permissions.has('Administrator')) {
+    if (focusedOption.name === 'player' && hasAdminPermission(interaction)) {
         const choices = User.searchPlayers(focusedValue);
         await interaction.respond(
             choices.map(choice => ({ name: choice.playerid, value: choice.playerid }))
@@ -293,7 +294,7 @@ async function execute(interaction) {
             return;
         }
 
-        if (!interaction.member?.permissions?.has('Administrator') && targetUser.playeruuid !== User.getByDiscordId(interaction.user.id)?.playeruuid) {
+        if (!hasAdminPermission(interaction) && targetUser.playeruuid !== User.getByDiscordId(interaction.user.id)?.playeruuid) {
             await interaction.editReply({ content: tForInteraction(interaction, 'dc.wallet.noPermission') });
             return;
         }
@@ -310,7 +311,7 @@ async function execute(interaction) {
         return;
     }
 
-    if (!interaction.member?.permissions?.has('Administrator')) {
+    if (!hasAdminPermission(interaction)) {
         await interaction.editReply({ content: tForInteraction(interaction, 'dc.wallet.noPermission') });
         return;
     }
